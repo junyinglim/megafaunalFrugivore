@@ -1,0 +1,91 @@
+Variable,Explanation
+LEVEL_3_CO,TDWG level 3 abbreviation
+ID,
+LEVEL_NAME,TDWG name
+REGION_NAM,region name
+CONTINENT,continent
+THREEREALM,biogeographic realm (3 levels)
+REALM_LONG,biogeographic realm (8 levels)
+NEOPALEO,Old World vs. New World
+AREA_M2,area in m2
+AREA_KM2,area in km2
+PERIMETER,
+LAT,latitude
+LONG,longitude
+X_COORD,x coordinate (Behrman)
+Y_COORD,y coordinate (Behrman)
+ISISLAND,whether island or not
+PALMSR,palm species richness
+PalmPresAbs,whether palm family is present or not
+srtm_alt_mean,mean altitude from Shuttle Radar Topography Mission (SRTM)
+srtm_alt_median,median altitude from Shuttle Radar Topography Mission (SRTM)
+srtm_alt_min,min altitude from Shuttle Radar Topography Mission (SRTM)
+srtm_alt_max,max altitude from Shuttle Radar Topography Mission (SRTM)
+alt_min0,same as srtm_alt_min but negative values set to zero
+alt_range,altitudinal range (max minus min)
+soilcount,"number of soil types from Harmonized World Soil Database (HWSD), differentiates 36 soil types of which we excluded three (water bodies, glaciers and no data)
+"
+PREC_Sum,Worldclim Annual precipitation (mm yearÐ1)
+PREC_CV,Worldclim Precipitation seasonality: coefficient of variation of monthly values (mm)
+P_drie_quart,Worldclim Precipitation of driest quarter (mm)
+Tmean_mean,"Worldclim Annual mean temperature (K, originally in ¡C x 10)"
+T_cold_quart,"Worldclim Mean temperature of coldest quarter (K, originally in ¡C x 10)"
+Temp_SD,"Worldclim Temperature seasonality: standard deviation of monthly means (K, originally in ¡C x 10)"
+Tmin_cold_month,Worldclim Mean temperature of coldest month
+GPP_mean,mean annual gross primary productivity (in gC/m2/yr) from MODIS
+GPP_median,median annual gross primary productivity (in gC/m2/yr) from MODIS
+GPP_min,minimum gross primary productivity (in gC/m2/yr) from MODIS
+GPP_max,maximum gross primary productivity (in gC/m2/yr) from MODIS
+GPP_range,range of gross primary productivity (in gC/m2/yr) from MODIS
+GPP_SD,standard deviation of gross primary productivity (in gC/m2/yr) from MODIS
+NPP_mean,mean net primary productivity (in gC/m2/yr) from MODIS
+NPP_median,median net primary productivity (in gC/m2/yr) from MODIS
+NPP_min,minimum net primary productivity (in gC/m2/yr) from MODIS
+NPP_max,maximum net primary productivity (in gC/m2/yr) from MODIS
+NPP_range,range in net primary productivity (in gC/m2/yr) from MODIS
+NPP_SD,standard deviation net primary productivity (in gC/m2/yr) from MODIS
+GeologicalOrigin,"Geological origin, either mainland or island (atoll, continental, mixed or volcanic)"
+Geology_3categ,"Geological origin, either mainland or three island categories (atoll, continental, or volcanic)"
+DistToCont_m,"distance of island to the nearest continent (in m), excluding Antarctica"
+DistToCont_km,"distance of island to the nearest continent (in km), excluding Antarctica"
+NearestMainland,the nearest continental TDWG level 3 unit
+ensLGM_Pmean,"Annual precipitation during Last Glacial Maximum (mm yearÐ1), ensemble mean of CCSM3 and MIROC3.2 Last Glacial Maximum models"
+ensLGM_Tmean,"Annual mean temperature during Last Glacial Maximum (K, originally in ¡C * 10), ensemble mean of CCSM3, MIROC3.2 Last Glacial Maximum models"
+ensLGM_Pano,"Absolute anomaly in annual precipitation between Last Glacial Maximum and present (mm yearÐ1), ensemble mean of CCSM3, MIROC3.2 Last Glacial Maximum models"
+ensLGM_Tano,"Anomaly in TEMP between Last Glacial Maximum and present (K, originally in ¡C * 10), ensemble mean of CCSM3, MIROC3.2 Last Glacial Maximum models"
+ccLGM_Tmean,"Annual mean temperature during Last Glacial Maximum (K, originally in ¡C * 10), from CCSM3 Last Glacial Maximum model"
+ccLGM_Pmean,"Annual precipitation during Last Glacial Maximum (mm yearÐ1), from CCSM3 model"
+miLGM_Tmean,"Annual mean temperature during Last Glacial Maximum (K, originally in ¡C * 10), from MIROC3.2 Last Glacial Maximum model"
+miLGM_Pmean,"Annual precipitation during Last Glacial Maximum (mm yearÐ1), from MIROC3.2 model"
+ccAnoTmean,"Mean anomaly in TEMP between Last Glacial Maximum and present (K, originally in ¡C * 10), from CCSM3"
+ccAnoTmedian,"Median anomaly in TEMP between Last Glacial Maximum and present (K, originally in ¡C * 10), from CCSM3"
+miAnoTmean,"Mean anomaly in TEMP between Last Glacial Maximum and present (K, originally in ¡C * 10), from MIROC3.2"
+miAnoTmedian,"Median anomaly in TEMP between Last Glacial Maximum and present (K, originally in ¡C * 10), from MIROC3.2"
+ccAnoPmean,"Mean anomaly in annual precipitation between Last Glacial Maximum and present (mm yearÐ1), from CCSM3"
+ccAnoPmedian,"Median anomaly in annual precipitation between Last Glacial Maximum and present (mm yearÐ1), from CCSM3"
+miAnoPmean,"Mean anomaly in annual precipitation between Last Glacial Maximum and present (mm yearÐ1), from MIROC3.2"
+miAnoPmedian,"Median anomaly in annual precipitation between Last Glacial Maximum and present (mm yearÐ1), from MIROC3.2"
+PLIO_PREC_30s,Annual precipitation during Pliocene (mm yearÐ1)
+PLIO_TEMP_30s,Annual mean temperature during Pliocene (in ¡C * 10)
+PLIO_P_ANOM,Anomaly in annual precipitation between Pliocene and present (mm yearÐ1)
+PLIO_T_ANOM,Anomaly in annual mean temperature between Pliocene and present (in ¡C * 10)
+Plio_Wmm_mean,Pliocene warmest month mean
+Plio_Cmm_mean,Pliocene coldest month mean
+Mio_Prec_Mean,Miocene precipitation
+Mio_Temp_Mean,Miocene temperature
+VelocityMean,Mean Late Quaternary Climate-Change Velocity (temperature)
+VelocityMedian,Median Late Quaternary Climate-Change Velocity (temperature)
+VelocityMeanLog,Log mean Late Quaternary Climate-Change Velocity (temperature)
+CH_Extent,Extent of canopy height (sum of pixels)
+CH_Mean,Mean canopy height
+CH_Range,Range in canopy height
+CH_CV,CV canopy height
+CH_Min,Minimum canopy height
+CH_Max,Maximum canopy height
+CH_Median,Median canopy height
+CH_SD,SD in canopy height
+CH_Majority,Majority of canopy height
+CH_Sum,Sum canopy height
+CH_Variety,Variety
+CH_PercCover,The percentage cover of canopy height pixels
+CH_PercQuart4,"The percentage of canopy height pixels with values in the upper quartile of the global height frequency histogram (>22 m), with values calculated by reclassifying canopy height values larger than 22 -> 1 and NoData otherwise"

@@ -1,0 +1,78 @@
+Megafaunal Paper Notes
+
+- MammalDiet v1 taxonomy
+- 93 extinct taxa will need diet classified 
+- Body size from, Faurby and Svenning
+
+
+
+Faurby & Svenning 2015
+- 398 range restrictions (i.e., they had disagreements with IUCN range maps)
+- 405 island species (ranges expansions + restrictions)
+- 203 fossil co-occurrences? 
+
+- Revised ranges for all species that may have had human-induced range changes (e.g., red list category, body size or occurrence on large isolated islands)
+- Ranges modified for 1085 dspecies, but for 85 range modifications were too small to be reflected given the grid size (110 x 110km)
+- 260 species not accepted by IUCN because they went extinct within the last 130,000 years
+<JYL: Does this mean that 740 of the IUCN ranges should overlap? Also means that these ranges should be preferred over the IUCN ranges>
+
+<Using IUCN range maps of terrestrial mammals, downloaded Oct 2018>
+- There are some polygons whose binomial name is a subspecies, will be correcting that so 
+- Used IUCN taxonomy to improve interoperability with the dietary dataset
+
+- Out of the 5431 species for which we have maps, we have dietary data for 5208 species
+
+Faurby maps also contain non-terrestrial mammals
+
+<MammalDiet v2 Gainsbury et al 2018>
+- Added 1261 species not covered by Kissling et al 2014, and filled in some that were previously extrapolated
+- Gosh, the dataset structure is SOOOOO stupid
+
+
+<Files>
+- iucnMammals.rds
+	- loaded shapefile of extent of occurrence range maps of all "terrestrial" mammals from IUCN
+- iucnMetadata.csv
+	- metadata associated with each polygon in the shape Files
+- iucnMammalTaxonList.csv
+	- taxonomic information (incl. synonyms) for all mammals in IUCN
+
+
+
+
+<16th Nov 2018>
+- Creating current and present-natural frugivore assemblage checklists from the PHYLACINE dataset
+	- Some taxa have zero sized ranges
+		- 15 taxa
+	- Present-Natural dataset
+		- 178 extinct herbivores (diet.plant == 100 conditioned on phylacine data)
+		- 1950 frugivores, incl. occassionals (fruit > 0; i.e. include primary = 1, sec and tertiary frugivores)
+		- Only 1820 of 1950 have phylacine range data, all 178 extinct herbivores 
+	- Current dataset
+		- 
+
+- Palms
+	- 2557 unique species in tdwg occ dataset (all of them are in the dataset)
+	- Only 2038 of these have fruit size data
+
+- How many TDWG units
+	- OW-West
+	- OW-East
+	- NW
+
+
+
+- Map notes
+	- Bottom of S. America looks weird (uruguay is missing, and southern chile are missing, in both goldel's and my maps)
+	- Marquesas is really high in fruit size (why is goldel's much smaller, there are only 2 species in the checklist there)
+
+
+- SEM notes
+# Model Chi-Square with its df and p-value: prefer p-value greater than 0.05 (model does )
+# Root Mean Square Error of Approximation (RMSEA): prefer lower 90%CI to be < 0.05
+# Comparative Fit Index (CFI): prefer value greater than 0.90
+# Mod. indexes should be << 3.84; if higher then may suggest a missing path
+
+lhs ~~ rhs (covariances)
+lhs ~ rhs (actual regression fit)
+
