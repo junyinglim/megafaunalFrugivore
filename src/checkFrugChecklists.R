@@ -25,7 +25,7 @@ presNat_overlap_res$ISISLAND[presNat_overlap_res$GeologicalOrigin == "continenta
 
 presNat_overlap_res$CONTINENT_COARSE <- as.vector(presNat_overlap_res$CONTINENT)
 presNat_overlap_res$CONTINENT_COARSE[presNat_overlap_res$CONTINENT_COARSE == "AFRICA"] <- "AFRICA"
-presNat_overlap_res$CONTINENT_COARSE[presNat_overlap_res$CONTINENT_COARSE %in% c("NORTHERN AMERICA", "SOUTHERN AMERICA", "ASIA-TROPICAL")] <- "AMERICA"
+presNat_overlap_res$CONTINENT_COARSE[presNat_overlap_res$CONTINENT_COARSE %in% c("NORTHERN AMERICA", "SOUTHERN AMERICA")] <- "AMERICA"
 presNat_overlap_res$CONTINENT_COARSE[presNat_overlap_res$CONTINENT_COARSE %in% c("EUROPE", "ASIA-TEMPERATE", "ASIA-TROPICAL")] <- "EURASIA"
 presNat_overlap_res$CONTINENT_COARSE[presNat_overlap_res$CONTINENT_COARSE %in% c("AUSTRALASIA")] <- "AUSTRALASIA"
 

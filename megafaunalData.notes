@@ -67,6 +67,35 @@ Faurby maps also contain non-terrestrial mammals
 	- Marquesas is really high in fruit size (why is goldel's much smaller, there are only 2 species in the checklist there)
 
 
+<26th Nov>
+- For list of species with no range modifications (i.e., present-natural range = current range), we used the original range maps (more precise instead of the PHYLACINE rasters)
+	- 2016 range maps were provided by Soren Faurby
+	- 4746 with no changes in range (excl. species with zero-range present-natural and current ranges)
+- Some species that are in the attribute table in Faurby's file, did not actually have polygon
+
+<27th Nov>
+- Downloaded latest range maps
+	- Of the 1641 frugivores with no range change, only 1632 had iucn maps. The 9 without maps:
+		- 1) Canis aureus (somehow not mapped in the most recent iucn red list => "use Faubry's")
+		- 2) Graomys centralis (does not appear to be synonymized into any other species in the genus, but does not appear in the most recent iucn red list => "use Faurby's")
+		- 3) Nectomys magdalenae (does not appear to be synonymized into any other species in the genus, but does not appear in the most recent iucn red list => "use Faurby's")
+		- 4) Tolypeutes matacus (mapped in most recent iucn red list but does not appear in their shapefile => "use Faurby's")
+		- 5) Tolypeutes tricinctus (mapped in most recent iucn red list but does not appear in their shapefile => "use Faurby's")
+		- 6) Mimon koepckeae (mapped in most recent iucn red list but does not appear in their shapefile; looks like a single occurrence => "use Faurby's") 
+		- 7) Pteropus pelewensis (does not appear to be synonymized into any other species in the genus, but does not appear in the most recent iucn red list => "use Faurby's")
+		- 8) Rattus arfakienis (does not appear to be synonymized into any other species in the genus, but does not appear in the most recent iucn red list => "use Faurby's")
+		- 9) Petinomys sagitta (does not appear to be synonymized into any other species in the genus, but does not appear in the most recent iucn red list => "use Faurby's")
+	- Some species (n = 6) have other issues and had to be hard coded because their ranges overlap with land masses that are not mapped in the TDWG shape file (very small islands)
+		
+
+
+
+
+
+presNat_fname_subset
+
+
+
 - SEM notes
 # Model Chi-Square with its df and p-value: prefer p-value greater than 0.05 (model does )
 # Root Mean Square Error of Approximation (RMSEA): prefer lower 90%CI to be < 0.05
