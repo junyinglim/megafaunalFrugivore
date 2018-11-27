@@ -36,6 +36,7 @@ vignettes/*.pdf
 rsconnect/
 
 .DS_Store
+src/.DS_Store
 data/*
 figs/*
 goldelFiles/*

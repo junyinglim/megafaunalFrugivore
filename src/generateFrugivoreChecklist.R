@@ -91,7 +91,7 @@ iucn_range_polys <- read_sf("~/Desktop/TERRESTRIAL_MAMMALS/TERRESTRIAL_MAMMALS.s
 sum(nochange_iucn_splist %in% iucn_range_polys$binomial)
 length(nochange_iucn_splist)
 
-# Create present-natural ranges
+## Create present-natural ranges  ======================== 
 presNat_dir <- file.path(phylacine.dir, "Present_natural")
 presNatRanges_fname <- list.files(presNat_dir)
 excl_fname <- paste0(c(zerorange_splist, nochange_splist), ".tif")
@@ -105,7 +105,7 @@ presNat_overlap <- ldply(.data = presNat_fname_subset, .fun = overlapTDWG,
                       .progress = "text")
 saveRDS(presNat_overlap, file.path(projdata.dir, "mammal_presnat_occ_raw.rds"))
 
-# Create "no change" ranges 
+## Create "no change" ranges  ======================== 
 nochange_frug_splist <- mammaldiet_allFrug_SpList[mammaldiet_allFrug_SpList %in% nochange_splist] 
 
 #nochange_overlap <- ldply(.data = gsub("_", " ", nochange_frug_splist), .fun = overlapTDWG,
@@ -140,67 +140,17 @@ sum(paste0(mammaldiet_allFrug_SpList, ".tif") %in% presNatRanges_fname) # 1820 w
 sum(paste0(phylacine_presentNat_oblgHerb_SpList, ".tif") %in% presNatRanges_fname) # 178 with data
 length(presNat_fname_subset) # should be the sum of the previous two lines
 
-
-
-
-# Create current ranges
+## Create current ranges  ======================== 
 curr.dir <- file.path(phylacine.dir, "Current")
 currRanges_fname <- list.files(curr.dir)
-rangeNoData_spList <- spatial_metadata$Binomial.1.2[spatial_metadata$Number.Cells.Current.Range == 0] # species with empty range
 curr_fname <- paste0(mammaldiet_allFrug_SpList, ".tif")
-excl_fname <- paste0(rangeNoData_spList, ".tif")
+rangeNoData_spList <- spatial_metadata$Binomial.1.2[spatial_metadata$Number.Cells.Current.Range == 0]
+excl_fname <- paste0(c(zerorange_splist, nochange_splist, rangeNoData_spList), ".tif")
+
 currRanges_fname <- currRanges_fname[!currRanges_fname %in% excl_fname]
+curr_fname_subset <- curr_fname[curr_fname %in% currRanges_fname]
 
-curr_fname_subset <- curr_fname[curr_fname %in% currRanges_fname] # only include those with a non-empty range 
-length(rangeNoData_spList)
-length(curr_fname)
-sum(curr_fname %in% currRanges_fname)
-length(curr_fname_subset)
-curr_list <- ldply(.data = curr_fname_subset,
-                   .fun = overlapTDWG,
-                   dir = curr.dir,
-                   tdwg = tdwg_shape_reproj, buffer = FALSE,
-                   .progress = "text")
-write.table(curr_list, file = file.path(projdata.dir, "mammal_current_occ.txt"), row.names = FALSE, sep = "\t")
-
-# Identify which grid cells overlap with both continental and 
-main.dir <- "/Users/junyinglim/Dropbox/Projects/2019/palms/projects/megafaunalFrugivore"
-projdata.dir <- file.path(main.dir, "data")
-tdwg_data <- read.csv(file.path(projdata.dir, "TDWG_Environment_AllData_2014Dec.csv"))
-
-presNat_overlap <- readRDS(file.path(projdata.dir, "mammal_presnat_occ_raw.rds"))
-
-# Flagging aberrant occurrences due to the low resolution of raster maps
-
-presNat_overlap_res <- merge(presNat_overlap, tdwg_data[c("LEVEL_3_CO", "ISISLAND", "CONTINENT")])
-presNat_overlap_res$ISISLAND[presNat_overlap_res$LEVEL_3_CO %in% c("SUM", "JAW", "BOR", "SRL", "NWG")] <- 0 # sumatra, jawa, borneo, sri lanka, and new guinea (SIC = sicilia)
-
-# for each species, for each grid cell, are there 1) multiple tdwg countries assigned, and 2) is at least one from a continent, and at least another one a mainland. If true, then return that grid cell.
-
-presNat_overlap_res$CONTINENT_COARSE <- as.vector(presNat_overlap_res$CONTINENT)
-presNat_overlap_res$CONTINENT_COARSE[presNat_overlap_res$CONTINENT_COARSE == "AFRICA"] <- "AFRICA"
-presNat_overlap_res$CONTINENT_COARSE[presNat_overlap_res$CONTINENT_COARSE %in% c("EUROPE", "ASIA-TEMPERATE", "ASIA-TROPICAL")] <- "EURASIA"
-presNat_overlap_res$CONTINENT_COARSE[presNat_overlap_res$CONTINENT_COARSE %in% c("NORTHERN AMERICA", "SOUTHERN AMERICA", "ASIA-TROPICAL")] <- "AMERICA"
-presNat_overlap_res$CONTINENT_COARSE[presNat_overlap_res$CONTINENT_COARSE %in% c("AUSTRALASIA")] <- "AUSTRALASIA"
-
-# For this purpose there are only four "continents"  (Eurasia, Africa, Australia and America) 
-
-table(presNat_overlap_res$CONTINENT_COARSE)
-
-checkGridCell <- function(x){
-  x$island_flag <- ifelse(sum(c(0,1) %in% x$ISISLAND) == 2, 1, 0)
-  x$diffcont_flag <- ifelse(length(unique(x$CONTINENT_COARSE)) == 2, 1, 0)
-  return(x)
-}
-test <- ddply(.data = presNat_overlap_res,
-               .variables = .(SpecName),
-               .fun = function(x){
-                 flaglist <- ddply(.data = x,
-                                   .variables = .(gridcell),
-                                   .fun = checkGridCell)
-                 return(flaglist)},
-              .progress = "text")
-test2 <- subset(test, island_flag == 1 | diffcont_flag == 1)
-dim(test)
-dim(test2)
-write.csv(test2, "~/Desktop/flaggedPresentNaturalRanges.csv", row.names = FALSE)
+curr_overlap <- ldply(.data = curr_fname_subset, .fun = overlapTDWG,
+                      dir = curr.dir, type = "raster",
+                      tdwg = tdwg_shape_reproj, .progress = "text")
+saveRDS(curr_overlap, file.path(projdata.dir, "mammal_current_occ_raw.rds"))
