@@ -87,8 +87,12 @@ Faurby maps also contain non-terrestrial mammals
 		- 9) Petinomys sagitta (does not appear to be synonymized into any other species in the genus, but does not appear in the most recent iucn red list => "use Faurby's")
 	- Some species (n = 6) have other issues and had to be hard coded because their ranges overlap with land masses that are not mapped in the TDWG shape file (very small islands)
 		
+<28th Nov>
+- Current ranges, I simply used Faubry's rasters. However, he states that there were about 40 taxa out of the 1950 frugivores that did not have non-zero present ranges, but that does not appear to be true with the iucn polygons.
+- For consistency, I will omit these.
 
-
+<29th Nov>
+- 
 
 
 
