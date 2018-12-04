@@ -45,16 +45,17 @@ mammal_flagged_occ <- read.csv(file.path(data.dir, "flaggedPresentNaturalRanges.
 mammal_presnat_occ2 <- rbind(mammal_presnat_occ[,-1], mammal_nochange_occ[,-1])
 
 # Remove false positives
-falsePos <- subset(mammal_flagged_occ, Keep == 1)[c("LEVEL_3_CO", "SpecName")]
-
-mammal_presnat_occ2$falsePos <- ifelse(is.na(match(paste0(mammal_presnat_occ2$LEVEL_3_CO, mammal_presnat_occ2$SpecName),paste0(falsePos$LEVEL_3_CO, falsePos$SpecName))),"No", "Yes")
+falsePos <- subset(mammal_flagged_occ, Keep == 0)[c("LEVEL_3_CO", "SpecName")]  #KEEP == 0
+mammal_presnat_occ2$falsePos <- ifelse(is.na(match(paste0(mammal_presnat_occ2$LEVEL_3_CO, mammal_presnat_occ2$SpecName),paste0(falsePos$LEVEL_3_CO, falsePos$SpecName))),"No", "Yes") # if there is no match, flag as "no", otherwise "yes"
 sum(mammal_presnat_occ2$falsePos == "Yes")
 mammal_presnat_comb_occ <- subset(mammal_presnat_occ2, falsePos == "No")
+mammal_presnat_comb_occ <- mammal_presnat_comb_occ[!duplicated(mammal_presnat_comb_occ),]
 
 mammal_curr_occ2 <- rbind(mammal_curr_occ[,-1], mammal_nochange_occ[,-1])
 mammal_curr_occ2$falsePos <- ifelse(is.na(match(paste0(mammal_curr_occ2$LEVEL_3_CO, mammal_curr_occ2$SpecName),paste0(falsePos$LEVEL_3_CO, falsePos$SpecName))),"No", "Yes")
 sum(mammal_curr_occ2$falsePos == "Yes")
 mammal_curr_comb_occ <- subset(mammal_curr_occ2, falsePos == "No")
+mammal_curr_comb_occ <- mammal_curr_comb_occ[!duplicated(mammal_curr_comb_occ),]
 
 # Only include areas that contain palms
 palm_tdwg_list <- unique(palm_occ$Area_code_L3)
@@ -99,6 +100,7 @@ tdwg_meanFruit <- ddply(.data = subset(palm_occ_trait, Area_code_L3 %in% mammal_
                         .fun = summarise,
                         meanFruitLength = mean(AverageFruitLength_cm, na.rm = TRUE),
                         meanFruitLengthFilled = mean(AverageFruitLength_cm_filled, na.rm = TRUE),
+                        megapalm_nsp = sum(AverageFruitLength_cm_filled > 4),
                         palm_nSp = length(AverageFruitLength_cm))
 names(tdwg_meanFruit)[names(tdwg_meanFruit) == "Area_code_L3"] <- "LEVEL_3_CO"
 
@@ -108,6 +110,7 @@ tdwg_presnat_meanBodySize <-
         .variables = .(LEVEL_3_CO),
         .fun = summarize,
         presNat_meanBodySize = mean(Mass.g, na.rm = TRUE),
+        presNat_medianBodySize = median(Mass.g, na.rm = TRUE),
         presNat_nSp = length(unique(SpecName)))
 
 megaherbivores_splist <- subset(phylacine_trait, Mass.g >= 1000000)$Binomial.1.2
@@ -116,7 +119,9 @@ tdwg_presnat_mega_meanBodySize <-
         .variables = .(LEVEL_3_CO),
         .fun = summarize,
                 presNat_mega_meanBodySize = mean(Mass.g, na.rm = TRUE),
-                presNat_mega_nSp = length(unique(SpecName)))
+                presNat_mega_medianBodySize = median(Mass.g, na.rm = TRUE),
+                presNat_mega_nSp = length(unique(SpecName))
+          )
 
 
 mammal_curr_occ_trait <- merge(mammal_curr_comb_occ, phylacine_trait, by.x = "SpecName", by.y = "Binomial.1.2", all.x = TRUE)
@@ -125,6 +130,7 @@ tdwg_curr_meanBodySize <-
         .variables = .(LEVEL_3_CO),
         .fun = summarize,
         curr_meanBodySize = mean(Mass.g, na.rm = TRUE),
+        curr_medianBodySize = median(Mass.g, na.rm = TRUE),
         curr_nSp = length(unique(SpecName)))
 
 tdwg_curr_mega_meanBodySize <- 
@@ -132,13 +138,17 @@ tdwg_curr_mega_meanBodySize <-
         .variables = .(LEVEL_3_CO),
         .fun = summarize,
         curr_mega_meanBodySize = mean(Mass.g, na.rm = TRUE),
+        curr_mega_medianBodySize = median(Mass.g, na.rm= TRUE),
         curr_mega_nSp = length(unique(SpecName)))
 
 tdwg_mammal_all <- Reduce(function(x, y) merge(x, y, by = "LEVEL_3_CO", all = T), list(tdwg_presnat_meanBodySize, tdwg_presnat_mega_meanBodySize, tdwg_curr_meanBodySize, tdwg_curr_mega_meanBodySize))
-#tdwg_meanBodySize <- merge(tdwg_curr_meanBodySize, tdwg_presnat_meanBodySize, all = TRUE)
+
 tdwg_res <- merge(tdwg_meanFruit, tdwg_mammal_all)#, all = TRUE)
 
 write.csv(tdwg_res, file.path(res.dir, "tdwg_res.csv"), row.names = FALSE)
+
+write.csv(merge(mammal_presnat_comb_occ, phylacine_trait, by.x = "SpecName", by.y = "Binomial.1.2", all.x = TRUE), file.path(data.dir, "mammal_presnat_comb_occ.csv"), row.names = FALSE)
+write.csv(merge(mammal_curr_comb_occ, phylacine_trait, by.x = "SpecName", by.y = "Binomial.1.2", all.x = TRUE), file.path(data.dir, "mammal_curr_comb_occ.csv"), row.names = FALSE)
 
 ## Plot mammal body size and fruit sizes ========================
 # Import tdwg shape files
@@ -146,7 +156,6 @@ tdwg_shape <- readOGR(file.path(rawdata.dir, "TDWG", "level3", "level3.shp"))
 tdwg_shape@data$id <- rownames(tdwg_shape@data)
 tdwg_shape_df <- fortify(tdwg_shape, region = "id")
 tdwg_shape_df <- merge(tdwg_shape_df, tdwg_shape@data)
-
 tdwg_plot_df <- merge(tdwg_res, tdwg_env, by = "LEVEL_3_CO")
 
 fruitLengthPlot  <- ggplot() +
@@ -163,16 +172,15 @@ gappedFruitLengthPlot  <- ggplot() +
   theme(legend.position = "bottom")
 ggsave(filename = file.path(fig.dir, "fruitSizeFilledPlot.pdf"), gappedFruitLengthPlot, width = 14, height = 7)
 
-FruitLengthFilledvsNotPlot <- ggplot() + 
-  geom_point(aes(y = log(meanFruitLength), x = log(meanFruitLengthFilled)), data = tdwg_plot_df) +
-  geom_abline(aes(intercept = 0, slope = 1))
-temp <- resid(lm(log(meanFruitLength) ~ log(meanFruitLengthFilled), data=tdwg_plot_df))
+# FruitLengthFilledvsNotPlot <- ggplot() + 
+#   geom_point(aes(y = log(meanFruitLength), x = log(meanFruitLengthFilled)), data = tdwg_plot_df) +
+#   geom_abline(aes(intercept = 0, slope = 1))
+#temp <- resid(lm(log(meanFruitLength) ~ log(meanFruitLengthFilled), data=tdwg_plot_df))
 
-FruitLengthFilledvsNotPlotResid <- ggplot(data.frame("resid" = temp[which(tdwg_plot_df$meanFruitLength != tdwg_plot_df$meanFruitLengthFilled)])) +
-  geom_histogram(aes(x = resid), bins = 15)
-
-FruitLengthSensitivity<- grid.arrange(FruitLengthFilledvsNotPlot, FruitLengthFilledvsNotPlotResid, ncol =2)
-ggsave(filename = file.path(fig.dir, "FruitLengthSensitivity.pdf"), FruitLengthSensitivity)
+#FruitLengthFilledvsNotPlotResid <- ggplot(data.frame("resid" = temp[which(tdwg_plot_df$meanFruitLength != tdwg_plot_df$meanFruitLengthFilled)])) +
+#  geom_histogram(aes(x = resid), bins = 15)
+#FruitLengthSensitivity<- grid.arrange(FruitLengthFilledvsNotPlot, FruitLengthFilledvsNotPlotResid, ncol =2)
+#ggsave(filename = file.path(fig.dir, "FruitLengthSensitivity.pdf"), FruitLengthSensitivity)
 
 
 target.col <- c("LAT", "LONG", "LEVEL_3_CO", "curr_meanBodySize", "curr_nSp", "presNat_meanBodySize","presNat_nSp", "curr_mega_nSp", "presNat_mega_nSp", "presNat_mega_meanBodySize", "curr_mega_meanBodySize")
@@ -183,6 +191,7 @@ tdwg_plot_melt <- melt(tdwg_plot_df[,target.col], id.vars = c("LAT", "LONG", "LE
                                        "presNat_mega_meanBodySize",
                                        "curr_nSp", "presNat_nSp",
                                        "curr_mega_nSp", "presNat_mega_nSp"))
+
 
 mammalbodySizePlot <- ggplot() +
   geom_polygon(aes(y = lat, x = long, group = group), data = subset(tdwg_shape_df, !LEVEL_3_CO == "ANT")) +
@@ -195,7 +204,7 @@ ggsave(mammalbodySizePlot, filename = file.path(fig.dir, "meanBodySizeCombined.p
 
 mammalSpRichPlot <- ggplot() +
   geom_polygon(aes(y = lat, x = long, group = group), data = subset(tdwg_shape_df, !LEVEL_3_CO == "ANT")) +
-  geom_point(aes(x = LONG, y = LAT, fill = log(value), size = log(value)), colour = "white", shape = 21, data = subset(tdwg_plot_melt, variable %in% c("curr_nSp", "presNat_nSp", "curr_mega_nSp", "presNat_mega_nSp")), alpha = 0.7) +
+  geom_point(aes(x = LONG, y = LAT, fill = value, size = value), colour = "white", shape = 21, data = subset(tdwg_plot_melt, variable %in% c("curr_nSp", "presNat_nSp", "curr_mega_nSp", "presNat_mega_nSp")), alpha = 0.7) +
   facet_wrap(~variable, nrow = 2) + 
   scale_fill_viridis()
 
@@ -203,15 +212,6 @@ ggsave(mammalSpRichPlot, filename = file.path(fig.dir, "mammalSpRichCombined.pdf
 
 ## Exploratory plots ========================
 tdwg_final <- merge(tdwg_res, tdwg_env, by = "LEVEL_3_CO",all.x = TRUE)
-
-ggplot(aes(y = log(meanFruitLengthFilled), x = log(curr_meanBodySize)), data = tdwg_final) +
-  geom_point() +
-  facet_wrap(~THREEREALM) +
-  geom_smooth(method = "lm")
-ggplot(aes(y = log(meanFruitLengthFilled), x = log(presNat_meanBodySize)), data = tdwg_final) +
-  geom_point() +
-  facet_wrap(~THREEREALM) +
-  geom_smooth(method = "lm") 
 
 test <- melt(tdwg_final, id.var = c("LEVEL_3_CO", "THREEREALM", "meanFruitLengthFilled"), measure.vars = c("presNat_meanBodySize", "curr_meanBodySize"))
 
@@ -227,10 +227,48 @@ summary(lm(log(meanFruitLengthFilled)~ log(presNat_meanBodySize), data = subset(
 mammalCurrVsPresNatBodySize <- ggplot(data = tdwg_final) + geom_point(aes(y = log(presNat_meanBodySize), x = log(curr_meanBodySize), color = THREEREALM)) + geom_abline(aes(intercept = 0, slope = 1))
 ggsave(mammalCurrVsPresNatBodySize, file = file.path(fig.dir, "mammalCurrVsPresNatBodySize.pdf"))
 
+
+ggplot(aes(x = log(curr_meanBodySize), y = meanFruitLengthFilled), data = tdwg_final) + geom_point() + geom_smooth(method = "lm") 
+ggplot(aes(x = log(presNat_meanBodySize), y = log(meanFruitLengthFilled)), data = tdwg_final) + geom_point() + geom_smooth(method = "lm") 
+
+hist(log(tdwg_final$meanFruitLengthFilled))
+hist(tdwg_final$meanFruitLengthFilled)
+
+# Calculate the proportion of mammals that are megafaunal, and the number of species of megafaunal fruits
+
+
+
+
+
+
+
+
+
+
+## ISLAND TAXA
+table(tdwg_env$GeologicalOrigin)
+table(tdwg_env$Geology_3categ)
+ggplot(aes(y = log(meanFruitLengthFilled), x=log(DistToCont_km), colour = Geology_3categ), data = subset(tdwg_final, Geology_3categ %in% c("continental", "mainland", "volcanic"))) + geom_point() + geom_smooth(method = "lm") + geom_label_repel(aes(y = log(meanFruitLengthFilled), x = log(DistToCont_km), label = LEVEL_3_CO))
+
+library(ggrepel)
+
+names(tdwg_env)
+ggplot(aes(y = log(meanFruitLengthFilled), x=THREEREALM, color = Geology_3categ), data = tdwg_final) + geom_boxplot()
+names(tdwg_env)
+
+library(geosphere)
+
+mat <- distm(tdwg_final[,c('LONG','LAT')], tdwg_final[,c('LONG','LAT')], fun=distGeo)
+nearestTDWGlist <- tdwg_final$LEVEL_3_CO[unlist(apply(mat, MARGIN = 1, FUN = function(x){ which(min(x[x>0]) == x) }))]
+distNearestTDWGlist <- unlist(apply(mat, MARGIN = 1, FUN = function(x){ min(x[x>0]) }))
+tdwg_final$nearestTDWG <- nearestTDWGlist
+tdwg_final$distNearestTDWG <- distNearestTDWGlist
+
+ggplot(aes(y = log(meanFruitLengthFilled), x=distNearestTDWG, color = Geology_3categ), data = tdwg_final)
+names(tdwg_env)
+
 ## SEM analysis ========================
-library(lavaan)
-library(semTools)
-library(semPlot)
+library(lavaan); library(semTools); library(semPlot)
 
 # PCA of climate globally
 currClimVar <- c("PREC_Sum", "PREC_CV", "P_drie_quart", "Tmean_mean", "T_cold_quart", "Temp_SD")
@@ -239,9 +277,17 @@ pcaClim <- prcomp(tdwg_env_subset[currClimVar], scale. = TRUE, center = TRUE)
 summary(pcaClim)    # first 3 axes explain ~93.8%
 tdwg_env_subset <- cbind(tdwg_env_subset, pcaClim$x[,1:3])
 
-# Merge environmental variables 
 tdwg_res_sem <- merge(tdwg_res, tdwg_env_subset, by = "LEVEL_3_CO", all.x = TRUE)
+# Merge environmental variables 
 write.csv(tdwg_res_sem, file.path(res.dir, "semAnalysis.csv"), row.names = FALSE)
+
+# 
+mod1 <- lm(log(meanFruitLengthFilled) ~ scale(log(presNat_meanBodySize)), data = subset(tdwg_res_sem, THREEREALM == "NewWorld"))
+summary(mod1)
+
+mod2 <- lm(log(meanFruitLengthFilled) ~ scale(log(curr_meanBodySize)), data = subset(tdwg_res_sem, THREEREALM == "NewWorld"))
+summary(mod2)
+
 
 # Normalize some variables (copied exactly what Goldel did here)
 THREEREALM <- tdwg_res_sem$THREEREALM 

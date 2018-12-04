@@ -92,7 +92,8 @@ Faurby maps also contain non-terrestrial mammals
 - For consistency, I will omit these.
 
 <29th Nov>
-- 
+- 197 countries with Palms (after removing cocos and lodoicea)
+- 190 countries that intersect with mammal occurrences
 
 
 
@@ -108,4 +109,10 @@ presNat_fname_subset
 
 lhs ~~ rhs (covariances)
 lhs ~ rhs (actual regression fit)
+
+
+effect of the biggest fruit
+prop megafaunal fruit diversity
+But also redo fruit size - body size with the facultative herbivores + splitting data up into quantiles
+
 

@@ -2,11 +2,8 @@
 # Using present-natural ranges from PHYLACINE (Faurby et al 2018) database and IUCN range map, generate frugivore checklists for both current and present-natural conditions
 
 ## Packages ========================
-library(raster)
-library(rgdal)
-library(rgeos)
-library(plyr)
-library(sf)
+library(raster); library(rgdal); library(rgeos)
+library(plyr); library(sf)
 options(stringsAsFactors = FALSE)
 
 ## Directories ========================
@@ -41,7 +38,9 @@ phylacine_trait <- read.csv(file.path(phylacine.dir, "Trait_data.csv"), stringsA
 spatial_metadata <- read.csv(file.path(phylacine.dir, "Spatial_metadata.csv"), stringsAsFactors = FALSE)
 
 phylacine_presentNat_oblgHerb_SpList <- subset(phylacine_trait, Diet.Plant == 100 & IUCN.Status.1.2 == "EP")$Binomial.1.2
-length(phylacine_presentNat_oblgHerb_SpList) # 178 extinct herbivores
+phylacine_presentNat_facHerb_SpList <- subset(phylacine_trait, Diet.Plant < 100 & Diet.Plant >= 50 & IUCN.Status.1.2 == "EP")$Binomial.1.2
+length(phylacine_presentNat_oblgHerb_SpList) # 178 extinct obligate herbivores
+length(phylacine_presentNat_facHerb_SpList) # 24 extinct occassional herbivores
 
 ## Create TDWG level checklists ======================== 
 # Import tdwg polygons
@@ -105,11 +104,17 @@ presNat_overlap <- ldply(.data = presNat_fname_subset, .fun = overlapTDWG,
                       .progress = "text")
 saveRDS(presNat_overlap, file.path(projdata.dir, "mammal_presnat_occ_raw.rds"))
 
+## Create present-natural for facultative herbivores extinct taxa  ======================== 
+presNat_fname2 <- paste0(phylacine_presentNat_facHerb_SpList, ".tif")
+presNat_fname2_subset <- presNat_fname2[presNat_fname2 %in% presNatRanges_fname]
+presNat_facherb_overlap <- ldply(.data = presNat_fname2_subset, .fun = overlapTDWG,
+                                             dir = presNat_dir, tdwg = tdwg_shape_reproj,
+                                             .progress = "text")
+saveRDS(presNat_facherb_overlap, file.path(projdata.dir, "mammal_presnat_facherb_occ_raw.rds"))
+
 ## Create "no change" ranges  ======================== 
 nochange_frug_splist <- mammaldiet_allFrug_SpList[mammaldiet_allFrug_SpList %in% nochange_splist] 
 
-#nochange_overlap <- ldply(.data = gsub("_", " ", nochange_frug_splist), .fun = overlapTDWG,
-#                          type = "polygon", tdwg = tdwg_shape, .progress = "text") # don't use thereproject
 #setdiff(gsub(x=nochange_frug_splist, "_", " "), iucn_range_polys$binomial) # 9 species not represented in IUCN shape file but are in Faurby's 2016 version
 res <- list()
 for(i in 1:length(nochange_frug_splist)){
