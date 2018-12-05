@@ -25,12 +25,16 @@ mammalDiet$SpecName <- paste(mammalDiet$Genus, mammalDiet$Species, sep = "_")
 # Create species list of obligate and facultative frugivores
 mammaldiet_allFrug_SpList <- subset(mammalDiet, Fruit >= 1)$SpecName
 mammaldiet_oblgFrug_SpList <- subset(mammalDiet, Fruit == 1)$SpecName
+mammaldiet_facFrug_SpList <- subset(mammalDiet, Fruit %in% c(3))$SpecName
 
 temp <- resolveTaxonomy(x = gsub("_", " ", mammaldiet_allFrug_SpList),
                         ref=iucnTaxonRef, syn.col = "name", acc.col = "accName")
 sum(is.na(temp)) # 26 names in mammaldiet that are not in iucn taxonomy
 temp[is.na(temp)] <- mammaldiet_allFrug_SpList[is.na(temp)]
 mammaldiet_allFrug_SpList <- gsub(" ", "_", temp)
+
+sum(mammaldiet_allFrug_SpList %in% phylacine_trait$Binomial.1.2) # 1822
+sum(duplicated(mammaldiet_allFrug_SpList))
 
 # Import phylacine dataset
 phylacine.dir <- file.path(frug.dir, "PHYLACINE")
@@ -40,7 +44,7 @@ spatial_metadata <- read.csv(file.path(phylacine.dir, "Spatial_metadata.csv"), s
 phylacine_presentNat_oblgHerb_SpList <- subset(phylacine_trait, Diet.Plant == 100 & IUCN.Status.1.2 == "EP")$Binomial.1.2
 phylacine_presentNat_facHerb_SpList <- subset(phylacine_trait, Diet.Plant < 100 & Diet.Plant >= 50 & IUCN.Status.1.2 == "EP")$Binomial.1.2
 length(phylacine_presentNat_oblgHerb_SpList) # 178 extinct obligate herbivores
-length(phylacine_presentNat_facHerb_SpList) # 24 extinct occassional herbivores
+length(phylacine_presentNat_facHerb_SpList) # 55 extinct occassional herbivores
 
 ## Create TDWG level checklists ======================== 
 # Import tdwg polygons
