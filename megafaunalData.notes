@@ -97,7 +97,6 @@ Faurby maps also contain non-terrestrial mammals
 
 
 
-presNat_fname_subset
 
 
 
@@ -114,5 +113,29 @@ lhs ~ rhs (actual regression fit)
 effect of the biggest fruit
 prop megafaunal fruit diversity
 But also redo fruit size - body size with the facultative herbivores + splitting data up into quantiles
+
+
+
+TO DO:
+1) Prepare electronic supplementary material !DONE!
+    - Accessions !DONE!
+    - Fossilized birth death trees !DONE!
+2) Figures
+	- Italicize species names
+3) Data accessibility
+	- Upload sequences to genbank
+	- Upload alignments and tree to TREEBASE
+4) Check sampling statistics !DONE!
+5) Figure out the Peperomia-Piper split statistics !DONE!
+6) Check references
+7) Revise discussion !DONE!
+	- Niche preemption !DONE!
+	- Evolutionary transitions !DONE!
+8) Final read through
+	- Remove the royal "I" !DONE!
+
+
+
+
 
 
