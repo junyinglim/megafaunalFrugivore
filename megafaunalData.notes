@@ -95,6 +95,10 @@ Faurby maps also contain non-terrestrial mammals
 - 197 countries with Palms (after removing cocos and lodoicea)
 - 190 countries that intersect with mammal occurrences
 
+<26th Dec>
+- Use model averaged coefficients to produce partial residuals?
+- Full model - (logFruitSize ~ currMedBodySize + (PC1, PC2, PC3, lgmTano, lgmPano, NPP_mean))
+	- Rel Impt: PC1 (1.0), currMedBodySize (1.0), NPP_mean (0.99), PC2 (0.99)
 
 
 

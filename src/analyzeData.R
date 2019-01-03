@@ -194,15 +194,46 @@ tdwg_plot_melt <- melt(tdwg_plot_df[,target.col],
 
 tdwg_plot_melt$variable <- factor(tdwg_plot_melt$variable, levels = c("curr_medianBodySize", "presNat_medianBodySize"), labels = c("Current", "Present-natural"))
 
-mammalbodySizePlot <- ggplot() +
-  geom_polygon(aes(y = lat, x = long, group = group), data = subset(tdwg_shape_df, !LEVEL_3_CO == "ANT")) +
-  geom_point(aes(x = LONG, y = LAT, fill = log(value), size = log(value)), colour = "white", shape = 21, data = subset(tdwg_plot_melt, variable %in% c("Current", "Present-natural")), alpha = 0.7) +
-  facet_wrap(~variable, nrow = 2) + 
-  theme(strip.background = element_blank(), axis.text = element_blank(), axis.line = element_blank(), axis.ticks = element_blank(), axis.title = element_blank(), strip.text = element_text(color = "grey20",size = 18), legend.position = "bottom",legend.justification = "center") +
-  guides(size=FALSE)+
-  scale_fill_viridis(limits = c(1,12), name = "Log median\nmammal body size (g)")
+#POSTER <- merge(x=tdwg_shape_df, y=tdwg_plot_df, by= "LEVEL_3_CO", all.x = TRUE)
+#POSTER2 <- POSTER[order(POSTER$order),]
+q_probs = seq(0.0, 1.0, 0.1)
+q_labs <- levels(cut(log(tdwg_plot_melt$value), quantile(log(tdwg_plot_melt$value), probs = q_probs, na.rm = T)))
+q_labs <- gsub(q_labs, pattern = "\\(|\\]", replacement = "")
+q_labs <- gsub(q_labs, pattern = ",", replacement = "-")
+#q_labs <- c("16.9 - 40.0", "40.0 - 64.1", "64.1 - 114.4", "114.4 - 254.7", "254.7 - 652.0", "652.0 - 3,498.2", "3,498.2 - 20,537.3", "20,537.3 - 120,571.7", "120,571.7 - 1,329,083")
+q_labs <- c("0 - 17", "17 - 40", "40 - 64", "64 - 114", "114 - 254", "254 - 652", "652 - 3,498", "3,498 - 20,537", "20,537 - 120,572", "120,572 - 1,329,083")
 
-ggsave(mammalbodySizePlot, filename = file.path(fig.dir, "medianLogBodySizeCombined.pdf"), width = 10, height = 10)
+tdwg_plot_melt$logvalue <- log(tdwg_plot_melt$value)
+
+curr_mammalbodySizePlot <- ggplot() +
+  geom_polygon(aes(y = lat, x = long, group = group), data = subset(tdwg_shape_df, !LEVEL_3_CO == "ANT")) +
+  geom_point(aes(x = LONG, y = LAT, fill = cut(logvalue, quantile(logvalue, probs = q_probs), labels = q_labs), size = logvalue), colour = "white", shape = 21, data = subset(tdwg_plot_melt, variable %in% c("Current", "Present-natural") & !is.na(logvalue)), alpha = 0.9) +
+  facet_wrap(~variable, nrow = 2, scales = "free")+
+  theme(panel.background = element_blank(), axis.text = element_blank(), axis.line = element_blank(), axis.ticks = element_blank(), axis.title = element_blank(), legend.position = "bottom",legend.justification = "center", strip.background = element_blank(), strip.text = element_text(size = 18)) +
+  guides(size=FALSE, fill = guide_legend(override.aes = list(size=10))) +
+  scale_fill_manual(values = colorRamps::matlab.like(n = 10), name = "Median\nmammal body size (g)", breaks = q_labs)
+ggsave(curr_mammalbodySizePlot, filename = file.path(fig.dir, "currmedianLogBodySizeCombined.pdf"), width = 10, height = 10)
+
+
+library(RColorBrewer)
+  scale_fill_viridis(limits = c(2,12),
+                     name = "Log median\nmammal body size (g)", option = "A")
+  #scale_fill_gradientn(limits = c(1,12), name = "Log median\nmammal body size (g)",
+  #                     colors = wes_palette("Zissou1", 100, type = "continuous"))
+
+# presnat_mammalbodySizePlot <- ggplot() +
+#   geom_polygon(aes(y = lat, x = long, group = group), data = subset(POSTER2, !LEVEL_3_CO == "ANT")) +
+#   geom_point(aes(x = LONG, y = LAT, fill = log(value), size = log(value)), colour = "white", shape = 21, data = subset(tdwg_plot_melt, variable %in% c("Current", "Present-natural")), alpha = 0.7) +
+#   #facet_wrap(~variable, nrow = 2) + 
+#   theme(panel.background = element_blank(), axis.text = element_blank(), axis.line = element_blank(), axis.ticks = element_blank(), axis.title = element_blank(), legend.position = "bottom",legend.justification = "center") +
+#   guides(size=FALSE)+
+#   scale_fill_viridis(limits = c(2,12), name = "Log median\nmammal body size (g)")
+  #scale_fill_gradientn(limits = c(1,12), name = "Log median\nmammal body size (g)",
+  #                     colors = wes_palette("Zissou1", 100, type = "continuous"))
+
+#ggsave(mammalbodySizePlot, filename = file.path(fig.dir, "medianLogBodySizeCombined.pdf"), width = 10, height = 10)
+
+#ggsave(presnat_mammalbodySizePlot, filename = file.path(fig.dir, "presnatmedianLogBodySizeCombined.pdf"), width = 10, height = 5)
 
 
 mammalSpRichPlot <- ggplot() +
