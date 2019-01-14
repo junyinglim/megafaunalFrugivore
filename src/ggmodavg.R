@@ -1,6 +1,6 @@
 require(ggplot2)
 
-plotRelImportance <- function(x, plotIntercept = FALSE){
+summarizeRelImportance <- function(x, plotIntercept = FALSE){
   # Plots relative
   # x = "averaging" class from MuMIn package
   #x = fullmod_avg
@@ -14,9 +14,14 @@ plotRelImportance <- function(x, plotIntercept = FALSE){
     summaryStats <- summaryStats[-1,]    
   }
   summaryStats <- merge(summaryStats, relimportStats, by = "coefficient")
-  
-  #ggplot(data = summaryStats) + geom_point(aes(y = fullAvgCoef, x= coefficient, size = importance)) + geom_segment(aes(y = lower2.5, yend = upper97.5, x = coefficient, xend = coefficient)) + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  return(summaryStats)
 }
+
+plotRelImportance <- function(x){
+  # Plots basic diagnostic output of the summarizeRelImportance function
+  ggplot(data = x) + geom_point(aes(y = fullAvgCoef, x= coefficient, size = importance)) + geom_segment(aes(y = lower2.5, yend = upper97.5, x = coefficient, xend = coefficient)) + theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+}
+
 
 # x$coefficients
 # 

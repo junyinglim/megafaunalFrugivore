@@ -15,6 +15,7 @@ options(stringsAsFactors =FALSE)
 library(plyr); library(dplyr); library(reshape2)
 library(ggplot2); library(sp); library(rgdal); library(viridis); library(gridExtra)
 library(car); library(MuMIn)
+
 ## Import palm data ========================
 palm_occ <- read.csv(file.path(data.dir, "palms_in_tdwg3.csv"))
 palm_trait <- read.csv(file.path(data.dir, "PalmTraits_10.csv"))
@@ -88,8 +89,10 @@ palm_trait_subset <- palm_trait[c("PalmTribe","accGenus", "SpecName","AverageFru
 
 gapFill <- function(x){
   if( sum(is.na(x$AverageFruitLength_cm)) == 0 ){
+    # If the genus is complete in data, then just return values
     return(x)  
   } else {
+    # Else, assign the empty values with the genus mean
     genusMean <- mean(x$AverageFruitLength_cm, na.rm = TRUE)
     x$AverageFruitLength_cm[is.na(x$AverageFruitLength_cm)] <- genusMean
     return(x)
@@ -156,7 +159,10 @@ tdwg_shape@data$id <- rownames(tdwg_shape@data)
 tdwg_shape_df <- fortify(tdwg_shape, region = "id")
 tdwg_shape_df <- merge(tdwg_shape_df, tdwg_shape@data)
 
-tdwg_plot_df <- merge(tdwg_res, tdwg_env, by = "LEVEL_3_CO")
+tdwg_plot_df <- merge(tdwg_res, tdwg_env, by = "LEVEL_3_CO", all.x = TRUE)
+
+# Define map theme
+map_theme <- theme(axis.ticks = element_blank(), axis.title = element_blank(), axis.text = element_blank())
 
 # fruitLengthPlot  <- ggplot() +
 #   geom_polygon(aes(y = lat, x = long, group = group), data = subset(tdwg_shape_df, !LEVEL_NAME == "Antarctica")) +
@@ -165,14 +171,34 @@ tdwg_plot_df <- merge(tdwg_res, tdwg_env, by = "LEVEL_3_CO")
 #   theme(legend.position = "bottom")
 # ggsave(filename = file.path(fig.dir, "fruitSizePlot.pdf"), fruitLengthPlot, width = 14, height = 7)
 # 
+
+
 gappedFruitLengthPlot  <- ggplot() +
   geom_polygon(aes(y = lat, x = long, group = group), data = subset(tdwg_shape_df, !LEVEL_3_CO == "ANT")) +
   geom_point(aes(x = LONG, y = LAT, fill = meanFruitLengthFilled, size = meanFruitLengthFilled), colour = "white", shape = 21, data = tdwg_plot_df, alpha = 0.7) +
   scale_fill_viridis() +
+  map_theme + 
   theme(legend.position = "bottom")
-ggsave(filename = file.path(fig.dir, "fruitSizeFilledPlot.pdf"), gappedFruitLengthPlot, width = 14, height = 7)
+ggsave(filename = file.path(fig.dir, "fruitSizeFilledPlot.pdf"), gappedFruitLengthPlot,
+       width = 14, height = 7)
 
-# FruitLengthFilledvsNotPlot <- ggplot() +
+# threerealmplot <- ggplot() +
+#   geom_polygon(aes(y = lat, x= long, group = group), data = subset(tdwg_shape_df, !LEVEL_3_CO == "ANT")) +
+#   geom_point(aes(x = LONG, y = LAT, fill = THREEREALM), data = tdwg_plot_df, shape = 21, size = 3, color = "white")+
+#   scale_fill_viridis(discrete = TRUE) +
+#   theme(legend.position = "bottom")
+# ggsave(threerealmplot, filename = file.path(fig.dir, "threerealmPlot.pdf"), width = 14, height = 7 )
+
+# islandplot <- ggplot() +
+#     geom_polygon(aes(y = lat, x= long, group = group), data = subset(tdwg_shape_df, !LEVEL_3_CO == "ANT")) +
+#     geom_point(aes(x = LONG, y = LAT, fill = Geology_3categ), data = subset(tdwg_plot_df, !is.na(Geology_3categ)), shape = 21, size = 3, color = "white")+
+#   scale_fill_viridis(discrete = TRUE) +
+#   theme(legend.position = "bottom")
+# ggsave(islandplot, filename = file.path(fig.dir, "islandPlot.pdf"), width = 14, height = 7 )
+#   
+
+
+ # FruitLengthFilledvsNotPlot <- ggplot() +
 #   geom_point(aes(y = log(meanFruitLength), x = log(meanFruitLengthFilled)), data = tdwg_plot_df) +
 #   geom_abline(aes(intercept = 0, slope = 1))
 # temp <- resid(lm(log(meanFruitLength) ~ log(meanFruitLengthFilled), data=tdwg_plot_df))
@@ -200,7 +226,6 @@ q_probs = seq(0.0, 1.0, 0.1)
 q_labs <- levels(cut(log(tdwg_plot_melt$value), quantile(log(tdwg_plot_melt$value), probs = q_probs, na.rm = T)))
 q_labs <- gsub(q_labs, pattern = "\\(|\\]", replacement = "")
 q_labs <- gsub(q_labs, pattern = ",", replacement = "-")
-#q_labs <- c("16.9 - 40.0", "40.0 - 64.1", "64.1 - 114.4", "114.4 - 254.7", "254.7 - 652.0", "652.0 - 3,498.2", "3,498.2 - 20,537.3", "20,537.3 - 120,571.7", "120,571.7 - 1,329,083")
 q_labs <- c("0 - 17", "17 - 40", "40 - 64", "64 - 114", "114 - 254", "254 - 652", "652 - 3,498", "3,498 - 20,537", "20,537 - 120,572", "120,572 - 1,329,083")
 
 tdwg_plot_melt$logvalue <- log(tdwg_plot_melt$value)
@@ -215,9 +240,9 @@ curr_mammalbodySizePlot <- ggplot() +
 ggsave(curr_mammalbodySizePlot, filename = file.path(fig.dir, "currmedianLogBodySizeCombined.pdf"), width = 10, height = 10)
 
 
-library(RColorBrewer)
-  scale_fill_viridis(limits = c(2,12),
-                     name = "Log median\nmammal body size (g)", option = "A")
+# library(RColorBrewer)
+#   scale_fill_viridis(limits = c(2,12),
+#                      name = "Log median\nmammal body size (g)", option = "A")
   #scale_fill_gradientn(limits = c(1,12), name = "Log median\nmammal body size (g)",
   #                     colors = wes_palette("Zissou1", 100, type = "continuous"))
 
@@ -244,7 +269,7 @@ mammalSpRichPlot <- ggplot() +
 
 ggsave(mammalSpRichPlot, filename = file.path(fig.dir, "mammalSpRichCombined.pdf"), width = 10, height = 10)
 
-## Exploratory plots ========================
+## Statistical models ========================
 tdwg_res$propMegaPalm <- tdwg_res$megapalm_nsp / tdwg_res$palm_nSp
 tdwg_res$propMegaMam_curr <- tdwg_res$curr_megaHerb_nSp / tdwg_res$curr_nSp
 tdwg_res$propMegaMam_presnat <- tdwg_res$presNat_megaHerb_nSp / tdwg_res$presNat_nSp
@@ -259,74 +284,193 @@ tdwg_final2$PC1 <- globalPCA$x[,1]
 tdwg_final2$PC2 <- globalPCA$x[,2]
 tdwg_final2$PC3 <- globalPCA$x[,3]
 
-library(MuMIn)
-source(src.dir, "ggmodavg.R")
+source(file.path(src.dir, "ggmodavg.R"))
 
 # Current + Global -------
-target.col <- c("PC1", "PC2","PC3", "meanFruitLengthFilled", "curr_medianBodySize", "NPP_mean", "PC1", "PC2", "PC3", "ensLGM_Tano", "ensLGM_Pano", "THREEREALM")
+target.col <- c("meanFruitLengthFilled", "curr_medianBodySize", "NPP_mean", "PC1", "PC2", "PC3", "ensLGM_Tano", "ensLGM_Pano", "THREEREALM")
 tdwg_final3 <- tdwg_final2[complete.cases(tdwg_final2[target.col]),]
-global_curr_mod <- lm(log(meanFruitLengthFilled) ~ scale(log(curr_medianBodySize)) + scale(NPP_mean) + scale(PC1) + scale(PC2) + scale(PC3) + scale(ensLGM_Tano) + scale(ensLGM_Pano), data = tdwg_final3, na.action = "na.fail")
+tdwg_final3_noisl <- subset(tdwg_final3, Geology_3categ %in% c("mainland", "continental"))
+
+global_curr_mod <- lm(log(meanFruitLengthFilled) ~ scale(log(curr_medianBodySize)) + scale(NPP_mean) + scale(PC1) + scale(PC2) + scale(PC3) + scale(ensLGM_Tano) + scale(ensLGM_Pano),
+                      data = tdwg_final3_noisl,
+                      na.action = "na.fail")
 global_curr_mod_dr <- dredge(global_curr_mod)
 global_curr_mod_avg <- model.avg(global_curr_mod_dr)
-ggsave(plotRelImportance(global_curr_mod_avg), filename = file.path(fig.dir, "global_curr_relimpt_plot.pdf"))
+global_curr_mod_avg_sum <- summarizeRelImportance(global_curr_mod_avg)
+global_curr_mod_plot <- plotRelImportance(global_curr_mod_avg_sum)
+ggsave(file.path(fig.dir, "global_curr_relimpt.pdf"),
+       global_curr_mod_plot, width = 8, height = 4)
 
 presid <- resid(global_curr_mod, type = "partial")
-z <- data.frame(presid = presid[,1], var = scale(log(tdwg_final3$curr_medianBodySize))) 
+z <- data.frame(presid = presid[,1], var = scale(log(tdwg_final3_noisl$curr_medianBodySize))) 
 global_curr_presid_plot <- ggplot(aes(y = presid, x =var),data = z)+ geom_point(shape = 1) + geom_smooth(method = "lm") + labs(y = "Mean fruit size\n(Partial residuals)", x = "Log median body size (Current)") + theme(panel.background = element_blank())
-ggsave(global_curr_presid_plot, filename = file.path(fig.dir, "global_curr_presid_plot.pdf"))
+ggsave(file.path(fig.dir, "global_curr_presid.pdf"), global_curr_presid_plot, width = 8, height = 4)
+
+# Present natural global-------
+target.col <- c("meanFruitLengthFilled", "presNat_medianBodySize", "NPP_mean", "PC1", "PC2", "PC3", "ensLGM_Tano", "ensLGM_Pano", "THREEREALM")
+tdwg_final3 <- tdwg_final2[complete.cases(tdwg_final2[target.col]),]
+tdwg_final3_noisl <- subset(tdwg_final3, Geology_3categ %in% c("mainland", "continental"))
+
+global_pnat_data <- tdwg_final3_noisl
+global_pnat_mod <- lm(log(meanFruitLengthFilled) ~ scale(log(presNat_medianBodySize)) + scale(NPP_mean) + scale(PC1) + scale(PC2) + scale(PC3) + scale(ensLGM_Tano) + scale(ensLGM_Pano),
+                      data = global_pnat_data,
+                      na.action = "na.fail")
+global_pnat_mod_dr <- dredge(global_pnat_mod)
+global_pnat_mod_avg <- model.avg(global_pnat_mod_dr)
+global_pnat_mod_avg_sum <- summarizeRelImportance(global_pnat_mod_avg)
+global_pnat_mod_plot <- plotRelImportance(global_pnat_mod_avg_sum)
+ggsave(file.path(fig.dir, "global_pnat_relimpt.pdf"),
+       global_pnat_mod_plot, width = 8, height = 4)
+
+presid <- resid(global_pnat_mod, type = "partial")
+z <- data.frame(presid = presid[,1], var = scale(log(global_pnat_data$presNat_medianBodySize))) 
+global_pnat_presid_plot <- ggplot(aes(y = presid, x =var),data = z)+ geom_point(shape = 1) + geom_smooth(method = "lm") + labs(y = "Mean fruit size\n(Partial residuals)", x = "Log median body size (Current)") + theme(panel.background = element_blank())
+ggsave(file.path(fig.dir, "global_pnat_presid.pdf"), 
+       global_pnat_presid_plot, width = 8, height = 4)
+
 
 # Current + New World -------
-tdwg_final3_nw <- subset(tdwg_final3, THREEREALM == "NewWorld" & Geology_3categ %in% c("mainland", "continental"))
-nw_curr_mod <- lm(log(meanFruitLengthFilled) ~ scale(log(curr_medianBodySize)) + scale(NPP_mean) + scale(PC1) + scale(PC2) + scale(PC3) + scale(ensLGM_Tano) + scale(ensLGM_Pano), data = tdwg_final3_nw, na.action = "na.fail")
+target.col <- c("meanFruitLengthFilled", "curr_medianBodySize", "NPP_mean", "PC1", "PC2", "PC3", "ensLGM_Tano", "ensLGM_Pano", "THREEREALM")
+tdwg_final3 <- tdwg_final2[complete.cases(tdwg_final2[target.col]),]
+tdwg_final_nw <- subset(tdwg_final3, THREEREALM == "NewWorld")
+tdwg_final_nw_noisl <- subset(tdwg_final_nw, Geology_3categ %in% c("mainland", "continental"))
+
+nw_curr_data <- tdwg_final_nw_noisl
+nw_curr_mod <- lm(log(meanFruitLengthFilled) ~ scale(log(curr_medianBodySize)) + scale(NPP_mean) + scale(PC1) + scale(PC2) + scale(PC3) + scale(ensLGM_Tano) + scale(ensLGM_Pano),
+                      data = nw_curr_data,
+                      na.action = "na.fail")
 nw_curr_mod_dr <- dredge(nw_curr_mod)
 nw_curr_mod_avg <- model.avg(nw_curr_mod_dr)
-nw_curr_mod_avg_stat <- plotRelImportance(nw_curr_mod_avg)
-#ggsave(, filename = file.path(fig.dir, "nw_curr_relimpt_plot.pdf"))
-
+nw_curr_mod_avg_sum <- summarizeRelImportance(nw_curr_mod_avg)
+nw_curr_mod_plot <- plotRelImportance(nw_curr_mod_avg_sum)
+ggsave(file.path(fig.dir, "nw_curr_relimpt.pdf"),
+       nw_curr_mod_plot, width = 8, height = 4)
 
 presid <- resid(nw_curr_mod, type = "partial")
-z <- data.frame(presid = presid[,1], var = scale(log(tdwg_final3_nw$curr_medianBodySize))) 
+z <- data.frame(presid = presid[,1], var = scale(log(nw_curr_data$curr_medianBodySize))) 
 nw_curr_presid_plot <- ggplot(aes(y = presid, x =var),data = z)+ geom_point(shape = 1) + geom_smooth(method = "lm") + labs(y = "Mean fruit size\n(Partial residuals)", x = "Log median body size (Current)") + theme(panel.background = element_blank())
-ggsave(nw_curr_presid_plot, filename = file.path(fig.dir, "nw_curr_presid_plot.pdf"))
+ggsave(file.path(fig.dir, "nw_curr_presid.pdf"), 
+       nw_curr_presid_plot, width = 8, height = 4)
 
-# Current, OW East -------
-tdwg_final3_owe <- subset(tdwg_final3, THREEREALM == "OWEast")
-owe_curr_mod <- lm(log(meanFruitLengthFilled) ~ scale(log(curr_medianBodySize)) + scale(NPP_mean) + scale(PC1) + scale(PC2) + scale(PC3) + scale(ensLGM_Tano) + scale(ensLGM_Pano), data = tdwg_final3_owe, na.action = "na.fail")
-owe_curr_mod_dr <- dredge(owe_curr_mod)
-owe_curr_mod_avg <- model.avg(owe_curr_mod_dr)
-ggsave(plotRelImportance(owe_curr_mod_avg), filename = file.path(fig.dir, "owe_curr_relimpt_plot.pdf"))
+# Present-natural + New World -------
+target.col <- c("meanFruitLengthFilled", "presNat_medianBodySize", "NPP_mean", "PC1", "PC2", "PC3", "ensLGM_Tano", "ensLGM_Pano", "THREEREALM")
+tdwg_final3 <- tdwg_final2[complete.cases(tdwg_final2[target.col]),]
+tdwg_final_nw <- subset(tdwg_final3, THREEREALM == "NewWorld")
+tdwg_final_nw_noisl <- subset(tdwg_final_nw, Geology_3categ %in% c("mainland", "continental"))
 
-presid <- resid(owe_curr_mod, type = "partial")
-z <- data.frame(presid = presid[,1], var = scale(log(tdwg_final3_owe$curr_medianBodySize))) 
-owe_curr_presid_plot <- ggplot(aes(y = presid, x =var),data = z)+ geom_point(shape = 1) + geom_smooth(method = "lm") + labs(y = "Mean fruit size\n(Partial residuals)", x = "Log median body size (Current)") + theme(panel.background = element_blank())
-ggsave(owe_curr_presid_plot, filename = file.path(fig.dir, "owe_curr_presid_plot.pdf"))
-
-# Current, OW West -------
-tdwg_final3_oww <- subset(tdwg_final3, THREEREALM == "OWWest")
-oww_curr_mod <- lm(log(meanFruitLengthFilled) ~ scale(log(curr_medianBodySize)) + scale(NPP_mean) + scale(PC1) + scale(PC2) + scale(PC3) + scale(ensLGM_Tano) + scale(ensLGM_Pano), data = tdwg_final3_oww, na.action = "na.fail")
-oww_curr_mod_dr <- dredge(oww_curr_mod)
-oww_curr_mod_avg <- model.avg(oww_curr_mod_dr)
-ggsave(plotRelImportance(oww_curr_mod_avg), filename = file.path(fig.dir, "oww_curr_relimpt_plot.pdf"))
-
-presid <- resid(oww_curr_mod, type = "partial")
-z <- data.frame(presid = presid[,1], var = scale(log(tdwg_final3_oww$curr_medianBodySize))) 
-oww_curr_presid_plot <- ggplot(aes(y = presid, x =var),data = z)+ geom_point(shape = 1) + geom_smooth(method = "lm") + labs(y = "Mean fruit size\n(Partial residuals)", x = "Log median body size (Current)") + theme(panel.background = element_blank())
-ggsave(oww_curr_presid_plot, filename = file.path(fig.dir, "oww_curr_presid_plot.pdf"))
-
-# Present-natural, New World -------
-target.col <- c("PC1", "PC2","PC3", "meanFruitLengthFilled", "presNat_medianBodySize", "NPP_mean", "PC1", "PC2", "PC3", "ensLGM_Tano", "ensLGM_Pano", "THREEREALM")
-tdwg_final4 <- tdwg_final2[complete.cases(tdwg_final2[target.col]),]
-tdwg_final4_nw <- subset(tdwg_final4, THREEREALM == "NewWorld" & Geology_3categ %in% c("mainland", "continental"))
-nw_pnat_mod <- lm(log(meanFruitLengthFilled) ~ scale(log(presNat_medianBodySize)) + scale(NPP_mean) + scale(PC1) + scale(PC2) + scale(PC3) + scale(ensLGM_Tano) + scale(ensLGM_Pano), data = tdwg_final4_nw, na.action = "na.fail")
+nw_pnat_data <- tdwg_final_nw_noisl
+nw_pnat_mod <- lm(log(meanFruitLengthFilled) ~ scale(log(presNat_medianBodySize)) + scale(NPP_mean) + scale(PC1) + scale(PC2) + scale(PC3) + scale(ensLGM_Tano) + scale(ensLGM_Pano),
+                  data = nw_pnat_data,
+                  na.action = "na.fail")
 nw_pnat_mod_dr <- dredge(nw_pnat_mod)
 nw_pnat_mod_avg <- model.avg(nw_pnat_mod_dr)
-nw_pnat_mod_avg_stat <- plotRelImportance(nw_pnat_mod_avg)
-#ggsave(plotRelImportance(nw_pnat_mod_avg), filename = file.path(fig.dir, "nw_pnat_relimpt_plot.pdf"))
+nw_pnat_mod_avg_sum <- summarizeRelImportance(nw_pnat_mod_avg)
+nw_pnat_mod_plot <- plotRelImportance(nw_pnat_mod_avg_sum)
+ggsave(file.path(fig.dir, "nw_pnat_relimpt.pdf"),
+       nw_pnat_mod_plot, width = 8, height = 4)
 
 presid <- resid(nw_pnat_mod, type = "partial")
-z2 <- data.frame(presid = presid[,1], var = scale(log(tdwg_final4_nw$presNat_medianBodySize))) 
-nw_pnat_presid_plot <- ggplot(aes(y = presid, x =var),data = z2)+ geom_point(shape = 1) + geom_smooth(method = "lm") + labs(y = "Mean fruit size\n(Partial residuals)", x = "Log median body size (Current)") + theme(panel.background = element_blank())
-ggsave(nw_pnat_presid_plot, filename = file.path(fig.dir, "nw_pnat_presid_plot.pdf"))
+z <- data.frame(presid = presid[,1], var = scale(log(nw_pnat_data$presNat_medianBodySize))) 
+nw_pnat_presid_plot <- ggplot(aes(y = presid, x =var),data = z)+ geom_point(shape = 1) + geom_smooth(method = "lm") + labs(y = "Mean fruit size\n(Partial residuals)", x = "Log median body size (Current)") + theme(panel.background = element_blank())
+ggsave(file.path(fig.dir, "nw_pnat_presid.pdf"), 
+       nw_pnat_presid_plot, width = 8, height = 4)
+
+# Current Old World East  -------
+target.col <- c("meanFruitLengthFilled", "curr_medianBodySize", "NPP_mean", "PC1", "PC2", "PC3", "ensLGM_Tano", "ensLGM_Pano", "THREEREALM")
+tdwg_final3 <- tdwg_final2[complete.cases(tdwg_final2[target.col]),]
+tdwg_final_owe <- subset(tdwg_final3, THREEREALM == "OWEast")
+tdwg_final_owe_noisl <- subset(tdwg_final_owe, Geology_3categ %in% c("mainland", "continental"))
+
+owe_curr_data <- tdwg_final_owe_noisl
+owe_curr_mod <- lm(log(meanFruitLengthFilled) ~ scale(log(curr_medianBodySize)) + scale(NPP_mean) + scale(PC1) + scale(PC2) + scale(PC3) + scale(ensLGM_Tano) + scale(ensLGM_Pano),
+                  data = owe_curr_data,
+                  na.action = "na.fail")
+owe_curr_mod_dr <- dredge(owe_curr_mod)
+owe_curr_mod_avg <- model.avg(owe_curr_mod_dr)
+owe_curr_mod_avg_sum <- summarizeRelImportance(owe_curr_mod_avg)
+owe_curr_mod_plot <- plotRelImportance(owe_curr_mod_avg_sum)
+ggsave(file.path(fig.dir, "owe_curr_relimpt.pdf"),
+       owe_curr_mod_plot, width = 8, height = 4)
+
+presid <- resid(owe_curr_mod, type = "partial")
+z <- data.frame(presid = presid[,1], var = scale(log(owe_curr_data$curr_medianBodySize))) 
+owe_curr_presid_plot <- ggplot(aes(y = presid, x =var),data = z)+ geom_point(shape = 1) + geom_smooth(method = "lm") + labs(y = "Mean fruit size\n(Partial residuals)", x = "Log median body size (Current)") + theme(panel.background = element_blank())
+ggsave(file.path(fig.dir, "owe_curr_presid.pdf"), 
+       owe_curr_presid_plot, width = 8, height = 4)
+
+# Present Natural Old World East  -------
+target.col <- c("meanFruitLengthFilled", "presNat_medianBodySize", "NPP_mean", "PC1", "PC2", "PC3", "ensLGM_Tano", "ensLGM_Pano", "THREEREALM")
+tdwg_final3 <- tdwg_final2[complete.cases(tdwg_final2[target.col]),]
+tdwg_final_owe <- subset(tdwg_final3, THREEREALM == "OWEast")
+tdwg_final_owe_noisl <- subset(tdwg_final_owe, Geology_3categ %in% c("mainland", "continental"))
+
+owe_pnat_data <- tdwg_final_owe_noisl
+owe_pnat_mod <- lm(log(meanFruitLengthFilled) ~ scale(log(presNat_medianBodySize)) + scale(NPP_mean) + scale(PC1) + scale(PC2) + scale(PC3) + scale(ensLGM_Tano) + scale(ensLGM_Pano),
+                   data = owe_pnat_data,
+                   na.action = "na.fail")
+owe_pnat_mod_dr <- dredge(owe_pnat_mod)
+owe_pnat_mod_avg <- model.avg(owe_pnat_mod_dr)
+owe_pnat_mod_avg_sum <- summarizeRelImportance(owe_pnat_mod_avg)
+owe_pnat_mod_plot <- plotRelImportance(owe_pnat_mod_avg_sum)
+ggsave(file.path(fig.dir, "owe_pnat_relimpt.pdf"),
+       owe_pnat_mod_plot, width = 8, height = 4)
+
+presid <- resid(owe_pnat_mod, type = "partial")
+z <- data.frame(presid = presid[,1], var = scale(log(owe_pnat_data$presNat_medianBodySize))) 
+owe_pnat_presid_plot <- ggplot(aes(y = presid, x =var),data = z)+ geom_point(shape = 1) + geom_smooth(method = "lm") + labs(y = "Mean fruit size\n(Partial residuals)", x = "Log median body size (Current)") + theme(panel.background = element_blank())
+ggsave(file.path(fig.dir, "owe_pnat_presid.pdf"), 
+       owe_pnat_presid_plot, width = 8, height = 4)
+
+# Current Old World West  -------
+target.col <- c("meanFruitLengthFilled", "curr_medianBodySize", "NPP_mean", "PC1", "PC2", "PC3", "ensLGM_Tano", "ensLGM_Pano", "THREEREALM")
+tdwg_final3 <- tdwg_final2[complete.cases(tdwg_final2[target.col]),]
+tdwg_final_oww <- subset(tdwg_final3, THREEREALM == "OWWest")
+tdwg_final_oww_noisl <- subset(tdwg_final_oww, Geology_3categ %in% c("mainland", "continental"))
+
+oww_curr_data <- tdwg_final_oww_noisl
+oww_curr_mod <- lm(log(meanFruitLengthFilled) ~ scale(log(curr_medianBodySize)) + scale(NPP_mean) + scale(PC1) + scale(PC2) + scale(PC3) + scale(ensLGM_Tano) + scale(ensLGM_Pano),
+                   data = oww_curr_data,
+                   na.action = "na.fail")
+oww_curr_mod_dr <- dredge(oww_curr_mod)
+oww_curr_mod_avg <- model.avg(oww_curr_mod_dr)
+oww_curr_mod_avg_sum <- summarizeRelImportance(oww_curr_mod_avg)
+oww_curr_mod_plot <- plotRelImportance(oww_curr_mod_avg_sum)
+ggsave(file.path(fig.dir, "oww_curr_relimpt.pdf"),
+       oww_curr_mod_plot, width = 8, height = 4)
+
+presid <- resid(oww_curr_mod, type = "partial")
+z <- data.frame(presid = presid[,1], var = scale(log(oww_curr_data$presNat_medianBodySize))) 
+oww_curr_presid_plot <- ggplot(aes(y = presid, x =var),data = z)+ geom_point(shape = 1) + geom_smooth(method = "lm") + labs(y = "Mean fruit size\n(Partial residuals)", x = "Log median body size (Current)") + theme(panel.background = element_blank())
+ggsave(file.path(fig.dir, "oww_curr_presid.pdf"), 
+       oww_curr_presid_plot, width = 8, height = 4)
+
+# Present Natural Old World West -------
+target.col <- c("meanFruitLengthFilled", "presNat_medianBodySize", "NPP_mean", "PC1", "PC2", "PC3", "ensLGM_Tano", "ensLGM_Pano", "THREEREALM")
+tdwg_final3 <- tdwg_final2[complete.cases(tdwg_final2[target.col]),]
+tdwg_final_oww <- subset(tdwg_final3, THREEREALM == "OWWest")
+tdwg_final_oww_noisl <- subset(tdwg_final_oww, Geology_3categ %in% c("mainland", "continental"))
+
+oww_pnat_data <- tdwg_final_oww
+oww_pnat_mod <- lm(log(meanFruitLengthFilled) ~ scale(log(presNat_medianBodySize)) + scale(NPP_mean) + scale(PC1) + scale(PC2) + scale(PC3) + scale(ensLGM_Tano) + scale(ensLGM_Pano) + scale(log(AREA_KM2)),
+                   data = oww_pnat_data,
+                   na.action = "na.fail")
+oww_pnat_mod_dr <- dredge(oww_pnat_mod)
+oww_pnat_mod_avg <- model.avg(oww_pnat_mod_dr)
+oww_pnat_mod_avg_sum <- summarizeRelImportance(oww_pnat_mod_avg)
+oww_pnat_mod_plot <- plotRelImportance(oww_pnat_mod_avg_sum)
+ggsave(file.path(fig.dir, "oww_pnat_relimpt.pdf"),
+       oww_pnat_mod_plot, width = 8, height = 4)
+
+presid <- resid(oww_pnat_mod, type = "partial")
+z <- data.frame(presid = presid[,1], var = scale(log(oww_pnat_data$presNat_medianBodySize))) 
+oww_pnat_presid_plot <- ggplot(aes(y = presid, x =var),data = z)+ geom_point(shape = 1) + geom_smooth(method = "lm") + labs(y = "Mean fruit size\n(Partial residuals)", x = "Log median body size (Current)") + theme(panel.background = element_blank())
+ggsave(file.path(fig.dir, "oww_pnat_presid.pdf"), 
+       oww_pnat_presid_plot, width = 8, height = 4)
+
+
+
+
+
 
 z$type <- "Current"
 z2$type<- "Present-natural"
