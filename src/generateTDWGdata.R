@@ -211,7 +211,7 @@ mam_range_z_realm <- ddply(.data = mammal_presnat_occ_trait2,
                            prefix = "pnat_realm", value.var = "Mass.g", .progress = "text")
 mam_range_z_global <- ses_range(mammal_presnat_occ_trait2, prefix = "pnat_global", value.var = "Mass.g")
 mam_range_z_res <- merge(mam_range_z_realm, mam_range_z_global, by = "LEVEL_3_CO")
-tdwg_presnat_meanBodySize <- merge(tdwg_presnat_meanBodySize, mam_range_z_res, by = "LEVEL_3_CO")
+tdwg_presnat_meanBodySize <- merge(tdwg_presnat_meanBodySize, mam_range_z_res, by = "LEVEL_3_CO", all.x = TRUE)
 
 # Current the mean and median body sizes of current mammal assemblages
 mammal_curr_occ_trait <- merge(mammal_curr_comb_occ, phylacine_trait, by.x = "SpecName", by.y = "Binomial.1.2", all.x = TRUE)
@@ -236,14 +236,14 @@ mam_curr_range_z_realm <- ddply(.data = mammal_curr_occ_trait2,
                            .fun = ses_range,
                            prefix = "curr_realm", value.var = "Mass.g", .progress = "text")
 mam_curr_range_z_global <- ses_range(mammal_curr_occ_trait2, prefix = "curr_global", value.var = "Mass.g")
-mam_range_z_res <- merge(mam_range_z_realm, mam_range_z_global, by = "LEVEL_3_CO")
-tdwg_presnat_meanBodySize <- merge(tdwg_presnat_meanBodySize, mam_range_z_res, by = "LEVEL_3_CO")
+mam_curr_range_z_res <- merge(mam_curr_range_z_realm, mam_curr_range_z_global, by = "LEVEL_3_CO")
+tdwg_curr_meanBodySize <- merge(tdwg_curr_meanBodySize, mam_curr_range_z_res, by = "LEVEL_3_CO", all.x = TRUE)
 
 # NOTE: Pteropus niger (Mascarene fruit bat) is found on both Mauritius and Reunion but is only on Mauritius for the current dataset, as a result, there are no mammals on Reunion in the current case (Pteropus) but 2 in the present-natural dataset
 
 # Merge present natural and current mammal assemblage summary statistics and fruit statistics
-tdwg_mammal_all <- merge(tdwg_presnat_meanBodySize, tdwg_curr_meanBodySize, by = "LEVEL_3_CO", all = TRUE)
-tdwg_res <- merge(tdwg_meanFruit, tdwg_mammal_all)
+tdwg_mammal_all <- merge(tdwg_presnat_meanBodySize, tdwg_curr_meanBodySize, by = c("LEVEL_3_CO", "THREEREALM"), all = TRUE)
+tdwg_res <- merge(tdwg_meanFruit, tdwg_mammal_all, by = c("LEVEL_3_CO", "THREEREALM"))
 
 # Remove Reunion from dataset
 tdwg_res <- tdwg_res[!(is.na(tdwg_res$curr_medianBodySize) | is.na(tdwg_res$presNat_medianBodySize)),]
@@ -260,7 +260,7 @@ tdwg_res$propMegaMam_presnat <- tdwg_res$presNat_megaHerb_nSp / tdwg_res$presNat
 tdwg_res$deltaMedianBodySize = log(tdwg_res$presNat_medianBodySize) - log(tdwg_res$curr_medianBodySize)
 
 # Merge with tdwg environmental data
-tdwg_final <- merge(tdwg_res, tdwg_env, by = "LEVEL_3_CO", all.x = TRUE)
+tdwg_final <- merge(tdwg_res, tdwg_env, by = c("LEVEL_3_CO", "THREEREALM"), all.x = TRUE)
 
 # Remove remote oceanic islands and countries with no environmental data
 # remoteIslList <- subset(tdwg_final, ISISLAND == 1 & DistToCont_km > 2000) # List of islands to remove
