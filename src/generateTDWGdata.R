@@ -15,6 +15,8 @@ options(stringsAsFactors =FALSE)
 library(plyr); library(dplyr); library(reshape2)
 library(ggplot2); library(sp); library(rgdal); library(viridis); library(gridExtra); library(ggrepel)
 library(car); library(MuMIn)
+library(readxl)
+library(picante)
 
 ## Import palm dataset ========================
 palm_occ <- read.csv(file.path(data.dir, "palms_in_tdwg3.csv"))
@@ -22,7 +24,8 @@ palm_trait <- read.csv(file.path(data.dir, "PalmTraits_10.csv"))
 palm_trait$SpecName <- gsub(palm_trait$SpecName, pattern= " ", replacement = "_")
 
 ## Import tdwg dataset ========================
-tdwg_env <- read.csv(file.path(data.dir, "TDWG_Environment_AllData_2019Jan.csv"))
+#tdwg_env <- read.csv(file.path(data.dir, "TDWG_Environment_AllData_2019Jan.csv"))
+tdwg_env <- read.csv(file.path(data.dir, "TDWG_Environment_AllData_2019Feb.csv"))
 
 ## Import diet dataset ========================
 # Import MammalDiet v1.0 dataset
@@ -123,6 +126,7 @@ palm_occ_trait <- merge(palm_occ, palm_trait[c("SpecName", "AverageFruitLength_c
 
 # Exclude species that are not animal dispersed
 palm_occ_trait <- palm_occ_trait[!palm_occ_trait$SpecName %in% c("Lodoicea_maldivica", "Cocos_nucifera"),]
+palm_occ_trait <- subset(palm_occ_trait, !is.na(AverageFruitLength_cm_filled)) # removes the two occurrences of Butyagrus nabonnandii
 
 # Find list of countries that the mammals occur in
 mammal_countrylist <- Reduce(union, list(unique(mammal_presnat_occ$LEVEL_3_CO),
@@ -132,7 +136,6 @@ mammal_countrylist <- Reduce(union, list(unique(mammal_presnat_occ$LEVEL_3_CO),
 # Find list of countries where palms and mammals overlap
 mammal_palm_intersect <- intersect(unique(palm_occ_trait$Area_code_L3), mammal_countrylist) # 190 countries in total
 
-
 # Calculate mean fruit size of TDWG units
 tdwg_meanFruit <- ddply(.data = subset(palm_occ_trait, Area_code_L3 %in% mammal_palm_intersect),
                         .variables = .(Area_code_L3),
@@ -141,12 +144,49 @@ tdwg_meanFruit <- ddply(.data = subset(palm_occ_trait, Area_code_L3 %in% mammal_
                         medianFruitLengthFilled = median(AverageFruitLength_cm_filled, na.rm = T),
                         meanFruitLengthFilled = mean(AverageFruitLength_cm_filled, na.rm = T),
                         maxFruitLengthFilled = max(AverageFruitLength_cm_filled, na.rm = T),
-                        rangeFruitLengthFilled = diff(range(AverageFruitLength_cm_filled, na.rm = T)),
-                        cvLogFruitLengthFilled = sd(log(AverageFruitLength_cm_filled), na.rm = T) / mean(log(AverageFruitLength_cm_filled), na.rm = T),
+                        minFruitLengthFilled  = min(AverageFruitLength_cm_filled, na.rm = T),
+                        rangeFruitLengthFilled = log(maxFruitLengthFilled)-log(minFruitLengthFilled),
                         sdLogFruitLengthFilled = sd(log(AverageFruitLength_cm_filled), na.rm = T),
                         megapalm_nsp = sum(AverageFruitLength_cm_filled > 4, na.rm = T),
                         palm_nSp = length(AverageFruitLength_cm))
 names(tdwg_meanFruit)[names(tdwg_meanFruit) == "Area_code_L3"] <- "LEVEL_3_CO"
+
+# Calculate z-scores for fruit size range, regional source pools
+palm_occ_trait2 <- merge(y = subset(palm_occ_trait, Area_code_L3 %in% mammal_palm_intersect),
+                         x = tdwg_env[c("LEVEL_3_CO", "THREEREALM", "REALM_LONG")],
+                         by.y = "Area_code_L3", by.x = "LEVEL_3_CO")
+palm_occ_trait2 <- subset(palm_occ_trait2, REALM_LONG %in% c("Neotropics", "Afrotropics", "IndoMalay", "Australasia"))
+
+ses_range <- function(x, prefix, value.var){
+  adj_mat <- acast(LEVEL_3_CO ~ SpecName, value.var = value.var, data = x, fill = 0) # only contains species from subset, country (rows), species (columns)
+  obs <- apply(adj_mat, MARGIN = 1, FUN = function(x){ diff(range(log(x[x > 0])))})
+  # apply(adj_mat, MARGIN = 1, FUN = function(x){ sum(x > 0)}) # checking to see how many species in each country
+  trait <- apply(adj_mat, MARGIN = 2, FUN = function(x) unique(x)[unique(x)> 0]) # zeros are not real values and all fruit lengths are non-zero
+  iterations = 1000
+  rand <- matrix(rep(NA, iterations * nrow(adj_mat)), nrow = nrow(adj_mat))
+  for(i in 1:iterations){
+    # print(i)
+    randMat <- randomizeMatrix( decostand(adj_mat, "pa"), null.model = "richness") 
+    # multiplies occurrences with trait values
+    randMat_trait <- mapply("*", as.data.frame(randMat), unlist(trait)) 
+    rand[,i] <- apply(randMat_trait, MARGIN = 1, FUN = function(x) {diff(range( log(x[x>0]) ) )})
+  }
+  randMean <- apply(rand, MARGIN = 1, FUN = mean)
+  randSd <- apply(rand, MARGIN = 1, FUN = sd)
+  z <- (obs-randMean) / randSd
+  res <- data.frame( z, "LEVEL_3_CO" = names(z))
+  names(res)[1] <- paste0(prefix, "range_z")
+  return(res)
+}
+
+palm_range_z_realm <- ddply(.data = palm_occ_trait2,
+                            .variables = .(THREEREALM),
+                            .fun = ses_range,
+                            prefix = "fruit_realm", value.var = "AverageFruitLength_cm_filled")
+
+palm_range_z_global <- ses_range(palm_occ_trait2, prefix = "fruit_global", value.var = "AverageFruitLength_cm_filled")
+palm_range_z_res <- merge(palm_range_z_realm, palm_range_z_global, by = "LEVEL_3_CO")
+tdwg_meanFruit <- merge(tdwg_meanFruit, palm_range_z_res, by = "LEVEL_3_CO", all.x = TRUE)
 
 # Calculate mean and median body sizes of present natural mammal assemblages
 mammal_presnat_occ_trait <- merge(mammal_presnat_comb_occ, phylacine_trait, by.x = "SpecName", by.y = "Binomial.1.2", all.x = TRUE)
@@ -157,11 +197,21 @@ tdwg_presnat_meanBodySize <-
         presNat_meanBodySize = mean(Mass.g, na.rm = T),
         presNat_medianBodySize = median(Mass.g, na.rm = T),
         presNat_maxBodySize = max(Mass.g, na.rm = T),
-        presNat_rangeBodySize = diff(range(Mass.g, na.rm = T)),
-        presNat_cvBodySize = sd(log(Mass.g), na.rm = T)/mean(log(Mass.g), na.rm = T),
+        presNat_minBodySize = min(Mass.g, na.rm = T),
+        presNat_rangeBodySize = log(presNat_maxBodySize) - log(presNat_minBodySize),
         presNat_sdBodySize = sd(log(Mass.g), na.rm = T),
         presNat_megaHerb_nSp = length(unique(SpecName[Mass.g > 44000])),
         presNat_nSp = length(unique(SpecName)))
+mammal_presnat_occ_trait2 <- merge(x = subset(mammal_presnat_occ_trait, LEVEL_3_CO %in% mammal_palm_intersect), y = tdwg_env[c("LEVEL_3_CO", "REALM_LONG", "THREEREALM")], by = "LEVEL_3_CO")
+mammal_presnat_occ_trait2 <- subset(mammal_presnat_occ_trait2, REALM_LONG %in% c("Neotropics", "Afrotropics", "IndoMalay", "Australasia"))
+
+mam_range_z_realm <- ddply(.data = mammal_presnat_occ_trait2,
+                           .variables = .(THREEREALM),
+                           .fun = ses_range,
+                           prefix = "pnat_realm", value.var = "Mass.g", .progress = "text")
+mam_range_z_global <- ses_range(mammal_presnat_occ_trait2, prefix = "pnat_global", value.var = "Mass.g")
+mam_range_z_res <- merge(mam_range_z_realm, mam_range_z_global, by = "LEVEL_3_CO")
+tdwg_presnat_meanBodySize <- merge(tdwg_presnat_meanBodySize, mam_range_z_res, by = "LEVEL_3_CO")
 
 # Current the mean and median body sizes of current mammal assemblages
 mammal_curr_occ_trait <- merge(mammal_curr_comb_occ, phylacine_trait, by.x = "SpecName", by.y = "Binomial.1.2", all.x = TRUE)
@@ -172,11 +222,22 @@ tdwg_curr_meanBodySize <-
         curr_meanBodySize = mean(Mass.g, na.rm = T),
         curr_medianBodySize = median(Mass.g, na.rm = T),
         curr_maxBodySize = max(Mass.g, na.rm = T),
-        curr_rangeBodySize = diff(range(Mass.g, na.rm = T)),
+        curr_minBodySize = min(Mass.g, na.rm = T),
+        curr_rangeBodySize = log(curr_maxBodySize) - log(curr_minBodySize),
         curr_megaHerb_nSp = length(unique(SpecName[Mass.g > 44000])),
-        curr_cvBodySize = sd(log(Mass.g), na.rm = T)/mean(log(Mass.g), na.rm = T),
         curr_sdBodySize = sd(log(Mass.g), na.rm = T),
         curr_nSp = length(unique(SpecName)))
+
+mammal_curr_occ_trait2 <- merge(x = subset(mammal_curr_occ_trait, LEVEL_3_CO %in% mammal_palm_intersect), y = tdwg_env[c("LEVEL_3_CO", "REALM_LONG", "THREEREALM")], by = "LEVEL_3_CO")
+mammal_curr_occ_trait2 <- subset(mammal_curr_occ_trait2, REALM_LONG %in% c("Neotropics", "Afrotropics", "IndoMalay", "Australasia"))
+
+mam_curr_range_z_realm <- ddply(.data = mammal_curr_occ_trait2,
+                           .variables = .(THREEREALM),
+                           .fun = ses_range,
+                           prefix = "curr_realm", value.var = "Mass.g", .progress = "text")
+mam_curr_range_z_global <- ses_range(mammal_curr_occ_trait2, prefix = "curr_global", value.var = "Mass.g")
+mam_range_z_res <- merge(mam_range_z_realm, mam_range_z_global, by = "LEVEL_3_CO")
+tdwg_presnat_meanBodySize <- merge(tdwg_presnat_meanBodySize, mam_range_z_res, by = "LEVEL_3_CO")
 
 # NOTE: Pteropus niger (Mascarene fruit bat) is found on both Mauritius and Reunion but is only on Mauritius for the current dataset, as a result, there are no mammals on Reunion in the current case (Pteropus) but 2 in the present-natural dataset
 
@@ -202,17 +263,21 @@ tdwg_res$deltaMedianBodySize = log(tdwg_res$presNat_medianBodySize) - log(tdwg_r
 tdwg_final <- merge(tdwg_res, tdwg_env, by = "LEVEL_3_CO", all.x = TRUE)
 
 # Remove remote oceanic islands and countries with no environmental data
-remoteIslList <- subset(tdwg_final, ISISLAND == 1 & DistToCont_km > 2000) # List of islands to remove
-tdwg_final2 <- subset(tdwg_final, (!LEVEL_3_CO %in% union(remoteIslList$LEVEL_3_CO, c("MRQ", "TUA", "VNA"))) & Geology_3categ %in% c("continental", "mainland", "volcanic"))
+# remoteIslList <- subset(tdwg_final, ISISLAND == 1 & DistToCont_km > 2000) # List of islands to remove
+# tdwg_final2 <- subset(tdwg_final, (!LEVEL_3_CO %in% union(remoteIslList$LEVEL_3_CO, c("MRQ", "TUA", "VNA"))) & Geology_3categ %in% c("continental", "mainland", "volcanic"))
 
+tdwg_final2 <- tdwg_final
 #tdwg_final2 <- subset(tdwg_final2, PALMSR>0)
 # Islands that are greater than 2000 km from closest continent
 # MRQ, TUA, VNA (Venuzuelan antilles removed due to lack of environmental information)
 # In total 13 removed (not including REU which was removed earlier)
 
 # Global level PCA
-env.var <- c("PREC_Sum", "PREC_CV", "P_drie_quart", "Tmean_mean", "T_cold_quart", "Temp_SD")
+env.var <- paste0("bio", c(12, 15, 17, 1, 11, 4), "_mean")
+  #paste0("bio", 1:19, "_mean")
+#c("PREC_Sum", "PREC_CV", "P_drie_quart", "Tmean_mean", "T_cold_quart", "Temp_SD")
 globalPCA <- prcomp(x = tdwg_final2[env.var], scale. = TRUE, center = TRUE)
+cumsum(globalPCA$sdev) /sum(globalPCA$sdev)
 tdwg_final2$globalPC1 <- globalPCA$x[,1]
 tdwg_final2$globalPC2 <- globalPCA$x[,2]
 tdwg_final2$globalPC3 <- globalPCA$x[,3]
@@ -220,11 +285,14 @@ tdwg_final2$globalPC3 <- globalPCA$x[,3]
 # Regional PCA
 tdwg_final_nw <- subset(tdwg_final2, REALM_LONG == "Neotropics")
 tdwg_final_oww <- subset(tdwg_final2, REALM_LONG == "Afrotropics")
-tdwg_final_owe <- subset(tdwg_final2, REALM_LONG %in% c("IndoMalay", "Oceania", "Australasia"))
+tdwg_final_owe <- subset(tdwg_final2, REALM_LONG %in% c("IndoMalay", "Australasia"))
 
 nwPCA <- prcomp(x= tdwg_final_nw[env.var], scale. = TRUE, center = TRUE)
+cumsum(nwPCA$sdev) / sum(nwPCA$sdev)
 owwPCA <- prcomp(x= tdwg_final_oww[env.var], scale. = TRUE, center = TRUE)
+cumsum(owwPCA$sdev) / sum(owwPCA$sdev)
 owePCA <- prcomp(x= tdwg_final_owe[env.var], scale. = TRUE, center = TRUE)
+cumsum(owePCA$sdev) / sum(owePCA$sdev)
 
 tdwg_final_nw$regionalPC1 <- nwPCA$x[,1]
 tdwg_final_nw$regionalPC2 <- nwPCA$x[,2]
