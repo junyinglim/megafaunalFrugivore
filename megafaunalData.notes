@@ -113,6 +113,37 @@ Faurby maps also contain non-terrestrial mammals
 - Using REALM_LONG == "Afrotropics", the negative relationship between fruit size and body size is no longer significant
 - Positive relationship between fruit size and the number of palm species globally, in the New World, OldWorld West but is negative in the Old World East
 
+< 26 Feb 2019 >
+Questions are provided by Jens-Christian
+
+Question 1: Is palm fruit size coupled to (current) mammal frugivore body size? (test and assess best explanatory model – global, using extant mammals and current ranges)
+ 
+Question 2: Does the relationship strengthen if extinct and extirpated mammals are considered? (keep model from Q1, replace mammal frugivore size by one based on present-natural ranges and including extinct species – compare this model to the original model from Q1)
+
+- Aren't the AIC values provided for the best fit models?
+ 
+Question 3: Is the impact of adding in present-natural ranges and including extinct species bigger where extinctions have been greater?
+(divide world into zones of high vs low extinction based on ratio of current to present-natural mammal frugivore richness; redo Q1+Q2 for these regions).
+ 
+ - Can we look at the residuals of these particular countries? Keep model same
+
+
+I think keeping model structure fixed between Q1 and Q2, may provide  a cleaner contrast for the current vs present-natural mammal effect.
+
+
+
+1) Fit global model based on current, minimal adequate model
+2) If we swap out the current with present-natural
+3) High extinction vs low extinction, distribution of these ratios, categorical variable?
+
+Maybe for Q3 limit to taxa that are above 10 kilos?
+
+Scale issues - long time
+Focus on global scale, keep model variables the same
+95 percentile for maximum
+
+Remove all the threatened species. Galetti, and
+
 
 - SEM notes
 # Model Chi-Square with its df and p-value: prefer p-value greater than 0.05 (model does )
