@@ -37,6 +37,8 @@ phylacine.dir <- file.path(frug.dir, "PHYLACINE")
 phylacine_trait <- read.csv(file.path(phylacine.dir, "Trait_data.csv"))
 spatial_metadata <- read.csv(file.path(phylacine.dir, "Spatial_metadata.csv"))
 
+phylacine_trait <-  merge(phylacine_trait, spatial_metadata[c("Binomial.1.2", "Number.Cells.Current.Range", "Number.Cells.Present.Natural.Range")], by = "Binomial.1.2")
+
 extinct_herb_splist <- subset(phylacine_trait, IUCN.Status.1.2 == "EP" & Diet.Plant == 100)$Binomial.1.2
 extinct_herb_all_splist <- subset(phylacine_trait, IUCN.Status.1.2 == "EP" & Diet.Plant<= 100 & Diet.Plant >= 50)$Binomial.1.2
 
@@ -88,6 +90,7 @@ mammal_curr_occ_final <- mammal_curr_occ4[!duplicated(mammal_curr_occ4),]
 palm_tdwg_list <- unique(palm_occ$Area_code_L3)
 mammal_presnat_comb_occ <- subset(mammal_presnat_occ_final, LEVEL_3_CO %in% palm_tdwg_list)
 mammal_curr_comb_occ <- subset(mammal_curr_occ_final, LEVEL_3_CO %in% palm_tdwg_list)
+
 
 # Export data
 write.csv(mammal_presnat_comb_occ, file.path(data.dir, "mammal_presnat_occ.csv"), row.names = FALSE)
@@ -148,8 +151,8 @@ tdwg_meanFruit <- ddply(.data = subset(palm_occ_trait, Area_code_L3 %in% mammal_
                                                           probs = 0.95, na.rm = T ),
                         minFruitLengthFilled  = min(AverageFruitLength_cm_filled, na.rm = T),
                         rangeFruitLengthFilled = log(maxFruitLengthFilled)-log(minFruitLengthFilled),
-                        dispFruitLengthFilled = mean(log(AverageFruitLength_cm_filled) - 
-                                                       log(medianFruitLengthFilled), na.rm = T) ,
+                        dispFruitLengthFilled = mean(abs(log(AverageFruitLength_cm_filled) - 
+                                                       log(medianFruitLengthFilled)), na.rm = T) ,
                         sdLogFruitLengthFilled = sd(log(AverageFruitLength_cm_filled), na.rm = T),
                         megapalm_nsp = sum(AverageFruitLength_cm_filled > 4, na.rm = T),
                         palm_nSp = length(AverageFruitLength_cm))
@@ -203,9 +206,10 @@ tdwg_presnat_meanBodySize <-
         presNat_maxBodySize = max(Mass.g, na.rm = T),
         presNat_max95BodySize = quantile(Mass.g, probs = 0.95, na.rm = T ),
         presNat_minBodySize = min(Mass.g, na.rm = T),
-        presNat_dispBodySize = mean(log(Mass.g) - log(presNat_medianBodySize)) ,
+        presNat_dispBodySize = mean(abs(log(Mass.g) - log(presNat_medianBodySize)), na.rm = T) ,
         presNat_rangeBodySize = log(presNat_maxBodySize) - log(presNat_minBodySize),
         presNat_sdBodySize = sd(log(Mass.g), na.rm = T),
+        presNat_medRangeSize = median(Number.Cells.Present.Natural.Range, na.rm = T),
         presNat_nSp = length(unique(SpecName)),
         presNat_meso_nSp = length(unique(SpecName[Mass.g > 10000])),
         presNat_mega_nSp = length(unique(SpecName[Mass.g > 44000])))
@@ -232,8 +236,9 @@ tdwg_curr_meanBodySize <-
         curr_max95BodySize = quantile(Mass.g, probs = 0.95, na.rm = T),
         curr_minBodySize = min(Mass.g, na.rm = T),
         curr_rangeBodySize = log(curr_maxBodySize) - log(curr_minBodySize),
-        curr_dispBodySize = mean(log(Mass.g) - log(curr_medianBodySize)) ,
+        curr_dispBodySize = mean(abs(log(Mass.g) - log(curr_medianBodySize)), na.rm = T) ,
         curr_sdBodySize = sd(log(Mass.g), na.rm = T),
+        curr_medRangeSize = median(Number.Cells.Current.Range, na.rm = T),
         curr_nSp = length(unique(SpecName)),
         curr_meso_nSp = length(unique(SpecName[Mass.g > 10000])),
         curr_mega_nSp = length(unique(SpecName[Mass.g > 44000])),
