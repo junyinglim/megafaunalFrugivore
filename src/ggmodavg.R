@@ -45,13 +45,6 @@ plotRelImportance <- function(x){
   ggplot(data = x) + geom_point(aes(y = fullAvgCoef, x= coefficient, size = importance)) + geom_segment(aes(y = lower2.5, yend = upper97.5, x = coefficient, xend = coefficient)) + theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
 }
 
-require(MuMIn)
-
-# gpa_data <- data.frame(gpa = c(1.97, 2.74, 2.19, 2.60, 2.98, 1.65, 1.89, 2.38, 2.66, 1.96, 3.14, 1.96, 2.20, 3.90, 2.02, 3.61, 3.07, 2.63, 3.11, 3.20), 
-#                        sat_math = c(321, 718, 358, 403, 640, 237, 270, 418, 443, 359, 669, 409, 582, 750, 451, 645, 791, 521, 594, 653),
-#                        sat_verb = c(247, 436, 578, 447, 563, 342, 472, 356, 327, 385, 664, 518, 364, 632, 435, 704, 341, 483, 665, 606),
-#                        hs_math = c(2.3, 3.8, 2.98, 3.58, 3.38, 1.48, 1.67, 3.73, 3.09, 1.54, 3.21, 2.77, 1.47, 3.14, 1.54, 3.50, 3.20, 3.59, 3.42, 3.69),
-#                        hs_eng = c(2.63, 3.57, 2.57, 2.21, 3.48, 2.14, 2.64, 2.52, 3.2, 3.46, 3.37, 2.60, 2.90, 3.49, 3.20, 3.74, 2.93, 3.32, 2.70, 3.52))
 dredge2 <- function(full_mod){
   # Extract terms from model object
   full_pred_terms <- attr(full_mod$terms, "term.labels")
@@ -123,8 +116,9 @@ dredge2 <- function(full_mod){
 
 
 model.avg2 <- function(model_list){
-  # Generate model averaged coefficients
-  model_list <- full_moddr
+  # Calculates standardized model averaged coefficients
+  # Reference: Cade, B.S. (2015) Model averaging and muddled multimodel inferences. Ecology, 96 (9), 2370 - 2382.
+  # model_list <- full_moddr
   predVars <- names(model_list$Models)
   
   avgStdCoef <- vector()
@@ -154,17 +148,34 @@ model.avg2 <- function(model_list){
     avgUnstdSE[i] <- sum(( (UnstdCoefs - avgUnstdCoef[i])^2 + (UnstdSEs)^2)^0.5 * (weights / weight_sum))
     
   }
+  
+  
   data.frame("Variable" = predVars,
              avgStdCoef = avgStdCoef,
              avgStdSE = avgStdSE,
+             avgStdCIlower = avgStdCoef + qnorm(p = 0.025) * avgStdSE,
+             avgStdCIupper = avgStdCoef + qnorm(p = 0.975) * avgStdSE,
              avgUnstdCoef = avgUnstdCoef,
              avgUnstdSE = avgUnstdSE,
+             avgUnstdCIlower = avgUnstdCoef + qnorm(p = 0.025) * avgUnstdSE,
+             avgUnstdCIupper = avgUnstdCoef + qnorm(p = 0.925) * avgUnstdSE,
              var_impt = var_impt)
 }
 
-full_mod <- lm(gpa ~ sat_math + sat_verb + hs_math + hs_eng, data = gpa_data, na.action = "na.fail")
-full_moddr <- dredge2(full_mod)
-full_modavg <- model.avg2(full_moddr)
+# gpa_data <- data.frame(gpa = c(1.97, 2.74, 2.19, 2.60, 2.98, 1.65, 1.89, 2.38, 2.66, 1.96, 3.14, 1.96, 2.20, 3.90, 2.02, 3.61, 3.07, 2.63, 3.11, 3.20), 
+#                        sat_math = c(321, 718, 358, 403, 640, 237, 270, 418, 443, 359, 669, 409, 582, 750, 451, 645, 791, 521, 594, 653),
+#                        sat_verb = c(247, 436, 578, 447, 563, 342, 472, 356, 327, 385, 664, 518, 364, 632, 435, 704, 341, 483, 665, 606),
+#                        hs_math = c(2.3, 3.8, 2.98, 3.58, 3.38, 1.48, 1.67, 3.73, 3.09, 1.54, 3.21, 2.77, 1.47, 3.14, 1.54, 3.50, 3.20, 3.59, 3.42, 3.69),
+#                        hs_eng = c(2.63, 3.57, 2.57, 2.21, 3.48, 2.14, 2.64, 2.52, 3.2, 3.46, 3.37, 2.60, 2.90, 3.49, 3.20, 3.74, 2.93, 3.32, 2.70, 3.52))
+# full_mod <- lm(gpa ~ sat_math + sat_verb + hs_math + hs_eng, data = gpa_data, na.action = "na.fail")
+# full_moddr <- dredge2(full_mod)
+# full_modavg <- model.avg2(full_moddr)
+# 
+# full_moddr2 <- dredge(full_mod)
+# full_modavg2 <- model.avg(full_moddr2)
 
-full_moddr2 <- dredge(full_mod)
-full_modavg2 <- model.avg(full_moddr2)
+# summary(full_modavg2)
+# confint(full_modavg2)
+# 0.4241378 + 0.3607670 * 1.96
+# 0.4241378 + 0.3607670 * -1.96
+# qnorm(p = c(0.975, 0.025))
