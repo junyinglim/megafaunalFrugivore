@@ -1,4 +1,4 @@
-## PACKAGES
+## Packages ========================
 library(ggplot2)
 library(viridis)
 library(reshape2)
@@ -129,7 +129,25 @@ deltabodySizePlot <- ggplot() +
   scale_fill_viridis(name = "Difference in\nlog median\nmammal body size (g)")
 ggsave(deltabodySizePlot, filename = file.path(fig.dir, "deltaBodySize.pdf"), width = 10, height = 5)
 
-# Plot mammal species richness ===========
+# Plot species richness ===========
+misc_melt <- melt(tdwg_final,
+                    id.vars = c("LAT", "LONG", "LEVEL_3_CO", "THREEREALM"),
+                    measure.vars = c("curr_nSp", "presNat_nSp", "palm_nSp",
+                                     "curr_mega_nSp", "presNat_mega_nSp", "megapalm_nsp",
+                                     "deltaMedianBodySize", "futr_maxBodySize", "futr_medianBodySize"))
+misc_maps <- list()
+for(i in 1:length(unique(misc_melt$variable))){
+  if(i %in% 1:7){
+    misc_maps[[i]] <- ggplot() + geom_polygon(aes(y = lat, x = long, group = group), data = tdwg_shp2) + geom_point(aes(y = LAT, x = LONG, fill = scale(value), size = scale(value)), shape = 21, colour = "white", data = subset(misc_melt, variable == unique(misc_melt$variable)[i] )) + map_theme + scale_fill_viridis() + labs(title = unique(misc_melt$variable)[i])+ guides(size = FALSE)
+  } else {
+    misc_maps[[i]] <- ggplot() + geom_polygon(aes(y = lat, x = long, group = group), data = tdwg_shp2) + geom_point(aes(y = LAT, x = LONG, fill = scale(log(value)), size = scale(log(value))), shape = 21, colour = "white", data = subset(misc_melt, variable == unique(misc_melt$variable)[i] )) + map_theme + scale_fill_viridis() + labs(title = unique(misc_melt$variable)[i]) + guides(size = FALSE)
+  }
+}
+misc_map_comb <- plot_grid(plotlist = misc_maps, nrow = 3, ncol = 3)
+
+ggsave(file.path(fig.dir, "miscMaps.pdf"), misc_map_comb, width = 26, height = 16.5)
+
+
 mammalSpRichPlot <- ggplot() +
   geom_polygon(aes(y = lat, x = long, group = group),
                data = subset(tdwg_shape_df, !LEVEL_3_CO == "ANT")) +
@@ -264,7 +282,7 @@ abiotic_map_comb <- plot_grid(plotlist = abiotic_maps, nrow = 3, ncol = 3)
 ggsave(file.path(fig.dir, "abioticMaps.pdf"), abiotic_map_comb, width = 26, height = 16.5)
 
 
-## Plot median mammal body size against median fruit length ===============
+## Plot mammal body size against  fruit length ===============
 medBS_v_FS_melt <- melt(tdwg_final,
                         id.vars = c("LAT", "LONG", "LEVEL_3_CO", "THREEREALM", "medianFruitLengthFilled"),
                         measure.vars = c("curr_medianBodySize", "presNat_medianBodySize"))
@@ -274,11 +292,11 @@ medBS_v_FS_melt$variable <- factor(medBS_v_FS_melt$variable,
 medBS_v_FS_plot <- ggplot(aes(y = log(medianFruitLengthFilled), x = scale(log(value)), color = THREEREALM),
                           data = medBS_v_FS_melt) + 
   geom_point() + 
-  facet_wrap(THREEREALM~variable, nrow = 3) +
+  facet_wrap(~variable, nrow = 2) +
   geom_smooth(method = "lm") +
   geom_text_repel(aes(label= LEVEL_3_CO), size = 1, colour = "grey20",segment.color = "grey20", segment.size = 0.3 ) +
-  labs(x = "Median body size\n(scaled)", y = "Median fruit size\n(scaled)") +
-  point_theme
+  labs(x = "Median body size\n(scaled)", y = "Median fruit size\n(scaled)", title = "Median body size\nscaled") +
+  theme(legend.position = "bottom")
 ggsave(file.path(fig.dir, "medBS_v_FS.pdf"), medBS_v_FS_plot, width = 6, height = 8)
 
 maxBS_v_FS_melt <- melt(tdwg_final,
@@ -289,41 +307,42 @@ maxBS_v_FS_melt$variable <- factor(maxBS_v_FS_melt$variable,
                                    labels = c("Current", "Present-natural"))
 maxBS_v_FS_plot <- ggplot(aes(y = log(max95FruitLengthFilled), x = scale(log(value)), color = THREEREALM),
                           data = maxBS_v_FS_melt) + 
-  labs(x = "Body size 95th percentile\n(scaled)", y = "Fruit size 95th percentile\n(scaled)") +
+  labs(x = "Body size 95th percentile\n(scaled)", y = "Fruit size 95th percentile\n(scaled)", title = "Body size 95th percentile\nscaled") +
   geom_point() + 
   geom_text_repel(aes(label= LEVEL_3_CO), size = 1, colour = "grey20",segment.color = "grey20", segment.size = 0.3 ) +
-  facet_wrap(THREEREALM~variable, nrow = 3) +
+  facet_wrap(~variable, nrow = 2) +
   geom_smooth(method = "lm") +
-  point_theme
+  theme(legend.position = "bottom")
 ggsave(file.path(fig.dir, "maxBS_v_FS.pdf"), maxBS_v_FS_plot, width = 6, height = 8)
 
-dispBS_v_FS_melt <- melt(tdwg_final,
-                        id.vars = c("LAT", "LONG", "LEVEL_3_CO", "THREEREALM", "dispFruitLengthFilled"),
-                        measure.vars = c("curr_dispBodySize", "presNat_dispBodySize"))
-dispBS_v_FS_melt$variable <- factor(dispBS_v_FS_melt$variable,
-                                    levels = c("curr_dispBodySize", "presNat_dispBodySize"),
-                                    labels = c("Current", "Present-natural"))
-dispBS_v_FS_plot <- ggplot(aes(y = dispFruitLengthFilled, x = scale(value), color = THREEREALM),
-                          data = dispBS_v_FS_melt) + 
-  labs(x = "Body size dispersion\n(scaled)", y = "Fruit size dispersion\n(scaled)") +
-  geom_point() + 
-  facet_wrap(THREEREALM~variable, nrow = 3) +
-  geom_text_repel(aes(label= LEVEL_3_CO), size = 1, colour = "grey20",segment.color = "grey20", segment.size = 0.3 ) +
-  geom_smooth(method = "lm") +
-  point_theme
-ggsave(file.path(fig.dir, "dispBS_v_FS.pdf"), dispBS_v_FS_plot, width = 6, height = 8)
+bs_v_fs_comb_plot <- plot_grid(plotlist = list(medBS_v_FS_plot, maxBS_v_FS_plot), ncol = 2)
+ggsave(bs_v_fs_comb_plot, filename = file.path(fig.dir, "bs_v_fs_comb.pdf"), height = 8, width = 12)
+
+# dispBS_v_FS_melt <- melt(tdwg_final,
+#                         id.vars = c("LAT", "LONG", "LEVEL_3_CO", "THREEREALM", "dispFruitLengthFilled"),
+#                         measure.vars = c("curr_dispBodySize", "presNat_dispBodySize"))
+# dispBS_v_FS_melt$variable <- factor(dispBS_v_FS_melt$variable,
+#                                     levels = c("curr_dispBodySize", "presNat_dispBodySize"),
+#                                     labels = c("Current", "Present-natural"))
+# dispBS_v_FS_plot <- ggplot(aes(y = dispFruitLengthFilled, x = scale(value), color = THREEREALM),
+#                           data = dispBS_v_FS_melt) + 
+#   labs(x = "Body size dispersion\n(scaled)", y = "Fruit size dispersion\n(scaled)") +
+#   geom_point() + 
+#   facet_wrap(THREEREALM~variable, nrow = 3) +
+#   geom_text_repel(aes(label= LEVEL_3_CO), size = 1, colour = "grey20",segment.color = "grey20", segment.size = 0.3 ) +
+#   geom_smooth(method = "lm") +
+#   point_theme
+# ggsave(file.path(fig.dir, "dispBS_v_FS.pdf"), dispBS_v_FS_plot, width = 6, height = 8)
 
 
 
 ## Plot relative importance of maximum body size ===============
 maxBS_modavg_res <- read.csv(file.path(res.dir, "maxBS_modavg_res.csv"), stringsAsFactors = TRUE)
-levels(maxBS_modavg_res$coefficient) <- gsub(levels(maxBS_modavg_res$coefficient),
-                                             pattern = "scale\\(|scale\\(log\\(|\\)", replacement = "")
-maxBS_modavg_res$coefficient <- factor(maxBS_modavg_res$coefficient,
-                                       levels = c("curr_max95BodySize", "presNat_max95BodySize",
-                                                  "globalPC1", "globalPC2", "globalPC3",
-                                                  "regionalPC1", "regionalPC2", "regionalPC3",
-                                                  "lgm_ens_Pano", "lgm_ens_Tano", "soilcount"),
+maxBS_modavg_res$Variable <- factor(maxBS_modavg_res$Variable,
+                                       levels = c("curr_logMax95BS_scl", "pnat_logMax95BS_scl",
+                                                  "globalPC1_scl", "globalPC2_scl", "globalPC3_scl",
+                                                  "regionalPC1_scl", "regionalPC2_scl", "regionalPC3_scl",
+                                                  "lgm_ens_Pano_scl", "lgm_ens_Tano_scl", "soilcount_scl"),
                                        labels = c("Max. body size", "Max. body size",
                                                   "PC1", "PC2", "PC3",
                                                   "PC1", "PC2", "PC3",
@@ -333,9 +352,10 @@ maxBS_modavg_res$GeographicScale <- factor(maxBS_modavg_res$GeographicScale, lev
 
 maxBS_modavg_plot <- ggplot(data = maxBS_modavg_res) + 
   geom_hline(aes(yintercept = 0), linetype = "dashed", colour = "grey50") +
-  geom_point(aes(y = condAvgCoef, x = coefficient, colour = Scenario, size = importance), position = position_dodge(0.8)) + 
-  geom_errorbar(aes(ymin = lower2.5, ymax = upper97.5, x = coefficient, colour = Scenario), position = position_dodge(0.8), width = 0.1 ) +
-  labs(title = "Body size 95th percentile\n(scaled)", y = "Model averaged coefficients", x= "Variables") +
+  geom_point(aes(y = avgStdCoef, x = Variable, colour = Scenario, size = var_impt), position = position_dodge(0.8)) + 
+  geom_errorbar(aes(ymin = avgStdCIlower, ymax = avgStdCIupper, x = Variable, colour = Scenario), position = position_dodge(0.8), width = 0.1 ) +
+  scale_size_continuous(limits = c(0, 1), name = "Variable\nimportance") +
+  labs(title = "Body size 95th percentile\n(scaled)", y = "Standardized\nmodel averaged coefficients", x= "Variables") +
   facet_wrap(~ GeographicScale, drop = TRUE, nrow = 4) + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
   
@@ -343,13 +363,11 @@ ggsave(file.path(fig.dir, "maxBS_modavg.pdf"), maxBS_modavg_plot, height= 9, wid
 
 ## Plot relative importance of median body size ===============
 medBS_modavg_res <- read.csv(file.path(res.dir, "medBS_modavg_res.csv"), stringsAsFactors = TRUE)
-levels(medBS_modavg_res$coefficient) <- gsub(levels(medBS_modavg_res$coefficient),
-                                             pattern = "scale\\(|scale\\(log\\(|\\)", replacement = "")
-medBS_modavg_res$coefficient <- factor(medBS_modavg_res$coefficient,
-                                       levels = c("curr_medianBodySize", "presNat_medianBodySize",
-                                                  "globalPC1", "globalPC2", "globalPC3",
-                                                  "regionalPC1", "regionalPC2", "regionalPC3",
-                                                  "lgm_ens_Pano", "lgm_ens_Tano", "soilcount"),
+medBS_modavg_res$Variable <- factor(medBS_modavg_res$Variable,
+                                       levels = c("curr_logMedBS_scl", "pnat_logMedBS_scl",
+                                                  "globalPC1_scl", "globalPC2_scl", "globalPC3_scl",
+                                                  "regionalPC1_scl", "regionalPC2_scl", "regionalPC3_scl",
+                                                  "lgm_ens_Pano_scl", "lgm_ens_Tano_scl", "soilcount_scl"),
                                        labels = c("Median body size", "Median body size",
                                                   "PC1", "PC2", "PC3",
                                                   "PC1", "PC2", "PC3",
@@ -359,39 +377,41 @@ medBS_modavg_res$GeographicScale <- factor(medBS_modavg_res$GeographicScale, lev
 
 medBS_modavg_plot <- ggplot(data = medBS_modavg_res) + 
   geom_hline(aes(yintercept = 0), linetype = "dashed", colour = "grey50") +
-  geom_point(aes(y = condAvgCoef, x = coefficient, colour = Scenario, size = importance), position = position_dodge(0.8)) + 
-  geom_errorbar(aes(ymin = lower2.5, ymax = upper97.5, x = coefficient, colour = Scenario), position = position_dodge(0.8), width = 0.1 ) +
-  labs(title = "Median body size\n(scaled)", y = "Model averaged coefficients", x= "Variables") +
+  geom_point(aes(y = avgStdCoef, x = Variable, colour = Scenario, size = var_impt), position = position_dodge(0.8)) + 
+  geom_errorbar(aes(ymin = avgStdCIlower, ymax = avgStdCIupper, x = Variable, colour = Scenario), position = position_dodge(0.8), width = 0.1 ) +
+  scale_size_continuous(limits = c(0, 1), name = "Variable\nimportance") +
+  labs(title = "Median body size\n(scaled)", y = "Standardized\nmodel averaged coefficients", x= "Variables") +
   facet_wrap(~ GeographicScale, drop = TRUE, nrow = 4) + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ggsave(file.path(fig.dir, "medBS_modavg.pdf"), medBS_modavg_plot, height= 9, width = 8)
 
 ## Plot relative importance of body size dispersion ===============
 dispBS_modavg_res <- read.csv(file.path(res.dir, "dispBS_modavg_res.csv"), stringsAsFactors = TRUE)
-levels(dispBS_modavg_res$coefficient) <- gsub(levels(dispBS_modavg_res$coefficient),
-                                             pattern = "scale\\(|scale\\(log\\(|\\)", replacement = "")
-dispBS_modavg_res$coefficient <- factor(dispBS_modavg_res$coefficient,
-                                       levels = c("curr_dispBodySize", "presNat_dispBodySize",
-                                                  "globalPC1", "globalPC2", "globalPC3",
-                                                  "regionalPC1", "regionalPC2", "regionalPC3",
-                                                  "lgm_ens_Pano", "lgm_ens_Tano", "soilcount"),
-                                       labels = c("Body size dispersion", "Body size dispersion",
-                                                  "PC1", "PC2", "PC3",
-                                                  "PC1", "PC2", "PC3",
-                                                  "LGM Prec. anomaly", "LGM Temp. anomaly", "Soil diversity"))
+
+dispBS_modavg_res$Variable <- factor(dispBS_modavg_res$Variable,
+                                        levels = c("curr_dispBodySize_scl", "presNat_dispBodySize_scl",
+                                                   "globalPC1_scl", "globalPC2_scl", "globalPC3_scl",
+                                                   "regionalPC1_scl", "regionalPC2_scl", "regionalPC3_scl",
+                                                   "lgm_ens_Pano_scl", "lgm_ens_Tano_scl", "soilcount_scl"),
+                                        labels = c("Body size dispersion", "Body size dispersion",
+                                                   "PC1", "PC2", "PC3",
+                                                   "PC1", "PC2", "PC3",
+                                                   "LGM Prec. anomaly", "LGM Temp. anomaly", "Soil diversity"))
 
 dispBS_modavg_res$GeographicScale <- factor(dispBS_modavg_res$GeographicScale, levels = c("Global", "Afrotropics", "Neotropics", "Indotropics"))
 
 dispBS_modavg_plot <- ggplot(data = dispBS_modavg_res) + 
   geom_hline(aes(yintercept = 0), linetype = "dashed", colour = "grey50") +
-  geom_point(aes(y = condAvgCoef, x = coefficient, colour = Scenario, size = importance), position = position_dodge(0.8)) + 
-  geom_errorbar(aes(ymin = lower2.5, ymax = upper97.5, x = coefficient, colour = Scenario), position = position_dodge(0.8), width = 0.1 ) +
-  labs(title = "Body size dispersion\n(scaled)", y = "Model averaged coefficients", x= "Variables") +
+  geom_point(aes(y = avgStdCoef, x = Variable, colour = Scenario, size = var_impt), position = position_dodge(0.8)) + 
+  geom_errorbar(aes(ymin = avgStdCIlower, ymax = avgStdCIupper, x = Variable, colour = Scenario), position = position_dodge(0.8), width = 0.1 ) +
+  scale_size_continuous(limits = c(0, 1), name = "Variable\nimportance") +
+  labs(title = "Body size dispersion\n(scaled)", y = "Standardized\nmodel averaged coefficients", x= "Variables") +
   facet_wrap(~ GeographicScale, drop = TRUE, nrow = 4) + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ggsave(file.path(fig.dir, "dispBS_modavg.pdf"), dispBS_modavg_plot, height= 9, width = 8)
 
 
-modavg_comb_plot <- plot_grid(plotlist = list(medBS_modavg_plot, maxBS_modavg_plot, dispBS_modavg_plot), ncol = 3)
-ggsave(modavg_comb_plot, filename = file.path(fig.dir, "modavg_comb.pdf"), height = 10, width = 20)
+#modavg_comb_plot <- plot_grid(plotlist = list(medBS_modavg_plot, maxBS_modavg_plot, dispBS_modavg_plot), ncol = 3)
+modavg_comb_plot <- plot_grid(plotlist = list(medBS_modavg_plot, maxBS_modavg_plot), ncol = 2)
+ggsave(modavg_comb_plot, filename = file.path(fig.dir, "modavg_comb.pdf"), height = 10, width = 15 )
 
