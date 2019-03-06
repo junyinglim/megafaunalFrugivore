@@ -342,11 +342,11 @@ maxBS_modavg_res$Variable <- factor(maxBS_modavg_res$Variable,
                                        levels = c("curr_logMax95BS_scl", "pnat_logMax95BS_scl",
                                                   "globalPC1_scl", "globalPC2_scl", "globalPC3_scl",
                                                   "regionalPC1_scl", "regionalPC2_scl", "regionalPC3_scl",
-                                                  "lgm_ens_Pano_scl", "lgm_ens_Tano_scl", "soilcount_scl"),
+                                                  "lgm_ens_Pano_scl", "lgm_ens_Tano_scl"),
                                        labels = c("Max. body size", "Max. body size",
                                                   "PC1", "PC2", "PC3",
                                                   "PC1", "PC2", "PC3",
-                                                  "LGM Prec. anomaly", "LGM Temp. anomaly", "Soil diversity"))
+                                                  "LGM Prec. anomaly", "LGM Temp. anomaly"))
 
 maxBS_modavg_res$GeographicScale <- factor(maxBS_modavg_res$GeographicScale, levels = c("Global", "Afrotropics", "Neotropics", "Indotropics"))
 

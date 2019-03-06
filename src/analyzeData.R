@@ -58,7 +58,7 @@ tdwg_final_oww <- scaleVars(tdwg_final_oww, col = scale.col, suffix = "_scl")
 tdwg_final_owe <- scaleVars(tdwg_final_owe, col = scale.col, suffix = "_scl")
 
 ## Model averaging (Median Body Size) ========================
-glob_curr_medBS_mod <- lm(logMedFS_scl ~ curr_logMedBS_scl + globalPC1_scl + globalPC2_scl + globalPC3_scl + soilcount_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data =tdwg_final_glob, na.action = "na.fail")
+glob_curr_medBS_mod <- lm(logMedFS_scl ~ curr_logMedBS_scl + globalPC1_scl + globalPC2_scl + globalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data =tdwg_final_glob, na.action = "na.fail")
 glob_pnat_medBS_mod <- update(glob_curr_medBS_mod, ~.-curr_logMedBS_scl + pnat_logMedBS_scl)
 vif(glob_curr_medBS_mod); vif(glob_pnat_medBS_mod)
 
@@ -71,7 +71,7 @@ glob_pnat_medBS_modavg_summ <- model.avg2(glob_pnat_medBS_moddr)
 glob_curr_medBS_moddr2 <- dredge(glob_curr_medBS_mod)
 glob_curr_medBS_modavg2 <- model.avg(glob_curr_medBS_moddr2)
 
-nw_curr_medBS_mod <- lm(logMedFS_scl ~ curr_logMedBS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + soilcount_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_nw, na.action = "na.fail")
+nw_curr_medBS_mod <- lm(logMedFS_scl ~ curr_logMedBS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_nw, na.action = "na.fail")
 nw_pnat_medBS_mod <- update(nw_curr_medBS_mod, ~.-curr_logMedBS_scl  + pnat_logMedBS_scl)
 vif(nw_curr_medBS_mod); vif(nw_pnat_medBS_mod)
 
@@ -87,7 +87,7 @@ nw_pnat_medBS_modavg_summ <- model.avg2(nw_pnat_medBS_moddr)
 # nw_pnat_medBS_modavg <- model.avg(nw_pnat_medBS_moddr)
 # nw_pnat_medBS_modavg_summ <- summarizeRelImportance(nw_pnat_medBS_modavg)
 
-oww_curr_medBS_mod <- lm(logMedFS_scl ~ curr_logMedBS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + soilcount_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_oww, na.action = "na.fail")
+oww_curr_medBS_mod <- lm(logMedFS_scl ~ curr_logMedBS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_oww, na.action = "na.fail")
 oww_pnat_medBS_mod <- update(oww_curr_medBS_mod, ~.-curr_logMedBS_scl + pnat_logMedBS_scl)
 vif(oww_curr_medBS_mod); vif(oww_pnat_medBS_mod)
 
@@ -96,7 +96,7 @@ oww_curr_medBS_modavg_summ <- model.avg2(oww_curr_medBS_moddr)
 oww_pnat_medBS_moddr <- dredge2(oww_pnat_medBS_mod)
 oww_pnat_medBS_modavg_summ <- model.avg2(oww_pnat_medBS_moddr)
 
-owe_curr_medBS_mod <- lm(logMedFS_scl ~ curr_logMedBS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + soilcount_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_owe, na.action = "na.fail")
+owe_curr_medBS_mod <- lm(logMedFS_scl ~ curr_logMedBS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_owe, na.action = "na.fail")
 owe_pnat_medBS_mod <- update(owe_curr_medBS_mod, ~.-curr_logMedBS_scl + pnat_logMedBS_scl )
 vif(owe_curr_medBS_mod); vif(owe_pnat_medBS_mod)
 
@@ -137,7 +137,7 @@ medBS_modavg_res <- Reduce("rbind", list(glob_curr_medBS_modavg_summ,
 write.csv(medBS_modavg_res, file.path(res.dir, "medBS_modavg_res.csv"), row.names = FALSE)
 
 ## MAXIMUM BODY SIZE ============
-glob_curr_maxBS_mod <- lm(logMax95FS_scl ~ curr_logMax95BS_scl + globalPC1_scl + globalPC2_scl + globalPC3_scl + soilcount_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data =tdwg_final_glob, na.action = "na.fail")
+glob_curr_maxBS_mod <- lm(logMax95FS_scl ~ curr_logMax95BS_scl + globalPC1_scl + globalPC2_scl + globalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data =tdwg_final_glob, na.action = "na.fail")
 glob_pnat_maxBS_mod <- update(glob_curr_maxBS_mod, ~.- curr_logMax95BS_scl + pnat_logMax95BS_scl)
 vif(glob_curr_maxBS_mod); vif(glob_pnat_maxBS_mod)
 
@@ -146,7 +146,7 @@ glob_curr_maxBS_modavg_summ <- model.avg2(glob_curr_maxBS_moddr)
 glob_pnat_maxBS_moddr <- dredge2(glob_pnat_maxBS_mod)
 glob_pnat_maxBS_modavg_summ <- model.avg2(glob_pnat_maxBS_moddr)
 
-nw_curr_maxBS_mod <- lm(logMax95FS_scl ~ curr_logMax95BS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + soilcount_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_nw, na.action = "na.fail")
+nw_curr_maxBS_mod <- lm(logMax95FS_scl ~ curr_logMax95BS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_nw, na.action = "na.fail")
 nw_pnat_maxBS_mod <- update(nw_curr_maxBS_mod, ~.- curr_logMax95BS_scl + pnat_logMax95BS_scl)
 vif(nw_curr_maxBS_mod); vif(nw_pnat_maxBS_mod)
 
@@ -155,7 +155,7 @@ nw_curr_maxBS_modavg_summ <- model.avg2(nw_curr_maxBS_moddr)
 nw_pnat_maxBS_moddr <- dredge2(nw_pnat_maxBS_mod)
 nw_pnat_maxBS_modavg_summ <- model.avg2(nw_pnat_maxBS_moddr)
 
-oww_curr_maxBS_mod <- lm(logMax95FS_scl ~ curr_logMax95BS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + soilcount_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_oww, na.action = "na.fail")
+oww_curr_maxBS_mod <- lm(logMax95FS_scl ~ curr_logMax95BS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_oww, na.action = "na.fail")
 oww_pnat_maxBS_mod <- update(oww_curr_maxBS_mod, ~.-curr_logMax95BS_scl + pnat_logMax95BS_scl)
 vif(oww_curr_maxBS_mod); vif(oww_pnat_maxBS_mod)
 
@@ -164,7 +164,7 @@ oww_curr_maxBS_modavg_summ <- model.avg2(oww_curr_maxBS_moddr)
 oww_pnat_maxBS_moddr <- dredge2(oww_pnat_maxBS_mod)
 oww_pnat_maxBS_modavg_summ <- model.avg2(oww_pnat_maxBS_moddr)
 
-owe_curr_maxBS_mod <- lm(logMax95FS ~ curr_logMax95BS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + soilcount_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_owe, na.action = "na.fail")
+owe_curr_maxBS_mod <- lm(logMax95FS ~ curr_logMax95BS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_owe, na.action = "na.fail")
 owe_pnat_maxBS_mod <- update(owe_curr_maxBS_mod, ~.-curr_logMax95BS_scl + pnat_logMax95BS_scl)
 vif(owe_curr_maxBS_mod); vif(owe_pnat_maxBS_mod)
 
@@ -210,7 +210,7 @@ tdwg_final_nw_disp <- subset(tdwg_final_glob_disp, REALM_LONG == "Neotropics")
 tdwg_final_oww_disp <- subset(tdwg_final_glob_disp, REALM_LONG == "Afrotropics")
 tdwg_final_owe_disp <- subset(tdwg_final_glob_disp, REALM_LONG %in% c("Australasia","IndoMalay"))
 
-glob_curr_dispBS_mod <- lm(dispFruitLengthFilled_scl ~ curr_dispBodySize_scl + globalPC1_scl + globalPC2_scl + globalPC3_scl + soilcount_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_glob_disp, na.action = "na.fail")
+glob_curr_dispBS_mod <- lm(dispFruitLengthFilled_scl ~ curr_dispBodySize_scl + globalPC1_scl + globalPC2_scl + globalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_glob_disp, na.action = "na.fail")
 glob_pnat_dispBS_mod <- update(glob_curr_dispBS_mod, ~.- curr_dispBodySize_scl + presNat_dispBodySize_scl)
 vif(glob_curr_dispBS_mod); vif(glob_pnat_dispBS_mod)
 
@@ -220,7 +220,7 @@ glob_curr_dispBS_modavg_summ <- model.avg2(glob_curr_dispBS_moddr)
 glob_pnat_dispBS_moddr <- dredge2(glob_pnat_dispBS_mod)
 glob_pnat_dispBS_modavg_summ <- model.avg2(glob_pnat_dispBS_moddr)
 
-nw_curr_dispBS_mod <- lm(dispFruitLengthFilled_scl ~ curr_dispBodySize_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + soilcount_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data =tdwg_final_nw_disp, na.action = "na.fail")
+nw_curr_dispBS_mod <- lm(dispFruitLengthFilled_scl ~ curr_dispBodySize_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data =tdwg_final_nw_disp, na.action = "na.fail")
 nw_pnat_dispBS_mod <- update(nw_curr_dispBS_mod,~.- curr_dispBodySize_scl + presNat_dispBodySize_scl)
 vif(nw_curr_dispBS_mod); vif(nw_pnat_dispBS_mod)
 
@@ -229,7 +229,7 @@ nw_curr_dispBS_modavg_summ <- model.avg2(nw_curr_dispBS_moddr)
 nw_pnat_dispBS_moddr <- dredge2(nw_pnat_dispBS_mod)
 nw_pnat_dispBS_modavg_summ <- model.avg2(nw_pnat_dispBS_moddr)
 
-oww_curr_dispBS_mod <- lm(dispFruitLengthFilled ~ curr_dispBodySize_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + soilcount_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data =tdwg_final_oww_disp, na.action = "na.fail")
+oww_curr_dispBS_mod <- lm(dispFruitLengthFilled ~ curr_dispBodySize_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_oww_disp, na.action = "na.fail")
 oww_pnat_dispBS_mod <- update(oww_curr_dispBS_mod,~.- curr_dispBodySize_scl + presNat_dispBodySize_scl)
 vif(oww_curr_dispBS_mod); vif(oww_pnat_dispBS_mod)
 
@@ -238,7 +238,7 @@ oww_curr_dispBS_modavg_summ <- model.avg2(oww_curr_dispBS_moddr)
 oww_pnat_dispBS_moddr <- dredge2(oww_pnat_dispBS_mod)
 oww_pnat_dispBS_modavg_summ <- model.avg2(oww_pnat_dispBS_moddr)
 
-owe_curr_dispBS_mod <- lm(dispFruitLengthFilled ~ curr_dispBodySize_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + soilcount_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data =tdwg_final_owe_disp, na.action = "na.fail")
+owe_curr_dispBS_mod <- lm(dispFruitLengthFilled ~ curr_dispBodySize_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data =tdwg_final_owe_disp, na.action = "na.fail")
 owe_pnat_dispBS_mod <- update(owe_curr_dispBS_mod,~.- curr_dispBodySize_scl + presNat_dispBodySize_scl)
 vif(owe_curr_dispBS_mod); vif(owe_pnat_dispBS_mod)
 
