@@ -1,4 +1,5 @@
 require(ggplot2)
+require(spdep)
 
 summarizeLM <- function(mod, scale = "global", scenario = "current"){
   
@@ -45,12 +46,32 @@ plotRelImportance <- function(x){
   ggplot(data = x) + geom_point(aes(y = fullAvgCoef, x= coefficient, size = importance)) + geom_segment(aes(y = lower2.5, yend = upper97.5, x = coefficient, xend = coefficient)) + theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
 }
 
-dredge2 <- function(full_mod){
+dredge2 <- function(full_mod, data, sw){
+  # Fit all possible combinations of predictor variables
+  #
+  # Arguments:
+  #     full_mod, model object with all predictor variables fit
+  #     data, data with all predictor variables. Should be the same data.frame used in the model object
+  #     sw, spatial weights object
+  # 
+  # Returns:
+  #     list, containing standardized (Cade 2015) and non-standardized model coefficients, coefficient standard errors, AICc, delta AIC and model weights
+  
+  # Testing
+  # full_mod <- knear1_nsw_mod; sw = knear1_sw; data = tdwg_final_glob
+  # full_mod <- glob_curr_medBS_mod; data = tdwg_final_glob
   # Extract terms from model object
-  full_pred_terms <- attr(full_mod$terms, "term.labels")
-  lhs_term <- attr(full_mod$terms, "variables")[[2]]
+  if(class(full_mod) == "lm"){
+    full_pred_terms <- attr(full_mod$terms, "term.labels")
+  }
+  if(class(full_mod) == "sarlm"){
+    full_pred_terms <- names(coefficients(full_mod))[-c(1,2)] # first two are intercept and lambda
+  }
+  lhs_term <- as.character(full_mod$call$formula)[2]
   nterms <- length(full_pred_terms)
-  # Create all possible combinations of predictor variables. Remove first row as no predictor variables are included
+  
+  # Create all possible combinations of predictor variables
+  # Remove first row as no predictor variables are included
   mod_list <- expand.grid(rep(list(0:1), nterms))[-1,] 
   names(mod_list) <- full_pred_terms
   
@@ -73,7 +94,12 @@ dredge2 <- function(full_mod){
     rhs_term <- names(mod_list)[mod_list[i,] == 1]
     mod_formula <- as.formula( paste(lhs_term, "~",
                                      paste(rhs_term, collapse = " + ")) )
-    mod_obj[[i]] <- lm(mod_formula, data = full_mod$model)
+    if(class(full_mod) == "lm"){
+      mod_obj[[i]] <- lm(mod_formula, data = data)  
+    }
+    if(class(full_mod) == "sarlm"){
+      mod_obj[[i]] <- errorsarlm(mod_formula, data = data, listw = sw)
+    }
     
     nobs <- nobs(mod_obj[[i]])
     npred <- length(rhs_term)
@@ -85,17 +111,23 @@ dredge2 <- function(full_mod){
     sd_list[[i]] <- pred_sd[rhs_term] # sd of the variable
     coef_list[[i]] <- coef( mod_obj[[i]] )[rhs_term]
     
+    # Extract standard errors
+    if(class(full_mod) == "lm"){
+      SE_list[[i]] <- summary(mod_obj[[i]])$coefficients[,2][rhs_term]  
+    }
+    if(class(full_mod) == "sarlm"){
+      SE_list[[i]] <- summary(mod_obj[[i]])$Coef[,2][rhs_term]
+    }
+    
     if(length(rhs_term) > 1){
       vif_list[[i]] <- vif(mod_obj[[i]])
       pSD_list[[i]] <- sd_list[[i]] * vif_list[[i]]^-0.5 * ((nobs - 1) / (nobs - npred))^0.5
       stdCoef_list[[i]] <- coef( mod_obj[[i]] )[rhs_term] * pSD_list[[i]]
-      SE_list[[i]] <- summary(mod_obj[[i]])$coefficients[,2][rhs_term]
       stdSE_list[[i]] <- (SE_list[[i]]^2 * pSD_list[[i]]^2)^0.5
     } else {
       vif_list[[i]] <- setNames(1, rhs_term)
       pSD_list[[i]] <- NA # Partial SD undefined for single variable models
       stdCoef_list[[i]] <- coef( mod_obj[[i]] )[rhs_term] * sd_list[[i]]
-      SE_list[[i]] <- summary(mod_obj[[i]])$coefficients[,2][rhs_term]
       stdSE_list[[i]] <- (SE_list[[i]]^2 * sd_list[[i]]^2)^0.5
     }
   }

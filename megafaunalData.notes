@@ -143,6 +143,72 @@ Focus on global scale, keep model variables the same
 
 Remove all the threatened species. Galetti, and
 
+< March 2019 >
+- Calculated new standardized coefficients following Cade 2015
+\begin{equation}
+
+\end{equation}
+
+
+- Started spatial regression models
+	- Generate neighbourhoods
+		- Need to figure out neighbourhoods for each focal polygon (e.g., `poly2nb` function, but not possible since some polygons are not adjacent (i.e., share points) with any other (e.g., islands)
+		- `knearneigh`: choice of number of neighbours is arbitrary. For centrally located polygons, more neighbours make sense, but for marginally situated polygons, the neighbour set incorporates a much larger spatial extent
+	- Calculate spatial distances between neighbours (`nbdist`)
+		- Since projection = longlat, distances are calculated as great circle distances
+	- Calculate spatial weights between neighbours
+		- 1 - d / max(d)
+		- Distances are now relative to the highest possible distance between neighbours of k-lag
+	- Standardization procedure
+		- B, binary = 
+		- W, row standardized = sums over all links to n
+		- C, global standardized = sums over all links to n
+	- "listw.explore()"
+		- Can be used to explore the effect of neighbour graph methods, standardization style and weight method
+
+Thoughts:
+- Neighbourhood definition
+	- k-nearest
+		- Pros: Can force islands to be adjacent to the closest unit
+		- Cons: Arbitrary, central mainland units forced to have the same number of connections as isolated ones
+				Can be non-symmetric
+	- Distance
+		- Pros: More natural, centrally located ones will have more connections than marginally situated units
+				Will always be symmetric
+		- Cons: Arbitrary, and cannot deal with different polygon sizes (only working with centroids) but that will always be a problem
+
+- Spatial weight
+	- Distance-based
+		- Can allow closer neighbours to have a greater contribution compared to distant ones
+		- Can be specified to be relative to maximum distance among neighbours, but covariance will be scaled differently for different units
+		- Furthermore, we are dealing with tdwg centroids, so distances between distant neighbours could be because they are large units. At these scales, perhaps distance-decay is less problematic
+
+- Standardization procedure
+	- Binary (B)
+		- Defined neighbours are perfectly correlated
+		- If used in conjunction with distance-based spatial weighting, then covariance will be directly proportional to distance
+	- Row-standardized (W)
+		- Weights are standardized by number of neighbours (e.g., if there are 5 neighbours and weights are binary [=1], then weights = 0.2)
+		- If used in conjunction with distance-based spatial weighting, then covariance will be directly proportional to distance / sum of all distances
+
+- Model type
+	- Error Spatial Autoregressive Model (Y = beta X + lambda W u + e)
+		- Assumes spatial autocorrelation in error term 
+		- Most reliable (Kissling and Carl 2008)
+	- Lagged Spatial Autoregressive Model (Y = rho W Y + beta X + e)
+		- Assumes spatial autocorrelation in response
+
+- Issues with model averaging spatial models
+	- Variance inflation factors, collinearity may be in part due to spatial autocorrelation, but there could be intrinsic collinearity as well.
+	- Theoretically(?), VIFs for terms could be calculated after spatial autocorrelation were taken into account
+	- Probably better for a hybrid approach, model averaging taking into collinearity, and a spatial model controlling for spatial autocorrelation.
+
+
+- Issues:
+	- Non-adjacent pairs will get a value of zero, another common approach is to set adjacencies wij to 
+	- https://rpubs.com/chrisbrunsdon/114718
+
+
 
 - SEM notes
 # Model Chi-Square with its df and p-value: prefer p-value greater than 0.05 (model does )

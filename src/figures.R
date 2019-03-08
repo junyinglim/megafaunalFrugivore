@@ -15,7 +15,7 @@ frug.dir <- file.path(rawdata.dir, "frugivores")
 options(stringsAsFactors =FALSE)
 
 ## Import tdwg polygon data ========================
-# tdwg_shp <- readOGR("~/Dropbox/Projects/2019/palms/data/TDWG/level3/level3.shp")
+tdwg_shp_raw <- readOGR("~/Dropbox/Projects/2019/palms/data/TDWG/level3/level3.shp")
 # tdwg_shp@data$id <- rownames(tdwg_shp@data)
 # tdwg_fort <- fortify(tdwg_shp, region = "id")
 # tdwg_fort <- merge(tdwg_fort, tdwg_shp@data, by = "id")
@@ -282,14 +282,27 @@ abiotic_map_comb <- plot_grid(plotlist = abiotic_maps, nrow = 3, ncol = 3)
 ggsave(file.path(fig.dir, "abioticMaps.pdf"), abiotic_map_comb, width = 26, height = 16.5)
 
 
+
+## Plot median fruit size and porportion of megafauna
+#propMegaMam_curr
+medBS_v_FS_plot <- ggplot(aes(y = log(medianFruitLengthFilled), x = propMegaMam_presnat, color = THREEREALM),
+                          data = tdwg_final) + 
+  geom_point() + 
+#  facet_wrap(~variable, nrow = 2) +
+  geom_smooth(method = "lm") +
+  geom_text_repel(aes(label= LEVEL_3_CO), size = 1, colour = "grey20",segment.color = "grey20", segment.size = 0.3 ) +
+  labs(y = "Median fruit size\n(scaled)", x = "Proportion of megafaunal") +
+  theme(legend.position = "bottom")
+
+
 ## Plot mammal body size against  fruit length ===============
 medBS_v_FS_melt <- melt(tdwg_final,
-                        id.vars = c("LAT", "LONG", "LEVEL_3_CO", "THREEREALM", "medianFruitLengthFilled"),
+                        id.vars = c("LAT", "LONG", "LEVEL_3_CO", "THREEREALM", "medianFruitLengthFilled", "megaSpLoss"),
                         measure.vars = c("curr_medianBodySize", "presNat_medianBodySize"))
 medBS_v_FS_melt$variable <- factor(medBS_v_FS_melt$variable,
                                    levels = c("curr_medianBodySize", "presNat_medianBodySize"),
                                    labels = c("Current", "Present-natural"))
-medBS_v_FS_plot <- ggplot(aes(y = log(medianFruitLengthFilled), x = scale(log(value)), color = THREEREALM),
+medBS_v_FS_plot <- ggplot(aes(y = log(medianFruitLengthFilled), x = scale(log(value)), color = THREEREALM, size = megaSpLoss),
                           data = medBS_v_FS_melt) + 
   geom_point() + 
   facet_wrap(~variable, nrow = 2) +
@@ -300,12 +313,12 @@ medBS_v_FS_plot <- ggplot(aes(y = log(medianFruitLengthFilled), x = scale(log(va
 ggsave(file.path(fig.dir, "medBS_v_FS.pdf"), medBS_v_FS_plot, width = 6, height = 8)
 
 maxBS_v_FS_melt <- melt(tdwg_final,
-                        id.vars = c("LAT", "LONG", "LEVEL_3_CO", "THREEREALM", "max95FruitLengthFilled"),
+                        id.vars = c("LAT", "LONG", "LEVEL_3_CO", "THREEREALM", "max95FruitLengthFilled", "megaSpLoss"),
                         measure.vars = c("curr_max95BodySize", "presNat_max95BodySize"))
 maxBS_v_FS_melt$variable <- factor(maxBS_v_FS_melt$variable,
                                    levels = c("curr_max95BodySize", "presNat_max95BodySize"),
                                    labels = c("Current", "Present-natural"))
-maxBS_v_FS_plot <- ggplot(aes(y = log(max95FruitLengthFilled), x = scale(log(value)), color = THREEREALM),
+maxBS_v_FS_plot <- ggplot(aes(y = log(max95FruitLengthFilled), x = scale(log(value)), color = THREEREALM, size = megaSpLoss),
                           data = maxBS_v_FS_melt) + 
   labs(x = "Body size 95th percentile\n(scaled)", y = "Fruit size 95th percentile\n(scaled)", title = "Body size 95th percentile\nscaled") +
   geom_point() + 

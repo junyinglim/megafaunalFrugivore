@@ -13,7 +13,7 @@ options(stringsAsFactors =FALSE)
 
 ## Packages ========================
 library(plyr); library(dplyr); library(reshape2)
-library(ggplot2); library(sp); library(rgdal); library(viridis); library(gridExtra); library(ggrepel)
+library(ggplot2); library(sp); library(rgdal); library(viridis); library(gridExtra); library(ggrepel); library(adespatial)
 library(car); library(MuMIn); library(stringr)
 source(file.path(src.dir, "ggmodavg.R"))
 
@@ -62,7 +62,7 @@ glob_curr_medBS_mod <- lm(logMedFS_scl ~ curr_logMedBS_scl + globalPC1_scl + glo
 glob_pnat_medBS_mod <- update(glob_curr_medBS_mod, ~.-curr_logMedBS_scl + pnat_logMedBS_scl)
 vif(glob_curr_medBS_mod); vif(glob_pnat_medBS_mod)
 
-glob_curr_medBS_moddr <- dredge2(glob_curr_medBS_mod)
+glob_curr_medBS_moddr <- dredge2(glob_curr_medBS_mod, data = tdwg_final_glob, model.type = "OLS")
 glob_curr_medBS_modavg_summ <- model.avg2(glob_curr_medBS_moddr)
 glob_pnat_medBS_moddr <- dredge2(glob_pnat_medBS_mod)
 glob_pnat_medBS_modavg_summ <- model.avg2(glob_pnat_medBS_moddr)
@@ -278,51 +278,127 @@ dispBS_modavg_res <- Reduce("rbind", list(glob_curr_dispBS_modavg_summ,
                                          owe_pnat_dispBS_modavg_summ))
 write.csv(dispBS_modavg_res, file.path(res.dir, "dispBS_modavg_res.csv"), row.names = FALSE)
 
-# 
-# ggplot(aes(y = dispFruitLengthFilled, x=  palm_nSp), data = tdwg_final_glob) + geom_point()+geom_smooth(method = "lm")
-# names(tdwg_final_glob)
-# 
-# sum(tdwg_final_glob$curr_nSp == 0)
+## Spatial eigenvectors modelling ========
+library(spdep)
+tdwg_shp_raw <- readOGR("~/Dropbox/Projects/2019/palms/data/TDWG/level3/level3.shp")
+glob_list <- tdwg_final_glob$LEVEL_3_CO
+tdwg_shp_glob <- subset(tdwg_shp_raw, LEVEL_3_CO %in% glob_list)
 
-## SPECIES DIVERSITY ============
-# library(pscl)
-# head(tdwg_final_glob)
-# sum(tdwg_final_glob$megapalm_nsp == 0, na.rm = TRUE)
+# Generate neighbourhoods
+# `poly2nb` not used as some polygons are not adjacent to anything else (i.e., islands)
+k1_mat <- knearneigh(as.matrix(tdwg_final_glob[c("LONG","LAT")]), k = 1, longlat = TRUE)
+k1_nb <- knn2nb(k1_mat)
+n.comp.nb(k1_nb) # number of disjoint connected subgraphs
+
+k2_mat <- knearneigh(as.matrix(tdwg_final_glob[c("LONG","LAT")]), k = 2, longlat = TRUE)
+k2_nb <- knn2nb(k2_mat)
+n.comp.nb(k2_nb) # number of disjoint connected subgraphs
+
+k3_mat <- knearneigh(as.matrix(tdwg_final_glob[c("LONG","LAT")]), k = 3, longlat = TRUE)
+k3_nb <- knn2nb(k3_mat)
+n.comp.nb(k3_nb)
+
+k4_mat <- knearneigh(as.matrix(tdwg_final_glob[c("LONG","LAT")]), k = 4, longlat = TRUE)
+k4_nb <- knn2nb(k4_mat)
+n.comp.nb(k4_nb)
+
+k5_mat <- knearneigh(as.matrix(tdwg_final_glob[c("LONG","LAT")]), k = 5, longlat = TRUE)
+k5_nb <- knn2nb(k5_mat)
+n.comp.nb(k5_nb) # 3 subgroups are the different realms
+
+k6_mat <- knearneigh(as.matrix(tdwg_final_glob[c("LONG","LAT")]), k = 6, longlat = TRUE)
+k6_nb <- knn2nb(k6_mat)
+n.comp.nb(k6_nb) # Number of subgraphs
+
+pdf(file.path(fig.dir, "knn.pdf"), width = 12, height = 6)
+par(mfrow = c(2,3))
+plot(tdwg_shp_glob, col = "grey", border = "white", main = "k-nearest neighbours = 1")
+plot(k1_nb, tdwg_final_glob[c("LONG","LAT")], add = T, col = "red")
+plot(tdwg_shp_glob, col = "grey", border = "white", main = "k-nearest neighbours = 2")
+plot(k2_nb, tdwg_final_glob[c("LONG","LAT")], add = T, col = "blue")
+plot(tdwg_shp_glob, col = "grey", border = "white", main = "k-nearest neighbours = 3")
+plot(k3_nb, tdwg_final_glob[c("LONG","LAT")], add = T, col = "gold")
+plot(tdwg_shp_glob, col = "grey", border = "white", main = "k-nearest neighbours = 4")
+plot(k4_nb, tdwg_final_glob[c("LONG","LAT")], add = T, col = "purple")
+plot(tdwg_shp_glob, col = "grey", border = "white", main = "k-nearest neighbours = 5")
+plot(k5_nb, tdwg_final_glob[c("LONG","LAT")], add = T, col = "green")
+plot(tdwg_shp_glob, col = "grey", border = "white", main = "k-nearest neighbours = 6")
+plot(k6_nb, tdwg_final_glob[c("LONG","LAT")], add = T, col = "pink")
+dev.off()
+
+# Generate spatial weighting matrices based on great circle distances
+k6_nb_dist <- nbdists(k6_nb, coords = as.matrix(tdwg_final_glob[c("LONG","LAT")]), longlat = TRUE) # calculate distances between neighbours
+fdist <- lapply(k6_nb_dist, function(x) 1 - x/max(dist(as.matrix(tdwg_final_glob[c("LONG","LAT")])))) # convert into spatial weights
+listwgab <- nb2listw(neighbours = k6_nb, glist = fdist, style = "B") # essentially global weighting
+mem.gab <- mem(listwgab) # generates Moran's eigenvector maps where correspionding eigenvalues are linearly related to Moran's index of spatial autocorrelation
+barplot(attr(mem.gab, "values"), main = "Eigenvalues of spatial weighting matrix")
+
+# Perform Moran's I on each eigenvector
+round(attr(mem.gab, "values"), 3)
+moranItest <- moran.randtest(x = mem.gab, 
+                             list = listwgab, nrepet = 999)
+signi <- which(moranItest$pvalue < 0.05) # identify eigenvectors that are positively significant (i.e., positive spatial autocorrelation)
+plot(mem.gab[,signi[35:36]], SpORcoords = as.matrix(tdwg_final_glob[c("LONG","LAT")]), nb = k6_nb )
+
+# F
+tdwg_final_glob_sp <- cbind(tdwg_final_glob, mem.gab)
+glob_med_f <- formula(paste0("logMedFS_scl ~ curr_logMedBS_scl + globalPC1_scl + globalPC2_scl + globalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl", "+", paste0(names(mem.gab)[signi], collapse = "+")))
+
+glob_curr_medBS_spmod <- lm(logMedFS_scl ~ curr_logMedBS_scl + globalPC1_scl + globalPC2_scl + globalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl + MEM1, data =tdwg_final_glob_sp, na.action = "na.fail")
+#glob_pnat_medBS_spmod <- update(glob_curr_medBS_spmod, ~.-curr_logMedBS_scl + pnat_logMedBS_scl)
+summary(glob_curr_medBS_spmod)
+
 # 
-# glob_sp_mod <- zeroinfl(megapalm_nsp ~ presNat_megaHerb_nSp, data = tdwg_final_glob, dist = "poisson")
-# 
-# 
-# glob_sp_mod2 <- glm(megapalm_nsp ~ presNat_megaHerb_nSp+ scale(globalPC1) + scale(globalPC2) + scale(globalPC3) + scale(lgm_ens_Tano) + scale(lgm_ens_Pano)+ THREEREALM, data = tdwg_final_glob, family = "poisson")
-# glob_sp_mod3 <- glm(megapalm_nsp ~ curr_megaHerb_nSp+ scale(globalPC1) + scale(globalPC2) + scale(globalPC3) + scale(lgm_ens_Tano) + scale(lgm_ens_Pano) + THREEREALM, data = tdwg_final_glob, family = "poisson")
-# AIC(glob_sp_mod2)
-# 
-# nw_sp_mod1 <- glm(megapalm_nsp ~ presNat_megaHerb_nSp + scale(regionalPC1) + scale(regionalPC2) + scale(regionalPC3) + scale(lgm_ens_Tano) + scale(lgm_ens_Pano), data = tdwg_final_nw, family = "poisson")
-# nw_sp_mod2 <- glm(megapalm_nsp ~ curr_megaHerb_nSp+ scale(regionalPC1) + scale(regionalPC2) + scale(regionalPC3) + scale(lgm_ens_Tano) + scale(lgm_ens_Pano), data = tdwg_final_nw, family = "poisson")
-# AIC(nw_sp_mod1)
-# AIC(nw_sp_mod2)
-# 
-# 
-# nw_prop_mod <- glm(propMegaPalm ~ propMegaMam_presnat+ scale(regionalPC1) + scale(regionalPC2) + scale(regionalPC3) + scale(lgm_ens_Tano) + scale(lgm_ens_Pano), data = tdwg_final_nw, family = "binomial")
-# nw_prop_mod2 <- glm(propMegaPalm ~ propMegaMam_curr+ scale(regionalPC1) + scale(regionalPC2) + scale(regionalPC3) + scale(lgm_ens_Tano) + scale(lgm_ens_Pano), data = tdwg_final_nw, family = "binomial")
-# summary(step(nw_prop_mod2))
+sp.cor <- sp.correlogram(k6_nb, tdwg_final_glob$logMedFS_scl, order=5,
+                         method="I", randomisation=T)
+sp.cor <- sp.correlogram(k6_nb, residuals(glob_curr_medBS_mod), order=5,
+                         method="I", randomisation=T)
+sp.cor <- sp.correlogram(k6_nb, residuals(glob_curr_medBS_spmod), order=5,
+                          method="I", randomisation=T)
+par(mfrow = c(1,1))
+plot(sp.cor, ylim = c(-1,1))
+abline(h = 0.1, col = "red")
+# https://cran.r-project.org/web/packages/adespatial/vignettes/tutorial.html#ref-Dray2012
 
 
-# ## CATEGORIES
-# hist(tdwg_final$megaSpLoss)
-# tdwg_final$propMegaLoss <- tdwg_final$megaSpLoss / tdwg_final$presNat_mega_nSp
-# summary(lm(medianFruitLengthFilled ~ log(curr_medianBodySize)*megaSpLoss, data = tdwg_final))
-# 
-# plot(medianFruitLengthFilled ~ log(curr_medianBodySize)*megaSpLoss, data = tdwg_final)
-# 
-# summary(lm(propMegaMam_presnat ~ propMegaPalm, data = subset(tdwg_final, propMegaPalm > 0)))
-# summary(lm(propMegaMam_curr ~ propMegaPalm, data = subset(tdwg_final, propMegaPalm > 0)))
-# 
-# plot(propMegaMam_curr ~ propMegaPalm, data = subset(tdwg_final, propMegaPalm > 0))
-# abline(lm(propMegaMam_curr ~ propMegaPalm, data = subset(tdwg_final, propMegaPalm > 0)))
-# 
-# plot(propMegaMam_presnat ~ propMegaPalm, data = subset(tdwg_final, propMegaPalm > 0))
-# abline(lm(propMegaMam_presnat ~ propMegaPalm, data = subset(tdwg_final, propMegaPalm > 0))) # areas with more megapalms will also have higher palm fruit sizes
-# #subset(tdwg_final, propMegaPalm > 0)
-# ggplot(aes(y = propMegaMam_presnat, x = propMegaPalm, colour = THREEREALM), data = tdwg_final) + geom_point() + geom_smooth(method = "lm")
+## Spatial autoregressive modelling ========
+glob_coords <- as.matrix(tdwg_final_glob[c("LONG","LAT")])
 
-# For areas with any megafaunal palms, areas with a greater proportion of megafaunal palms also correlated with a greater proportion of megafaunal mammals
+# Distance based neighbourhood, minimum required for all units to have at least one neighbour, no distance-based spatial weighting
+dnear1 <- dnearneigh(glob_coords, longlat = TRUE, d1 = 0, d2 = 1550) # no units with no links
+n.comp.nb(dnear1)
+dnear1_nsw <- nb2listw(dnear1, style = "W")
+
+# Distance based neighbourhood distance weighting
+fdist <- lapply(dnear1, function(x) 1 - x/max(dist(glob_coords)))
+dnear1_sw <- nb2listw(neighbours = dnear1, glist = fdist, style = "W")
+
+# k-nearest neighbours
+knear1 <- knearneigh(glob_coords, k = 1)
+knear1 <- knn2nb(knear1, sym = TRUE)
+n.comp.nb(knear1)
+knear1_nsw <- nb2listw(knear1, style = "W")
+
+# k-nearest neighbourhood distance weighting
+fdist <- lapply(knear1, function(x) { 1 - x/max(dist(glob_coords))})
+knear1_sw <- nb2listw(knear1, style = "W", glist = fdist)
+
+# Fit error SARs
+dnear1_nsw_mod <- errorsarlm(logMedFS_scl ~ curr_logMedBS_scl + globalPC1_scl + globalPC2_scl + globalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_glob, listw = dnear1_nsw)
+summary(dnear1_nsw_mod)
+
+dnear1_sw_mod <- errorsarlm(logMedFS_scl ~ curr_logMedBS_scl + globalPC1_scl + globalPC2_scl + globalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_glob, listw = dnear1_sw)
+summary(dnear1_sw_mod)
+
+knear1_nsw_mod <- errorsarlm(logMedFS_scl ~ curr_logMedBS_scl + globalPC1_scl + globalPC2_scl + globalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_glob, listw = knear1_nsw)
+summary(knear1_nsw_mod)
+
+knear1_sw_mod <- errorsarlm(logMedFS_scl ~ curr_logMedBS_scl + globalPC1_scl + globalPC2_scl + globalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_glob, listw = knear1_sw)
+summary(knear1_sw_mod)
+
+# Calculate Moran's I to test for spatial autocorrelation in residuals
+moran.mc(x = residuals(knear1_sw_mod), listw= knear1_sw, nsim = 999, alternative = "less")
+moran.mc(x = residuals(knear1_sw_mod), listw= dnear1_sw, nsim = 999, alternative = 
+           "greater") # test with more inclusive definition
+moran.mc(x = tdwg_final_glob$logMedFS_scl, listw= knear1_nsw, nsim = 999)
+
