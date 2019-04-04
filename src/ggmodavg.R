@@ -213,3 +213,25 @@ model.avg2 <- function(model_list){
 # 0.4241378 + 0.3607670 * 1.96
 # 0.4241378 + 0.3607670 * -1.96
 # qnorm(p = c(0.975, 0.025))
+
+
+computeModelAvg <- function(x){
+  # Takes a full model and performs model averaging on it
+  moddr <- dredge(x)
+  summarizeRelImportance(model.avg(moddr))
+}
+
+roundNumbers <- function(df, digits = 3){
+  # For a given dataframe, round all numeric columns to 3 significant digits
+  # Arguments:
+  #     df = data.frame
+  #     digits = number of digits for rounding
+  # Returns:
+  #     data.frame
+  temp <- sapply(df, FUN = is.numeric)
+  cols <- names(temp)[temp]
+  for(i in 1:length(cols)){
+    df[[cols[i]]] <- round(df[[cols[i]]], digits = digits)
+  }
+  return(df)
+}

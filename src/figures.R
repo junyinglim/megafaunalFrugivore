@@ -374,7 +374,7 @@ maxBS_modavg_plot <- ggplot(data = maxBS_modavg_res) +
   
 ggsave(file.path(fig.dir, "maxBS_modavg.pdf"), maxBS_modavg_plot, height= 9, width = 8)
 
-## Plot relative importance of median body size ===============
+## Plot OLS model averaging results for median body size ===============
 medBS_modavg_res <- read.csv(file.path(res.dir, "medBS_modavg_res.csv"), stringsAsFactors = TRUE)
 medBS_modavg_res$Variable <- factor(medBS_modavg_res$Variable,
                                        levels = c("curr_logMedBS_scl", "pnat_logMedBS_scl",
@@ -428,3 +428,35 @@ ggsave(file.path(fig.dir, "dispBS_modavg.pdf"), dispBS_modavg_plot, height= 9, w
 modavg_comb_plot <- plot_grid(plotlist = list(medBS_modavg_plot, maxBS_modavg_plot), ncol = 2)
 ggsave(modavg_comb_plot, filename = file.path(fig.dir, "modavg_comb.pdf"), height = 10, width = 15 )
 
+
+
+
+
+## Plot SAR model averaging results for median body size
+sar_knear_medBS_modavg_res <- read.csv(file.path(res.dir, "sar_knear_medBS_modavg.csv"))
+sar_soi_medBS_modavg_res <- read.csv(file.path(res.dir, "sar_soi_medBS_modavg.csv"))
+sar_medBS_modavg_res <- rbind(sar_knear_medBS_modavg_res, sar_soi_medBS_modavg_res)
+
+sar_medBS_modavg_res$coefficient <- factor(sar_medBS_modavg_res$coefficient,
+                                    levels = c("curr_logMedBS_scl", "pnat_logMedBS_scl",
+                                               "globalPC1_scl", "globalPC2_scl", "globalPC3_scl",
+                                               "regionalPC1_scl", "regionalPC2_scl", "regionalPC3_scl",
+                                               "lgm_ens_Pano_scl", "lgm_ens_Tano_scl"),
+                                    labels = c("Log median body size", "Log median body size",
+                                               "PC1", "PC2", "PC3",
+                                               "PC1", "PC2", "PC3",
+                                               "LGM Prec. anomaly", "LGM Temp. anomaly"))
+
+
+
+
+
+medBS_sarmodavg_plot <- ggplot(data = sar_medBS_modavg_res) + 
+  geom_hline(aes(yintercept = 0), linetype = "dashed", colour = "grey50") +
+  geom_point(aes(y = fullAvgCoef, x = coefficient, colour = Scenario, size = importance), position = position_dodge(0.8)) + 
+  geom_errorbar(aes(ymin = lower2.5, ymax = upper97.5, x = coefficient, colour = Scenario), position = position_dodge(0.8), width = 0.1 ) +
+  scale_size_continuous(limits = c(0, 1), name = "Variable\nimportance") +
+  facet_wrap(Method~Weighting) +
+  labs(title = "Median body size", y = "Standardized\nmodel averaged coefficients", x= "Variables") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+ggsave(medBS_sarmodavg_plot, filename = file.path(fig.dir, "sar_medBS_modavg.pdf"), height = 8, width = 14)

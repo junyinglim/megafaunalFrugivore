@@ -168,14 +168,23 @@ Remove all the threatened species. Galetti, and
 
 Thoughts:
 - Neighbourhood definition
-	- k-nearest
+	- "k-nearest"
 		- Pros: Can force islands to be adjacent to the closest unit
 		- Cons: Arbitrary, central mainland units forced to have the same number of connections as isolated ones
 				Can be non-symmetric
-	- Distance
+	- "Distance"
 		- Pros: More natural, centrally located ones will have more connections than marginally situated units
 				Will always be symmetric
 		- Cons: Arbitrary, and cannot deal with different polygon sizes (only working with centroids) but that will always be a problem
+	- "Gabriel"
+		- (https://en.wikipedia.org/wiki/Gabriel_graph)
+		- Sub-graph of the Delaunay triangulation
+		- Does not guarantee symmetry
+	- "Delaunay triangulation"
+		- (https://en.wikipedia.org/wiki/Delaunay_triangulation)
+		- Complicated, but essentially convex hull drawn around all points, all links without overlap are considered.
+	- "Sphere of influnece (SOI)"
+		- Circles centred on centroids of radius equal to the centroid's nearest neighbour distances, intersect in two places (Avis & Horton 1985)
 
 - Spatial weight
 	- Distance-based
@@ -207,6 +216,16 @@ Thoughts:
 - Issues:
 	- Non-adjacent pairs will get a value of zero, another common approach is to set adjacencies wij to 
 	- https://rpubs.com/chrisbrunsdon/114718
+
+
+
+
+To account for spatial autocorrelation, we used spatial autoregressive error models (SAR_error; Dormann et al 2007), which have been shown to be more reliable than other spatial autogressive formulations (Kissling & Carl 2008). Spatial autoregressive models attempt to account for spatial correlation between units within a given neighbourhood / network structure. The correlation between neighbours may be additionally weighted (i.e., spatial weights) based on structural (e.g., geographic distances) or functional similarities between them (Ver Hoef et al 2018).
+However, because of the irregular spacing and size of geographic units in our study (i.e., TDWG botanical country units) in contrast with regular grid based units, we consider neighbourhoods based on distances between the centroids of our spatial units as adjacency-based neighbourhood definitions may not be appropriate. To account for sensitivity of our results, we thus fit various SARs with different neighbourhood definitions and weights.
+We focused on two main neighbourhood definitions. The first is based on k-nearest units, where the closest unit to each focal unit was considered a neighbour. Following Kissling et al 2012, we only allowed for one nearest neighbour. We then forced the neighbourhoods to be symmetrical. For example, the nearest neighbouring unit for islands may be a unit on the continent, but not necessarily vice versa. 2) We also used the sphere of influence to define neighbours. The sphere of influence for each focal unit is defined as a circle of radius equal to the focal unit's distance to its nearest neighbour. Where the sphere of influence of two units overlap, they are considered neighbours under this defintion. We feel that this is more appropriate than distance-based neighbourhood definitions as it takes into account the size and geometry of each unit in our study, whereas under a distance-based defintion that defines neighbours based on distances between centroids, larger units may have fewer neighbours for a given distance than a smaller unit.
+For spatial weighting, we used
+
+
 
 
 
@@ -248,7 +267,7 @@ Palm fruit size distribution and mammal body size distribution
 
 
 
-< PAPERS >
+< IMPORTANT REFERENCES >
 
 Hansen & Galetti (2008) The Forgotten Megafauna. Science
 - Classic definitions of megafauna need to be extended beyond absolute animal size to be context-depedendent
@@ -257,6 +276,14 @@ Hansen & Galetti (2008) The Forgotten Megafauna. Science
 
 Guimarez (2008) Seed dispersal anachronisms: Rethinking the fruits extinct megafauna ate
 - 
+
+Goldel et al (2015) Environmental correlates of , Bot J. Linn Soc.
+- Mean annual temperature and annual precipitation were additionally important for median leaf size.
+- Glacial–interglacial temperature change was the most important predictor for median fruit size (but also seasonality). Large fruits more likely to survive seasonal / harsher / stressful conditions or perhaps they are better at colonizing areas that have undergone large amount of climate change 
+
+
+< Points to make: >
+- Sizes of frugivores increases towards the higher latitudes, but is out of the range of palms
 
 
 
@@ -282,4 +309,7 @@ Saturday
 - Include birds
 
 
-August - September
+Svenning J-C, Borchsenius F, Bjorholm S, Balslev H. 2008a. High tropical net diversification drives the New World latitudinal gradient in palm (Arecaceae) species richness. J. Biogeogr. 35:394–406
+
+
+

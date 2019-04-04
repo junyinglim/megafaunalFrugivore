@@ -13,7 +13,7 @@ options(stringsAsFactors =FALSE)
 
 ## Packages ========================
 library(plyr); library(dplyr); library(reshape2)
-library(ggplot2); library(sp); library(rgdal); library(viridis); library(gridExtra); library(ggrepel); library(adespatial)
+library(ggplot2); library(sp); library(rgdal); library(viridis); library(gridExtra); library(ggrepel); library(adespatial); library(RANN)
 library(car); library(MuMIn); library(stringr)
 source(file.path(src.dir, "ggmodavg.R"))
 
@@ -57,7 +57,7 @@ tdwg_final_nw <- scaleVars(tdwg_final_nw, col = scale.col, suffix = "_scl")
 tdwg_final_oww <- scaleVars(tdwg_final_oww, col = scale.col, suffix = "_scl")
 tdwg_final_owe <- scaleVars(tdwg_final_owe, col = scale.col, suffix = "_scl")
 
-## Model averaging (Median Body Size) ========================
+## OLS - Median body size ========================
 glob_curr_medBS_mod <- lm(logMedFS_scl ~ curr_logMedBS_scl + globalPC1_scl + globalPC2_scl + globalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data =tdwg_final_glob, na.action = "na.fail")
 glob_pnat_medBS_mod <- update(glob_curr_medBS_mod, ~.-curr_logMedBS_scl + pnat_logMedBS_scl)
 vif(glob_curr_medBS_mod); vif(glob_pnat_medBS_mod)
@@ -136,7 +136,7 @@ medBS_modavg_res <- Reduce("rbind", list(glob_curr_medBS_modavg_summ,
                                          owe_pnat_medBS_modavg_summ))
 write.csv(medBS_modavg_res, file.path(res.dir, "medBS_modavg_res.csv"), row.names = FALSE)
 
-## MAXIMUM BODY SIZE ============
+## OLS - Maximum body size ============
 glob_curr_maxBS_mod <- lm(logMax95FS_scl ~ curr_logMax95BS_scl + globalPC1_scl + globalPC2_scl + globalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data =tdwg_final_glob, na.action = "na.fail")
 glob_pnat_maxBS_mod <- update(glob_curr_maxBS_mod, ~.- curr_logMax95BS_scl + pnat_logMax95BS_scl)
 vif(glob_curr_maxBS_mod); vif(glob_pnat_maxBS_mod)
@@ -204,7 +204,7 @@ maxBS_modavg_res <- Reduce("rbind", list(glob_curr_maxBS_modavg_summ,
                                          owe_pnat_maxBS_modavg_summ))
 write.csv(maxBS_modavg_res, file.path(res.dir, "maxBS_modavg_res.csv"), row.names = FALSE)
 
-## DISPERSION IN BODY SIZE ============
+## OLS - Dispersion in body size ============
 tdwg_final_glob_disp <- subset(tdwg_final_glob, palm_nSp > 1 & curr_nSp > 1 & presNat_nSp > 1)
 tdwg_final_nw_disp <- subset(tdwg_final_glob_disp, REALM_LONG == "Neotropics")
 tdwg_final_oww_disp <- subset(tdwg_final_glob_disp, REALM_LONG == "Afrotropics")
@@ -278,127 +278,226 @@ dispBS_modavg_res <- Reduce("rbind", list(glob_curr_dispBS_modavg_summ,
                                          owe_pnat_dispBS_modavg_summ))
 write.csv(dispBS_modavg_res, file.path(res.dir, "dispBS_modavg_res.csv"), row.names = FALSE)
 
-## Spatial eigenvectors modelling ========
-library(spdep)
-tdwg_shp_raw <- readOGR("~/Dropbox/Projects/2019/palms/data/TDWG/level3/level3.shp")
-glob_list <- tdwg_final_glob$LEVEL_3_CO
-tdwg_shp_glob <- subset(tdwg_shp_raw, LEVEL_3_CO %in% glob_list)
-
-# Generate neighbourhoods
-# `poly2nb` not used as some polygons are not adjacent to anything else (i.e., islands)
-k1_mat <- knearneigh(as.matrix(tdwg_final_glob[c("LONG","LAT")]), k = 1, longlat = TRUE)
-k1_nb <- knn2nb(k1_mat)
-n.comp.nb(k1_nb) # number of disjoint connected subgraphs
-
-k2_mat <- knearneigh(as.matrix(tdwg_final_glob[c("LONG","LAT")]), k = 2, longlat = TRUE)
-k2_nb <- knn2nb(k2_mat)
-n.comp.nb(k2_nb) # number of disjoint connected subgraphs
-
-k3_mat <- knearneigh(as.matrix(tdwg_final_glob[c("LONG","LAT")]), k = 3, longlat = TRUE)
-k3_nb <- knn2nb(k3_mat)
-n.comp.nb(k3_nb)
-
-k4_mat <- knearneigh(as.matrix(tdwg_final_glob[c("LONG","LAT")]), k = 4, longlat = TRUE)
-k4_nb <- knn2nb(k4_mat)
-n.comp.nb(k4_nb)
-
-k5_mat <- knearneigh(as.matrix(tdwg_final_glob[c("LONG","LAT")]), k = 5, longlat = TRUE)
-k5_nb <- knn2nb(k5_mat)
-n.comp.nb(k5_nb) # 3 subgroups are the different realms
-
-k6_mat <- knearneigh(as.matrix(tdwg_final_glob[c("LONG","LAT")]), k = 6, longlat = TRUE)
-k6_nb <- knn2nb(k6_mat)
-n.comp.nb(k6_nb) # Number of subgraphs
-
-pdf(file.path(fig.dir, "knn.pdf"), width = 12, height = 6)
-par(mfrow = c(2,3))
-plot(tdwg_shp_glob, col = "grey", border = "white", main = "k-nearest neighbours = 1")
-plot(k1_nb, tdwg_final_glob[c("LONG","LAT")], add = T, col = "red")
-plot(tdwg_shp_glob, col = "grey", border = "white", main = "k-nearest neighbours = 2")
-plot(k2_nb, tdwg_final_glob[c("LONG","LAT")], add = T, col = "blue")
-plot(tdwg_shp_glob, col = "grey", border = "white", main = "k-nearest neighbours = 3")
-plot(k3_nb, tdwg_final_glob[c("LONG","LAT")], add = T, col = "gold")
-plot(tdwg_shp_glob, col = "grey", border = "white", main = "k-nearest neighbours = 4")
-plot(k4_nb, tdwg_final_glob[c("LONG","LAT")], add = T, col = "purple")
-plot(tdwg_shp_glob, col = "grey", border = "white", main = "k-nearest neighbours = 5")
-plot(k5_nb, tdwg_final_glob[c("LONG","LAT")], add = T, col = "green")
-plot(tdwg_shp_glob, col = "grey", border = "white", main = "k-nearest neighbours = 6")
-plot(k6_nb, tdwg_final_glob[c("LONG","LAT")], add = T, col = "pink")
-dev.off()
-
-# Generate spatial weighting matrices based on great circle distances
-k6_nb_dist <- nbdists(k6_nb, coords = as.matrix(tdwg_final_glob[c("LONG","LAT")]), longlat = TRUE) # calculate distances between neighbours
-fdist <- lapply(k6_nb_dist, function(x) 1 - x/max(dist(as.matrix(tdwg_final_glob[c("LONG","LAT")])))) # convert into spatial weights
-listwgab <- nb2listw(neighbours = k6_nb, glist = fdist, style = "B") # essentially global weighting
-mem.gab <- mem(listwgab) # generates Moran's eigenvector maps where correspionding eigenvalues are linearly related to Moran's index of spatial autocorrelation
-barplot(attr(mem.gab, "values"), main = "Eigenvalues of spatial weighting matrix")
-
-# Perform Moran's I on each eigenvector
-round(attr(mem.gab, "values"), 3)
-moranItest <- moran.randtest(x = mem.gab, 
-                             list = listwgab, nrepet = 999)
-signi <- which(moranItest$pvalue < 0.05) # identify eigenvectors that are positively significant (i.e., positive spatial autocorrelation)
-plot(mem.gab[,signi[35:36]], SpORcoords = as.matrix(tdwg_final_glob[c("LONG","LAT")]), nb = k6_nb )
-
-# F
-tdwg_final_glob_sp <- cbind(tdwg_final_glob, mem.gab)
-glob_med_f <- formula(paste0("logMedFS_scl ~ curr_logMedBS_scl + globalPC1_scl + globalPC2_scl + globalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl", "+", paste0(names(mem.gab)[signi], collapse = "+")))
-
-glob_curr_medBS_spmod <- lm(logMedFS_scl ~ curr_logMedBS_scl + globalPC1_scl + globalPC2_scl + globalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl + MEM1, data =tdwg_final_glob_sp, na.action = "na.fail")
-#glob_pnat_medBS_spmod <- update(glob_curr_medBS_spmod, ~.-curr_logMedBS_scl + pnat_logMedBS_scl)
-summary(glob_curr_medBS_spmod)
-
-# 
-sp.cor <- sp.correlogram(k6_nb, tdwg_final_glob$logMedFS_scl, order=5,
-                         method="I", randomisation=T)
-sp.cor <- sp.correlogram(k6_nb, residuals(glob_curr_medBS_mod), order=5,
-                         method="I", randomisation=T)
-sp.cor <- sp.correlogram(k6_nb, residuals(glob_curr_medBS_spmod), order=5,
-                          method="I", randomisation=T)
-par(mfrow = c(1,1))
-plot(sp.cor, ylim = c(-1,1))
-abline(h = 0.1, col = "red")
-# https://cran.r-project.org/web/packages/adespatial/vignettes/tutorial.html#ref-Dray2012
-
 
 ## Spatial autoregressive modelling ========
 glob_coords <- as.matrix(tdwg_final_glob[c("LONG","LAT")])
 
-# Distance based neighbourhood, minimum required for all units to have at least one neighbour, no distance-based spatial weighting
-dnear1 <- dnearneigh(glob_coords, longlat = TRUE, d1 = 0, d2 = 1550) # no units with no links
-n.comp.nb(dnear1)
-dnear1_nsw <- nb2listw(dnear1, style = "W")
-
-# Distance based neighbourhood distance weighting
-fdist <- lapply(dnear1, function(x) 1 - x/max(dist(glob_coords)))
-dnear1_sw <- nb2listw(neighbours = dnear1, glist = fdist, style = "W")
+# Define neighbourhoods
+# Distance based neighbourhood
+nb_dnear <- dnearneigh(glob_coords, longlat = TRUE, d1 = 0, d2 = 1550)
+# Min dist for all units to have at least one neighbour
 
 # k-nearest neighbours
-knear1 <- knearneigh(glob_coords, k = 1)
-knear1 <- knn2nb(knear1, sym = TRUE)
-n.comp.nb(knear1)
-knear1_nsw <- nb2listw(knear1, style = "W")
+nb_knear <- knn2nb(knearneigh(glob_coords, k = 1), sym = TRUE)
 
-# k-nearest neighbourhood distance weighting
-fdist <- lapply(knear1, function(x) { 1 - x/max(dist(glob_coords))})
-knear1_sw <- nb2listw(knear1, style = "W", glist = fdist)
+# Sphere of influence (symmetrical)
+nb_dlny <- tri2nb(glob_coords) 
+nb_soi <- graph2nb(soi.graph(nb_dlny, glob_coords))
 
-# Fit error SARs
-dnear1_nsw_mod <- errorsarlm(logMedFS_scl ~ curr_logMedBS_scl + globalPC1_scl + globalPC2_scl + globalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_glob, listw = dnear1_nsw)
-summary(dnear1_nsw_mod)
+# Calculate bray-curits distances between tdwg units
+library(vegan)
+palm_occ_trait <- read.csv(file = file.path(res.dir, "tdwg_palm_occ_trait.csv"))
+palm_occ_trait2 <- subset(palm_occ_trait, Area_code_L3 %in% tdwg_final_glob$LEVEL_3_CO)
+palm_occ_mat <- acast(palm_occ_trait2, Area_code_L3 ~ SpecName, length )
+palm_vegdist <- as.matrix(vegdist(palm_occ_mat, method = "bray"))
+match(rownames(palm_vegdist), tdwg_final_glob$LEVEL_3_CO) #the neighbourhoods and the tdwg units in the distance matrix are in the same order
 
-dnear1_sw_mod <- errorsarlm(logMedFS_scl ~ curr_logMedBS_scl + globalPC1_scl + globalPC2_scl + globalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_glob, listw = dnear1_sw)
-summary(dnear1_sw_mod)
+# Generate spatial weights
+nb_soi_gcd <- nbdists(nb_soi, glob_coords, longlat = TRUE)
+nb_soi_maxdist <- max(unlist(nb_soi_gcd))
 
-knear1_nsw_mod <- errorsarlm(logMedFS_scl ~ curr_logMedBS_scl + globalPC1_scl + globalPC2_scl + globalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_glob, listw = knear1_nsw)
-summary(knear1_nsw_mod)
+nb_soi_w_dist <- lapply(nb_soi_gcd, function(x) 1 - x / nb_soi_maxdist )
+listw_soi_w_dist <- nb2listw(nb_soi, glist = nb_soi_w_dist, style = "W")
 
-knear1_sw_mod <- errorsarlm(logMedFS_scl ~ curr_logMedBS_scl + globalPC1_scl + globalPC2_scl + globalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_glob, listw = knear1_sw)
-summary(knear1_sw_mod)
+listw_soi_nw <- nb2listw(nb_soi, style = "W")
 
-# Calculate Moran's I to test for spatial autocorrelation in residuals
-moran.mc(x = residuals(knear1_sw_mod), listw= knear1_sw, nsim = 999, alternative = "less")
-moran.mc(x = residuals(knear1_sw_mod), listw= dnear1_sw, nsim = 999, alternative = 
-           "greater") # test with more inclusive definition
-moran.mc(x = tdwg_final_glob$logMedFS_scl, listw= knear1_nsw, nsim = 999)
+nb_soi_vegdist <- lapply(1:length(nb_soi), FUN = function(x)  palm_vegdist[x, nb_soi[[x]] ])
+nb_soi_w_vegdist <- lapply(nb_soi_vegdist, function(x) (1 - x) + 0.00001 ) # zero sum means that there are focal units for which the spatial weights are zero
+listw_soi_w_vegdist <- nb2listw(nb_soi, glist = nb_soi_w_vegdist, style = "W") # if the zero.policy = T, then these units will effectively not have neighbours
 
+nb_knear_gcd <- nbdists(nb_knear, glob_coords, longlat = TRUE)
+nb_knear_maxdist <- max(unlist(nb_knear_gcd))
+nb_knear_w_dist <- lapply(nb_knear_gcd, function(x) (1 - x / nb_knear_maxdist)+0.00001 )
+
+listw_knear_w_dist <- nb2listw(nb_knear, glist = nb_knear_w_dist, style = "W")
+listw_knear_nw <- nb2listw(nb_knear, style = "W")
+
+nb_knear_vegdist <- lapply(1:length(nb_knear), FUN = function(x)  palm_vegdist[x, nb_knear[[x]] ])
+nb_knear_w_vegdist <- lapply(nb_knear_vegdist, function(x) (1 - x) + 0.00001 )
+listw_knear_w_vegdist <- nb2listw(nb_knear, glist = nb_knear_w_vegdist, style = "W")
+
+# Define global model formulae
+glob_curr_modf <- formula(logMedFS_scl ~ curr_logMedBS_scl + globalPC1_scl + globalPC2_scl + globalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl)
+
+glob_curr_maxBS_modf <- formula(logMax95FS ~ curr_logMax95BS_scl + globalPC1_scl + globalPC2_scl + globalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl)
+
+# soi neighbourhoods, median body size
+glob_curr_medBS_sar_soi_nw_mod <- errorsarlm(glob_curr_modf, data = tdwg_final_glob, listw = listw_soi_nw, na.action = "na.fail")
+glob_pnat_medBS_sar_soi_nw_mod <- update(glob_curr_sar_soi_nw_mod, ~. -curr_logMedBS_scl + pnat_logMedBS_scl)
+
+glob_curr_medBS_sar_soi_w_dist_mod <- errorsarlm(glob_curr_modf, data = tdwg_final_glob, listw = listw_soi_w_dist, na.action = "na.fail")
+glob_pnat_medBS_sar_soi_w_dist_mod <- update(glob_curr_sar_soi_w_dist_mod, ~.-curr_logMedBS_scl + pnat_logMedBS_scl)
+
+# soi nb, max body size
+glob_curr_maxBS_sar_soi_nw_mod <- errorsarlm(glob_curr_maxBS_modf, data = tdwg_final_glob, listw = listw_soi_nw, na.action = "na.fail")
+glob_pnat_maxBS_sar_soi_nw_mod <- update(glob_curr_sar_soi_nw_maxBS_mod, ~. -curr_logMax95BS_scl + pnat_logMax95BS_scl)
+
+glob_curr_maxBS_sar_soi_w_dist_mod <- errorsarlm(glob_curr_maxBS_modf, data = tdwg_final_glob, listw = listw_soi_w_dist, na.action = "na.fail")
+glob_pnat_maxBS_sar_soi_w_dist_mod <- update(glob_curr_sar_soi_w_dist_maxBS_mod, ~.-curr_logMax95BS_scl + pnat_logMax95BS_scl)
+
+medBS_sarsoi_modelavglist <- lapply(list(glob_curr_medBS_sar_soi_nw_mod,
+                                         glob_pnat_medBS_sar_soi_nw_mod,
+                                         glob_curr_medBS_sar_soi_w_dist_mod,
+                                         glob_pnat_medBS_sar_soi_w_dist_mod),
+                                    FUN = computeModelAvg)
+medBS_sarsoi_modelavgdf <- Reduce( medBS_sarsoi_modelavglist, f = "rbind")
+medBS_sarsoi_modelavgdf$Geographic.scale <- "Global"
+medBS_sarsoi_modelavgdf$Method <- "Sphere of Influence"
+medBS_sarsoi_modelavgdf$Weighting <- rep(c("No weighting", "Distance-weighting") , each = 12 )
+medBS_sarsoi_modelavgdf$Scenario <- rep(c("Current", "Present-Natural") , each = 6 )
+write.csv(medBS_sarsoi_modelavgdf,
+          file.path(res.dir, "medBS_sarsoi_modavg.csv"), row.names = FALSE)
+
+maxBS_sarsoi_modelavglist <- lapply(list(glob_curr_maxBS_sar_soi_nw_mod,
+                                         glob_pnat_maxBS_sar_soi_nw_mod,
+                                         glob_curr_maxBS_sar_soi_w_dist_mod,
+                                         glob_pnat_maxBS_sar_soi_w_dist_mod),
+                                    FUN = computeModelAvg)
+maxBS_sarsoi_modelavgdf <- Reduce( maxBS_sarsoi_modelavglist, f = "rbind")
+maxBS_sarsoi_modelavgdf$Geographic.scale <- "Global"
+maxBS_sarsoi_modelavgdf$Method <- "Sphere of Influence"
+maxBS_sarsoi_modelavgdf$Weighting <- rep(c("No weighting", "Distance-weighting") , each = 12 )
+maxBS_sarsoi_modelavgdf$Scenario <- rep(c("Current", "Present-Natural") , each = 6 )
+write.csv(maxBS_sarsoi_modelavgdf,
+          file.path(res.dir, "maxBS_sarsoi_modavg.csv"), row.names = FALSE)
+
+
+# Knear, no distance weighting, median body size global
+glob_curr_medBS_sar_knear_nw_mod <- errorsarlm(glob_curr_modf, data = tdwg_final_glob, listw = listw_knear_nw, na.action = "na.fail")
+glob_pnat_medBS_sar_knear_nw_mod <- update(glob_curr_medBS_sar_knear_nw_mod, ~. -curr_logMedBS_scl + pnat_logMedBS_scl)
+
+glob_curr_medBS_sar_knear_w_dist_mod <- errorsarlm(glob_curr_modf, data = tdwg_final_glob, listw = listw_knear_w_dist, na.action = "na.fail")
+glob_pnat_medBS_sar_knear_w_dist_mod <- update(glob_curr_medBS_sar_knear_w_dist_mod, ~.-curr_logMedBS_scl + pnat_logMedBS_scl)
+
+# knear, maximum body size
+glob_curr_maxBS_sar_knear_nw_mod <- errorsarlm(glob_curr_maxBS_modf, data = tdwg_final_glob, listw = listw_knear_nw, na.action = "na.fail")
+glob_pnat_maxBS_sar_knear_nw_mod <- update(glob_curr_maxBS_sar_knear_nw_mod, ~. - curr_logMax95BS_scl + pnat_logMax95BS_scl)
+
+glob_curr_maxBS_sar_knear_w_dist_mod <- errorsarlm(glob_curr_maxBS_modf, data = tdwg_final_glob, listw = listw_knear_w_dist, na.action = "na.fail")
+glob_pnat_maxBS_sar_knear_w_dist_mod <- update(glob_curr_maxBS_sar_knear_w_dist_mod, ~. - curr_logMax95BS_scl + pnat_logMax95BS_scl)
+
+# glob_curr_sar_knear_w_vegdist_mod <- errorsarlm(glob_curr_modf, data = tdwg_final_glob, listw = listw_knear_w_vegdist, na.action = "na.fail")
+# glob_pnat_sar_knear_w_vegdist_mod <- update(glob_curr_sar_knear_w_vegdist, ~.-curr_logMedBS_scl + pnat_logMedBS_scl)
+
+medBS_sarknn_modelavglist <- lapply(list(glob_curr_medBS_sar_knear_nw_mod,
+                                         glob_pnat_medBS_sar_knear_nw_mod,
+                                         glob_curr_medBS_sar_knear_w_dist_mod,
+                                         glob_pnat_medBS_sar_knear_w_dist_mod),
+                                    FUN = computeModelAvg)
+medBS_sarknn_modelavgdf <- Reduce( medBS_sarknn_modelavglist, f = "rbind")
+medBS_sarknn_modelavgdf$Geographic.scale <- "Global"
+medBS_sarknn_modelavgdf$Method <- "Nearest neighbour"
+medBS_sarknn_modelavgdf$Weighting <- rep(c("No weighting", "Distance-weighting") , each = 12 )
+medBS_sarknn_modelavgdf$Scenario <- rep(c("Current", "Present-Natural") , each = 6 )
+write.csv(knearsar_modelavgdf, file.path(res.dir, "medBS_sarknn_medBS_modavg.csv"),
+          row.names = FALSE)
+
+maxBS_sarknn_modelavglist <- lapply(list(glob_curr_maxBS_sar_knear_nw_mod,
+                                         glob_pnat_maxBS_sar_knear_nw_mod,
+                                         glob_curr_maxBS_sar_knear_w_dist_mod,
+                                         glob_pnat_maxBS_sar_knear_w_dist_mod),
+                                FUN = computeModelAvg)
+maxBS_sarknn_modelavgdf <- Reduce( maxBS_sarknn_modelavglist, f = "rbind")
+maxBS_sarknn_modelavgdf$Geographic.scale <- "Global"
+maxBS_sarknn_modelavgdf$Method <- "Nearest neighbour"
+maxBS_sarknn_modelavgdf$Weighting <- rep(c("No weighting", "Distance-weighting") , each = 12 )
+maxBS_sarknn_modelavgdf$Scenario <- rep(c("Current", "Present-Natural") , each = 6 )
+write.csv(maxBS_sarknn_modelavgdf, file.path(res.dir, "maxBS_sarknn_modavg.csv"), row.names = FALSE)
+
+# Clean up median body size SAR model results
+medBS_sar_modelavgdf <- rbind(medBS_sarsoi_modelavgdf, medBS_sarknn_modelavgdf)
+medBS_sar_modelavgdf_r <- roundNumbers(medBS_sar_modelavgdf)
+
+medBS_sar_modelavgdf_r$coefficient <- factor(medBS_sar_modelavgdf_r$coefficient,
+                                             levels = c("curr_logMedBS_scl", "pnat_logMedBS_scl",
+                                                        "globalPC1_scl", "globalPC2_scl",
+                                                        "globalPC3_scl", "lgm_ens_Pano_scl",
+                                                        "lgm_ens_Tano_scl"),
+                                             labels = c("Current log median body size",
+                                                        "Present-natural log median body size",
+                                                        "Global PC1", "Global PC2",
+                                                        "Global PC3", "LGM Prec. Anom.",
+                                                        "LGM Temp. Anom."))
+write.csv(medBS_sar_modelavgdf_r, file.path(res.dir, "medBS_sar_modavg.csv"))
+
+# Clean up maximum body size SAR model results
+maxBS_sar_modelavgdf <- rbind(maxBS_sarsoi_modelavgdf, maxBS_sarknn_modelavgdf)
+maxBS_sar_modelavgdf_r <- roundNumbers(maxBS_sar_modelavgdf)
+
+maxBS_sar_modelavgdf_r$coefficient <- factor(maxBS_sar_modelavgdf_r$coefficient,
+                                             levels = c("curr_logMax95BS_scl",
+                                                        "pnat_logMax95BS_scl",
+                                                        "globalPC1_scl",
+                                                        "globalPC2_scl",
+                                                        "globalPC3_scl",
+                                                        "lgm_ens_Pano_scl",
+                                                        "lgm_ens_Tano_scl"),
+                                             labels = c("Current log median body size",
+                                                        "Present-natural log median body size",
+                                                        "Global PC1", "Global PC2",
+                                                        "Global PC3", "LGM Prec. Anom.",
+                                                        "LGM Temp. Anom."))
+write.csv(maxBS_sar_modelavgdf_r, file.path(res.dir, "maxBS_sar_modavg.csv"))
+
+
+# Making sure that model fits do not have Moran I's higher than 0
+moran.test(x = residuals(glob_curr_sar_knear_nw_mod), listw = listw_knear_nw)
+moran.test(x = residuals(glob_pnat_sar_knear_nw_mod), listw = listw_knear_nw)
+moran.test(x = residuals(glob_curr_sar_knear_w_dist_mod), listw = listw_knear_w_dist)
+moran.test(x = residuals(glob_pnat_sar_knear_w_dist_mod), listw = listw_knear_w_dist)
+
+moran.test(x = residuals(glob_curr_sar_soi_nw_mod), listw = listw_soi_nw)
+moran.test(x = residuals(glob_pnat_sar_soi_nw_mod), listw = listw_soi_nw)
+moran.test(x = residuals(glob_curr_sar_soi_w_dist_mod), listw = listw_soi_w_dist)
+moran.test(x = residuals(glob_pnat_sar_soi_w_dist_mod), listw = listw_soi_w_dist)
+
+# Plot higher lags without and after
+library(ncf)
+plot(sp.correlogram(neighbours = nb_knear, var = residuals(glob_curr_sar_knear_w_dist_mod), order = 5, zero.policy = T, style = "W", randomisation = F))
+plot(sp.correlogram(neighbours = nb_knear, var = tdwg_final_glob$logMedFS_scl, order = 5, zero.policy = T, style = "W", randomisation = F))
+
+plot(sp.correlogram(neighbours = nb_soi, var = residuals(glob_curr_sar_soi_w_dist_mod), order = 5, zero.policy = T, style = "W", randomisation = F))
+
+## Calculate expected 
+glob_curr_medBS_mod <- lm(logMedFS ~ curr_logMedBS + globalPC1_scl + 
+                      globalPC2_scl + globalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, 
+                    data = tdwg_final_glob, na.action = "na.fail")
+summary(glob_curr_medBS_mod)
+predictDF <- with(data.frame(globalPC1_scl, globalPC2_scl, globalPC3_scl, 
+                        lgm_ens_Tano_scl, lgm_ens_Pano_scl,
+                        curr_logMedBS = log(tdwg_final_glob$futr_medianBodySize) ),
+                  data = tdwg_final_glob)
+glob_futr_medBS_mod <- predict(glob_curr_medBS_mod, newdata = predictDF)
+
+
+plot(tdwg_final_glob$logMedFS ~ fitted(glob_curr_medBS_mod))
+abline(0,1)
+points(glob_futr_medBS_mod ~ fitted(glob_curr_medBS_mod), col = "blue")
+
+# Difference between the fitted log median fruit size (with current body size) and the fitted log median fruit size (with future body size)
+changeInFruitSize <- exp(fitted(glob_curr_medBS_mod)) - exp(glob_futr_medBS_mod)
+
+hist(changeInFruitSize, xlab = "Change in fruit size (cm)" )
+range(changeInFruitSize, na.rm = T) # up to 1 cm 
+median(changeInFruitSize, na.rm = T) # 0.1 mm
+
+median(tdwg_final_glob$medianFruitLengthFilled)
+0.1*100/median(tdwg_final_glob$medianFruitLengthFilled) # about 5% decrease in fruit size
+
+plot(log(curr_medianBodySize) ~ log(futr_medianBodySize), data = tdwg_final_glob)
+abline(0,1)
+meanLossInMedSize <- with((curr_logMedBS - log(futr_medianBodySize)), data = tdwg_final_glob)
+
+
+
+# Mean changes; largest fruits are going to be disproportionately affected so degree of change is likely to be much larger than suggested by the mean values

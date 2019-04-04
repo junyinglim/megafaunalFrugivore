@@ -158,6 +158,8 @@ tdwg_meanFruit <- ddply(.data = subset(palm_occ_trait, Area_code_L3 %in% mammal_
                         palm_nSp = length(AverageFruitLength_cm))
 names(tdwg_meanFruit)[names(tdwg_meanFruit) == "Area_code_L3"] <- "LEVEL_3_CO"
 
+write.csv(subset(palm_occ_trait, Area_code_L3 %in% mammal_palm_intersect), file = file.path(res.dir, "tdwg_palm_occ_trait.csv"), row.names = F)
+
 # # Calculate z-scores for fruit size range, regional source pools
 # palm_occ_trait2 <- merge(y = subset(palm_occ_trait, Area_code_L3 %in% mammal_palm_intersect),
 #                          x = tdwg_env[c("LEVEL_3_CO", "THREEREALM", "REALM_LONG")],
@@ -297,10 +299,14 @@ env.var <- paste0("bio", c(12, 15, 17, 1, 11, 4), "_mean")
   #paste0("bio", 1:19, "_mean")
 #c("PREC_Sum", "PREC_CV", "P_drie_quart", "Tmean_mean", "T_cold_quart", "Temp_SD")
 globalPCA <- prcomp(x = tdwg_final2[env.var], scale. = TRUE, center = TRUE)
-cumsum(globalPCA$sdev) /sum(globalPCA$sdev)
+
 tdwg_final2$globalPC1 <- globalPCA$x[,1]
 tdwg_final2$globalPC2 <- globalPCA$x[,2]
 tdwg_final2$globalPC3 <- globalPCA$x[,3]
+
+globalPCA_varexp <- cumsum(globalPCA$sdev^2) /sum(globalPCA$sdev^2)
+globalPCA_res <- rbind(globalPCA$rotation, globalPCA_varexp)
+write.csv(roundNumbers(data.frame(globalPCA_res)), row.names = T, file = file.path(res.dir, "globalPCA_res.csv"))
 
 # Regional PCA
 tdwg_final_nw <- subset(tdwg_final2, REALM_LONG == "Neotropics")
@@ -308,11 +314,19 @@ tdwg_final_oww <- subset(tdwg_final2, REALM_LONG == "Afrotropics")
 tdwg_final_owe <- subset(tdwg_final2, REALM_LONG %in% c("IndoMalay", "Australasia"))
 
 nwPCA <- prcomp(x= tdwg_final_nw[env.var], scale. = TRUE, center = TRUE)
-cumsum(nwPCA$sdev) / sum(nwPCA$sdev)
 owwPCA <- prcomp(x= tdwg_final_oww[env.var], scale. = TRUE, center = TRUE)
-cumsum(owwPCA$sdev) / sum(owwPCA$sdev)
 owePCA <- prcomp(x= tdwg_final_owe[env.var], scale. = TRUE, center = TRUE)
-cumsum(owePCA$sdev) / sum(owePCA$sdev)
+
+nwPCA_varexp <- cumsum(nwPCA$sdev^2) / sum(nwPCA$sdev^2)
+owwPCA_varexp <- cumsum(owwPCA$sdev^2) / sum(owwPCA$sdev^2)
+owePCA_varexp <- cumsum(owePCA$sdev^2) / sum(owePCA$sdev^2)
+
+nwPCA_res <- rbind(nwPCA$rotation, nwPCA_varexp)
+write.csv(roundNumbers(data.frame(nwPCA_res)), file = file.path(res.dir, "nwPCA_res.csv"))
+owwPCA_res <- rbind(owwPCA$rotation, owwPCA_varexp)
+write.csv(roundNumbers(data.frame(owwPCA_res)), file.path(res.dir, "owwPCA_res.csv"))
+owePCA_res <- rbind(owePCA$rotation, owePCA_varexp)
+write.csv(roundNumbers(data.frame(owePCA_res)), file.path(res.dir, "owePCA_res.csv"))
 
 tdwg_final_nw$regionalPC1 <- nwPCA$x[,1]
 tdwg_final_nw$regionalPC2 <- nwPCA$x[,2]
