@@ -24,17 +24,20 @@ summarizeLM <- function(mod, scale = "global", scenario = "current"){
 
 
 
-summarizeRelImportance <- function(x, plotIntercept = FALSE){
+summarizeRelImportance <- function(x, returnIntercept = FALSE){
   # Plots relative
   # x = "averaging" class from MuMIn package
-  #x = fullmod_avg
-  summaryStats <- data.frame(coefficient = colnames(x$coefficients), fullAvgCoef = x$coefficients[1,], condAvgCoef = x$coefficients[2,])
+  summaryStats <- data.frame(coefficient = colnames(x$coefficients),
+                             fullAvgCoef = summary(x)$coefmat.full[,1],
+                             condAvgCoef = summary(x)$coefmat.subset[,1],
+                             fullAvgSE = summary(x)$coefmat.full[,2],
+                             condAvgSE = summary(x)$coefmat.subset[,2] )
   
   relimportStats <- data.frame(importance = x$importance, coefficient = names(x$importance))
   confintStats <- data.frame(confint(x))
   names(confintStats) <- c("lower2.5", "upper97.5")
   summaryStats <- cbind(summaryStats, confintStats)
-  if(!plotIntercept){
+  if(!returnIntercept){
     summaryStats <- summaryStats[-1,]    
   }
   summaryStats <- merge(summaryStats, relimportStats, by = "coefficient")
@@ -61,12 +64,12 @@ dredge2 <- function(full_mod, data, sw){
   # full_mod <- knear1_nsw_mod; sw = knear1_sw; data = tdwg_final_glob
   # full_mod <- glob_curr_medBS_mod; data = tdwg_final_glob
   # Extract terms from model object
+  data <- full_mod$model
+  
   if(class(full_mod) == "lm"){
     full_pred_terms <- attr(full_mod$terms, "term.labels")
   }
-  if(class(full_mod) == "sarlm"){
-    full_pred_terms <- names(coefficients(full_mod))[-c(1,2)] # first two are intercept and lambda
-  }
+  
   lhs_term <- as.character(full_mod$call$formula)[2]
   nterms <- length(full_pred_terms)
   
@@ -97,10 +100,6 @@ dredge2 <- function(full_mod, data, sw){
     if(class(full_mod) == "lm"){
       mod_obj[[i]] <- lm(mod_formula, data = data)  
     }
-    if(class(full_mod) == "sarlm"){
-      mod_obj[[i]] <- errorsarlm(mod_formula, data = data, listw = sw)
-    }
-    
     nobs <- nobs(mod_obj[[i]])
     npred <- length(rhs_term)
     npara <- length(coef(mod_obj[[i]]))+1# includes intercept and standard dev. in AIC calculations
@@ -219,6 +218,12 @@ computeModelAvg <- function(x){
   # Takes a full model and performs model averaging on it
   moddr <- dredge(x)
   summarizeRelImportance(model.avg(moddr))
+}
+
+computeModelAvg2 <- function(x){
+  # Takes a full model and performs model averaging but calculates adjusted coefficients (following Cade 2015)
+  moddr <- dredge2(x)
+  return(model.avg2(moddr))
 }
 
 roundNumbers <- function(df, digits = 3){

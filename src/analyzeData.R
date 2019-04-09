@@ -60,224 +60,87 @@ tdwg_final_owe <- scaleVars(tdwg_final_owe, col = scale.col, suffix = "_scl")
 ## OLS - Median body size ========================
 glob_curr_medBS_mod <- lm(logMedFS_scl ~ curr_logMedBS_scl + globalPC1_scl + globalPC2_scl + globalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data =tdwg_final_glob, na.action = "na.fail")
 glob_pnat_medBS_mod <- update(glob_curr_medBS_mod, ~.-curr_logMedBS_scl + pnat_logMedBS_scl)
+
 vif(glob_curr_medBS_mod); vif(glob_pnat_medBS_mod)
-
-glob_curr_medBS_moddr <- dredge2(glob_curr_medBS_mod, data = tdwg_final_glob, model.type = "OLS")
-glob_curr_medBS_modavg_summ <- model.avg2(glob_curr_medBS_moddr)
-glob_pnat_medBS_moddr <- dredge2(glob_pnat_medBS_mod)
-glob_pnat_medBS_modavg_summ <- model.avg2(glob_pnat_medBS_moddr)
-
-# Just comparing coefficients using the MuMIn package
-glob_curr_medBS_moddr2 <- dredge(glob_curr_medBS_mod)
-glob_curr_medBS_modavg2 <- model.avg(glob_curr_medBS_moddr2)
 
 nw_curr_medBS_mod <- lm(logMedFS_scl ~ curr_logMedBS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_nw, na.action = "na.fail")
 nw_pnat_medBS_mod <- update(nw_curr_medBS_mod, ~.-curr_logMedBS_scl  + pnat_logMedBS_scl)
 vif(nw_curr_medBS_mod); vif(nw_pnat_medBS_mod)
 
-nw_curr_medBS_moddr <- dredge2(nw_curr_medBS_mod)
-nw_curr_medBS_modavg_summ <- model.avg2(nw_curr_medBS_moddr)
-nw_pnat_medBS_moddr <- dredge2(nw_pnat_medBS_mod)
-nw_pnat_medBS_modavg_summ <- model.avg2(nw_pnat_medBS_moddr)
-
-# nw_curr_medBS_moddr <- dredge(nw_curr_medBS_mod)
-# nw_curr_medBS_modavg <- model.avg(nw_curr_medBS_moddr)
-# nw_curr_medBS_modavg_summ <- summarizeRelImportance(nw_curr_medBS_modavg)
-# nw_pnat_medBS_moddr <- dredge(nw_pnat_medBS_mod)
-# nw_pnat_medBS_modavg <- model.avg(nw_pnat_medBS_moddr)
-# nw_pnat_medBS_modavg_summ <- summarizeRelImportance(nw_pnat_medBS_modavg)
-
 oww_curr_medBS_mod <- lm(logMedFS_scl ~ curr_logMedBS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_oww, na.action = "na.fail")
 oww_pnat_medBS_mod <- update(oww_curr_medBS_mod, ~.-curr_logMedBS_scl + pnat_logMedBS_scl)
 vif(oww_curr_medBS_mod); vif(oww_pnat_medBS_mod)
-
-oww_curr_medBS_moddr <- dredge2(oww_curr_medBS_mod)
-oww_curr_medBS_modavg_summ <- model.avg2(oww_curr_medBS_moddr)
-oww_pnat_medBS_moddr <- dredge2(oww_pnat_medBS_mod)
-oww_pnat_medBS_modavg_summ <- model.avg2(oww_pnat_medBS_moddr)
 
 owe_curr_medBS_mod <- lm(logMedFS_scl ~ curr_logMedBS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_owe, na.action = "na.fail")
 owe_pnat_medBS_mod <- update(owe_curr_medBS_mod, ~.-curr_logMedBS_scl + pnat_logMedBS_scl )
 vif(owe_curr_medBS_mod); vif(owe_pnat_medBS_mod)
 
-owe_curr_medBS_moddr <- dredge2(owe_curr_medBS_mod)
-owe_curr_medBS_modavg_summ <- model.avg2(owe_curr_medBS_moddr)
-owe_pnat_medBS_moddr <- dredge2(owe_pnat_medBS_mod)
-owe_pnat_medBS_modavg_summ <- model.avg2(owe_pnat_medBS_moddr)
+medBS_ols_modavglist <- lapply(list(glob_curr_medBS_mod, glob_pnat_medBS_mod, 
+                                    nw_curr_medBS_mod, nw_pnat_medBS_mod, 
+                                    oww_curr_medBS_mod, oww_pnat_medBS_mod,
+                                    owe_curr_medBS_mod, owe_pnat_medBS_mod),
+                               FUN = computeModelAvg )
+medBS_ols_modavgres <- do.call("rbind", medBS_ols_modavglist)
+medBS_ols_modavgres$Geographic.Scale <- rep(c("Global", "Neotropics", "Afrotropics", "Indotropics"), each = 12)
+medBS_ols_modavgres$Scenario <- rep(c("Current", "Present-natural"), each = 6)
+medBS_ols_modavgres$Method <- "OLS"
 
-# Export data
-glob_curr_medBS_modavg_summ$GeographicScale <- "Global"
-glob_pnat_medBS_modavg_summ$GeographicScale <- "Global"
-glob_curr_medBS_modavg_summ$Scenario <- "Current"
-glob_pnat_medBS_modavg_summ$Scenario <- "Present-natural"
+write.csv(roundNumbers(medBS_ols_modavgres), file.path(res.dir, "medBS_ols_modavg.csv"))
 
-nw_curr_medBS_modavg_summ$GeographicScale <- "Neotropics"
-nw_pnat_medBS_modavg_summ$GeographicScale <- "Neotropics"
-nw_curr_medBS_modavg_summ$Scenario <- "Current"
-nw_pnat_medBS_modavg_summ$Scenario <- "Present-natural"
+## OLS - Median body size (Cade 2015)
+medBS_ols_cade_modavglist <- lapply(list(glob_curr_medBS_mod, glob_pnat_medBS_mod, 
+                                         nw_curr_medBS_mod, nw_pnat_medBS_mod, 
+                                         oww_curr_medBS_mod, oww_pnat_medBS_mod,
+                                         owe_curr_medBS_mod, owe_pnat_medBS_mod),
+                                    FUN = computeModelAvg2)
 
-oww_curr_medBS_modavg_summ$GeographicScale <- "Afrotropics"
-oww_pnat_medBS_modavg_summ$GeographicScale <- "Afrotropics"
-oww_curr_medBS_modavg_summ$Scenario <- "Current"
-oww_pnat_medBS_modavg_summ$Scenario <- "Present-natural"
+medBS_ols_cade_modavgres <- do.call("rbind", medBS_ols_cade_modavglist)
+medBS_ols_cade_modavgres$Geographic.Scale <- rep(c("Global", "Neotropics", "Afrotropics", "Indotropics"), each = 12)
+medBS_ols_cade_modavgres$Scenario <- rep(c("Current", "Present-natural"), each = 6)
+medBS_ols_cade_modavgres$Method <- "OLS"
 
-owe_curr_medBS_modavg_summ$GeographicScale <- "Indotropics"
-owe_pnat_medBS_modavg_summ$GeographicScale <- "Indotropics"
-owe_curr_medBS_modavg_summ$Scenario <- "Current"
-owe_pnat_medBS_modavg_summ$Scenario <- "Present-natural"
-
-medBS_modavg_res <- Reduce("rbind", list(glob_curr_medBS_modavg_summ,
-                                         glob_pnat_medBS_modavg_summ,
-                                         nw_curr_medBS_modavg_summ,
-                                         nw_pnat_medBS_modavg_summ,
-                                         oww_curr_medBS_modavg_summ,
-                                         oww_pnat_medBS_modavg_summ,
-                                         owe_curr_medBS_modavg_summ,
-                                         owe_pnat_medBS_modavg_summ))
-write.csv(medBS_modavg_res, file.path(res.dir, "medBS_modavg_res.csv"), row.names = FALSE)
+write.csv(roundNumbers(medBS_ols_cade_modavgres), file.path(res.dir, "medBS_ols_cade_modavg.csv"))
 
 ## OLS - Maximum body size ============
 glob_curr_maxBS_mod <- lm(logMax95FS_scl ~ curr_logMax95BS_scl + globalPC1_scl + globalPC2_scl + globalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data =tdwg_final_glob, na.action = "na.fail")
 glob_pnat_maxBS_mod <- update(glob_curr_maxBS_mod, ~.- curr_logMax95BS_scl + pnat_logMax95BS_scl)
 vif(glob_curr_maxBS_mod); vif(glob_pnat_maxBS_mod)
 
-glob_curr_maxBS_moddr <- dredge2(glob_curr_maxBS_mod)
-glob_curr_maxBS_modavg_summ <- model.avg2(glob_curr_maxBS_moddr)
-glob_pnat_maxBS_moddr <- dredge2(glob_pnat_maxBS_mod)
-glob_pnat_maxBS_modavg_summ <- model.avg2(glob_pnat_maxBS_moddr)
-
 nw_curr_maxBS_mod <- lm(logMax95FS_scl ~ curr_logMax95BS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_nw, na.action = "na.fail")
 nw_pnat_maxBS_mod <- update(nw_curr_maxBS_mod, ~.- curr_logMax95BS_scl + pnat_logMax95BS_scl)
 vif(nw_curr_maxBS_mod); vif(nw_pnat_maxBS_mod)
-
-nw_curr_maxBS_moddr <- dredge2(nw_curr_maxBS_mod)
-nw_curr_maxBS_modavg_summ <- model.avg2(nw_curr_maxBS_moddr)
-nw_pnat_maxBS_moddr <- dredge2(nw_pnat_maxBS_mod)
-nw_pnat_maxBS_modavg_summ <- model.avg2(nw_pnat_maxBS_moddr)
 
 oww_curr_maxBS_mod <- lm(logMax95FS_scl ~ curr_logMax95BS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_oww, na.action = "na.fail")
 oww_pnat_maxBS_mod <- update(oww_curr_maxBS_mod, ~.-curr_logMax95BS_scl + pnat_logMax95BS_scl)
 vif(oww_curr_maxBS_mod); vif(oww_pnat_maxBS_mod)
 
-oww_curr_maxBS_moddr <- dredge2(oww_curr_maxBS_mod)
-oww_curr_maxBS_modavg_summ <- model.avg2(oww_curr_maxBS_moddr)
-oww_pnat_maxBS_moddr <- dredge2(oww_pnat_maxBS_mod)
-oww_pnat_maxBS_modavg_summ <- model.avg2(oww_pnat_maxBS_moddr)
-
 owe_curr_maxBS_mod <- lm(logMax95FS ~ curr_logMax95BS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_owe, na.action = "na.fail")
 owe_pnat_maxBS_mod <- update(owe_curr_maxBS_mod, ~.-curr_logMax95BS_scl + pnat_logMax95BS_scl)
 vif(owe_curr_maxBS_mod); vif(owe_pnat_maxBS_mod)
 
-owe_curr_maxBS_moddr <- dredge2(owe_curr_maxBS_mod)
-owe_curr_maxBS_modavg_summ <- model.avg2(owe_curr_maxBS_moddr)
-owe_pnat_maxBS_moddr <- dredge2(owe_pnat_maxBS_mod)
-owe_pnat_maxBS_modavg_summ <- model.avg2(owe_pnat_maxBS_moddr)
+maxBS_ols_modavglist <- lapply(list(glob_curr_maxBS_mod, glob_pnat_maxBS_mod, 
+                                    nw_curr_maxBS_mod, nw_pnat_maxBS_mod, 
+                                    oww_curr_maxBS_mod, oww_pnat_maxBS_mod,
+                                    owe_curr_maxBS_mod, owe_pnat_maxBS_mod),
+                               FUN = computeModelAvg )
+maxBS_ols_modavgres <- do.call("rbind", maxBS_ols_modavglist)
+maxBS_ols_modavgres$Geographic.Scale <- rep(c("Global", "Neotropics", "Afrotropics", "Indotropics"), each = 12)
+maxBS_ols_modavgres$Scenario <- rep(c("Current", "Present-natural"), each = 6)
+maxBS_ols_modavgres$Method <- "OLS"
 
-# Export data
-glob_curr_maxBS_modavg_summ$GeographicScale <- "Global"
-glob_pnat_maxBS_modavg_summ$GeographicScale <- "Global"
-glob_curr_maxBS_modavg_summ$Scenario <- "Current"
-glob_pnat_maxBS_modavg_summ$Scenario <- "Present-natural"
+write.csv(roundNumbers(maxBS_ols_modavgres), file.path(res.dir, "maxBS_ols_modavg.csv"))
 
-nw_curr_maxBS_modavg_summ$GeographicScale <- "Neotropics"
-nw_pnat_maxBS_modavg_summ$GeographicScale <- "Neotropics"
-nw_curr_maxBS_modavg_summ$Scenario <- "Current"
-nw_pnat_maxBS_modavg_summ$Scenario <- "Present-natural"
-
-oww_curr_maxBS_modavg_summ$GeographicScale <- "Afrotropics"
-oww_pnat_maxBS_modavg_summ$GeographicScale <- "Afrotropics"
-oww_curr_maxBS_modavg_summ$Scenario <- "Current"
-oww_pnat_maxBS_modavg_summ$Scenario <- "Present-natural"
-
-owe_curr_maxBS_modavg_summ$GeographicScale <- "Indotropics"
-owe_pnat_maxBS_modavg_summ$GeographicScale <- "Indotropics"
-owe_curr_maxBS_modavg_summ$Scenario <- "Current"
-owe_pnat_maxBS_modavg_summ$Scenario <- "Present-natural"
-
-maxBS_modavg_res <- Reduce("rbind", list(glob_curr_maxBS_modavg_summ,
-                                         glob_pnat_maxBS_modavg_summ,
-                                         nw_curr_maxBS_modavg_summ,
-                                         nw_pnat_maxBS_modavg_summ,
-                                         oww_curr_maxBS_modavg_summ,
-                                         oww_pnat_maxBS_modavg_summ,
-                                         owe_curr_maxBS_modavg_summ,
-                                         owe_pnat_maxBS_modavg_summ))
-write.csv(maxBS_modavg_res, file.path(res.dir, "maxBS_modavg_res.csv"), row.names = FALSE)
-
-## OLS - Dispersion in body size ============
-tdwg_final_glob_disp <- subset(tdwg_final_glob, palm_nSp > 1 & curr_nSp > 1 & presNat_nSp > 1)
-tdwg_final_nw_disp <- subset(tdwg_final_glob_disp, REALM_LONG == "Neotropics")
-tdwg_final_oww_disp <- subset(tdwg_final_glob_disp, REALM_LONG == "Afrotropics")
-tdwg_final_owe_disp <- subset(tdwg_final_glob_disp, REALM_LONG %in% c("Australasia","IndoMalay"))
-
-glob_curr_dispBS_mod <- lm(dispFruitLengthFilled_scl ~ curr_dispBodySize_scl + globalPC1_scl + globalPC2_scl + globalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_glob_disp, na.action = "na.fail")
-glob_pnat_dispBS_mod <- update(glob_curr_dispBS_mod, ~.- curr_dispBodySize_scl + presNat_dispBodySize_scl)
-vif(glob_curr_dispBS_mod); vif(glob_pnat_dispBS_mod)
-
-glob_curr_dispBS_moddr <- dredge2(glob_curr_dispBS_mod)
-glob_curr_dispBS_modavg_summ <- model.avg2(glob_curr_dispBS_moddr)
-
-glob_pnat_dispBS_moddr <- dredge2(glob_pnat_dispBS_mod)
-glob_pnat_dispBS_modavg_summ <- model.avg2(glob_pnat_dispBS_moddr)
-
-nw_curr_dispBS_mod <- lm(dispFruitLengthFilled_scl ~ curr_dispBodySize_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data =tdwg_final_nw_disp, na.action = "na.fail")
-nw_pnat_dispBS_mod <- update(nw_curr_dispBS_mod,~.- curr_dispBodySize_scl + presNat_dispBodySize_scl)
-vif(nw_curr_dispBS_mod); vif(nw_pnat_dispBS_mod)
-
-nw_curr_dispBS_moddr <- dredge2(nw_curr_dispBS_mod)
-nw_curr_dispBS_modavg_summ <- model.avg2(nw_curr_dispBS_moddr)
-nw_pnat_dispBS_moddr <- dredge2(nw_pnat_dispBS_mod)
-nw_pnat_dispBS_modavg_summ <- model.avg2(nw_pnat_dispBS_moddr)
-
-oww_curr_dispBS_mod <- lm(dispFruitLengthFilled ~ curr_dispBodySize_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_oww_disp, na.action = "na.fail")
-oww_pnat_dispBS_mod <- update(oww_curr_dispBS_mod,~.- curr_dispBodySize_scl + presNat_dispBodySize_scl)
-vif(oww_curr_dispBS_mod); vif(oww_pnat_dispBS_mod)
-
-oww_curr_dispBS_moddr <- dredge2(oww_curr_dispBS_mod)
-oww_curr_dispBS_modavg_summ <- model.avg2(oww_curr_dispBS_moddr)
-oww_pnat_dispBS_moddr <- dredge2(oww_pnat_dispBS_mod)
-oww_pnat_dispBS_modavg_summ <- model.avg2(oww_pnat_dispBS_moddr)
-
-owe_curr_dispBS_mod <- lm(dispFruitLengthFilled ~ curr_dispBodySize_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data =tdwg_final_owe_disp, na.action = "na.fail")
-owe_pnat_dispBS_mod <- update(owe_curr_dispBS_mod,~.- curr_dispBodySize_scl + presNat_dispBodySize_scl)
-vif(owe_curr_dispBS_mod); vif(owe_pnat_dispBS_mod)
-
-owe_curr_dispBS_moddr <- dredge2(owe_curr_dispBS_mod)
-owe_curr_dispBS_modavg_summ <- model.avg2(owe_curr_dispBS_moddr)
-owe_pnat_dispBS_moddr <- dredge2(owe_pnat_dispBS_mod)
-owe_pnat_dispBS_modavg_summ <- model.avg2(owe_pnat_dispBS_moddr)
-
-# Export data
-glob_curr_dispBS_modavg_summ$GeographicScale <- "Global"
-glob_pnat_dispBS_modavg_summ$GeographicScale <- "Global"
-glob_curr_dispBS_modavg_summ$Scenario <- "Current"
-glob_pnat_dispBS_modavg_summ$Scenario <- "Present-natural"
-
-nw_curr_dispBS_modavg_summ$GeographicScale <- "Neotropics"
-nw_pnat_dispBS_modavg_summ$GeographicScale <- "Neotropics"
-nw_curr_dispBS_modavg_summ$Scenario <- "Current"
-nw_pnat_dispBS_modavg_summ$Scenario <- "Present-natural"
-
-oww_curr_dispBS_modavg_summ$GeographicScale <- "Afrotropics"
-oww_pnat_dispBS_modavg_summ$GeographicScale <- "Afrotropics"
-oww_curr_dispBS_modavg_summ$Scenario <- "Current"
-oww_pnat_dispBS_modavg_summ$Scenario <- "Present-natural"
-
-owe_curr_dispBS_modavg_summ$GeographicScale <- "Indotropics"
-owe_pnat_dispBS_modavg_summ$GeographicScale <- "Indotropics"
-owe_curr_dispBS_modavg_summ$Scenario <- "Current"
-owe_pnat_dispBS_modavg_summ$Scenario <- "Present-natural"
-
-dispBS_modavg_res <- Reduce("rbind", list(glob_curr_dispBS_modavg_summ,
-                                         glob_pnat_dispBS_modavg_summ,
-                                         nw_curr_dispBS_modavg_summ,
-                                         nw_pnat_dispBS_modavg_summ,
-                                         oww_curr_dispBS_modavg_summ,
-                                         oww_pnat_dispBS_modavg_summ,
-                                         owe_curr_dispBS_modavg_summ,
-                                         owe_pnat_dispBS_modavg_summ))
-write.csv(dispBS_modavg_res, file.path(res.dir, "dispBS_modavg_res.csv"), row.names = FALSE)
-
+## OLS - Maximum body size (Cade) ============
+maxBS_ols_cade_modavglist <- lapply(list(glob_curr_maxBS_mod, glob_pnat_maxBS_mod, 
+                                         nw_curr_maxBS_mod, nw_pnat_maxBS_mod, 
+                                         oww_curr_maxBS_mod, oww_pnat_maxBS_mod,
+                                         owe_curr_maxBS_mod, owe_pnat_maxBS_mod),
+                                    FUN = computeModelAvg2 )
+maxBS_ols_cade_modavgres <- do.call("rbind", maxBS_ols_cade_modavglist)
+maxBS_ols_cade_modavgres$Geographic.Scale <- rep(c("Global", "Neotropics", "Afrotropics", "Indotropics"), each = 12)
+maxBS_ols_cade_modavgres$Scenario <- rep(c("Current", "Present-natural"), each = 6)
+maxBS_ols_cade_modavgres$Method <- "OLS"
+write.csv(roundNumbers(maxBS_ols_cade_modavgres), file.path(res.dir, "maxBS_ols_cade_modavg.csv"))
 
 ## Spatial autoregressive modelling ========
 glob_coords <- as.matrix(tdwg_final_glob[c("LONG","LAT")])
@@ -399,7 +262,7 @@ medBS_sarknn_modelavgdf$Geographic.scale <- "Global"
 medBS_sarknn_modelavgdf$Method <- "Nearest neighbour"
 medBS_sarknn_modelavgdf$Weighting <- rep(c("No weighting", "Distance-weighting") , each = 12 )
 medBS_sarknn_modelavgdf$Scenario <- rep(c("Current", "Present-Natural") , each = 6 )
-write.csv(knearsar_modelavgdf, file.path(res.dir, "medBS_sarknn_medBS_modavg.csv"),
+write.csv(knearsar_modelavgdf, file.path(res.dir, "medBS_sarknn_modavg.csv"),
           row.names = FALSE)
 
 maxBS_sarknn_modelavglist <- lapply(list(glob_curr_maxBS_sar_knear_nw_mod,
@@ -497,7 +360,5 @@ median(tdwg_final_glob$medianFruitLengthFilled)
 plot(log(curr_medianBodySize) ~ log(futr_medianBodySize), data = tdwg_final_glob)
 abline(0,1)
 meanLossInMedSize <- with((curr_logMedBS - log(futr_medianBodySize)), data = tdwg_final_glob)
-
-
 
 # Mean changes; largest fruits are going to be disproportionately affected so degree of change is likely to be much larger than suggested by the mean values
