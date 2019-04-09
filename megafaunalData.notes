@@ -217,6 +217,11 @@ Thoughts:
 	- Non-adjacent pairs will get a value of zero, another common approach is to set adjacencies wij to 
 	- https://rpubs.com/chrisbrunsdon/114718
 
+< 5 Apr >
+- Digitzed IUCN statuses for all Madagascan palms (Rakotoarinivo et al 2014 PLoS ONE)
+	- Palms that are more endangered do not have larger fruit sizes
+	- Palms with larger fruits do not statistically have larger ranges (EOO or AOO)
+	- Analysis was not controlled for phylogeny unfortunately
 
 
 

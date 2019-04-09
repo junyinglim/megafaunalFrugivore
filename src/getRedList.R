@@ -31,3 +31,47 @@ palm_redlist <- ddply(.data = palm_trait,
  
 
 
+# Madagascar palms ========================
+palm_trait <- read.csv(file.path(data.dir,"PalmTraits_10.csv"), na.strings = "")
+palm_trait$RedList2012 <- factor(palm_trait$RedList2012, levels = c("LC", "NT", "VU", "EN", "CR", "DD"))
+palm_trait$RedList2012_categ <- factor(palm_trait$RedList2012,
+                                       levels = c("LC", "NT", "VU", "EN", "CR", "DD"),
+                                       labels = c(1,1,2,2,2,0))
+
+madagascar_FS_IUCN <- ggplot(data = subset(palm_trait, !is.na(RedList2012))) +
+  geom_point(aes(y = log(AverageFruitLength_cm), x = RedList2012))
+
+madagascar_EOO <- ggplot(aes(y = log10(AverageFruitLength_cm),
+                             x = log10(EOO)),
+                         data = subset(palm_trait, !is.na(EOO))) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  geom_text_repel(aes(label = paste0(substr(accGenus,1,1), ". ", accSpecies)),
+                  size = 2) +
+  labs(x = "Log10 extent of occurrence (km^2)")
+
+
+madagascar_AOO <- ggplot(aes(y = log10(AverageFruitLength_cm),
+                             x = log10(AOO)),
+                         data = subset(palm_trait, !is.na(AOO))) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  geom_text_repel(aes(label = paste0(substr(accGenus,1,1), ". ", accSpecies)),
+                  size = 2) +
+  labs(x = "Log10 area of occupancy (km^2)")
+
+madagascar_AOO_IUCN <- ggplot(aes(x = RedList2012,
+                             y = log10(AOO)),
+                         data = subset(palm_trait, !is.na(AOO))) +
+  geom_point()
+
+madagascar_EOO_IUCN <- ggplot(aes(x = RedList2012,
+                                  y = log10(EOO)),
+                              data = subset(palm_trait, !is.na(AOO))) +
+  geom_point()
+  
+ggsave(file.path(fig.dir, "madagascar_IUCN.pdf"), madagascar_FS_IUCN)
+ggsave(file.path(fig.dir, "madagascar_AOO.pdf"), madagascar_AOO)
+ggsave(file.path(fig.dir, "madagascar_EOO.pdf"), madagascar_EOO)
+ggsave(file.path(fig.dir, "madagascar_AOO_IUCN.pdf"), madagascar_AOO_IUCN)
+ggsave(file.path(fig.dir, "madagascar_EOO_IUCN.pdf"), madagascar_EOO_IUCN)
