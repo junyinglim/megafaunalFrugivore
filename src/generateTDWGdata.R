@@ -17,6 +17,7 @@ library(ggplot2); library(sp); library(rgdal); library(viridis); library(gridExt
 library(car); library(MuMIn)
 library(readxl)
 library(picante)
+source(file.path(src.dir, "ggmodavg.R"))
 
 ## Import palm dataset ========================
 palm_occ <- read.csv(file.path(data.dir, "palms_in_tdwg3.csv"))
@@ -160,43 +161,6 @@ names(tdwg_meanFruit)[names(tdwg_meanFruit) == "Area_code_L3"] <- "LEVEL_3_CO"
 
 write.csv(subset(palm_occ_trait, Area_code_L3 %in% mammal_palm_intersect), file = file.path(res.dir, "tdwg_palm_occ_trait.csv"), row.names = F)
 
-# # Calculate z-scores for fruit size range, regional source pools
-# palm_occ_trait2 <- merge(y = subset(palm_occ_trait, Area_code_L3 %in% mammal_palm_intersect),
-#                          x = tdwg_env[c("LEVEL_3_CO", "THREEREALM", "REALM_LONG")],
-#                          by.y = "Area_code_L3", by.x = "LEVEL_3_CO")
-# palm_occ_trait2 <- subset(palm_occ_trait2, REALM_LONG %in% c("Neotropics", "Afrotropics", "IndoMalay", "Australasia"))
-# 
-# ses_range <- function(x, prefix, value.var){
-#   adj_mat <- acast(LEVEL_3_CO ~ SpecName, value.var = value.var, data = x, fill = 0) # only contains species from subset, country (rows), species (columns)
-#   obs <- apply(adj_mat, MARGIN = 1, FUN = function(x){ diff(range(log(x[x > 0])))})
-#   # apply(adj_mat, MARGIN = 1, FUN = function(x){ sum(x > 0)}) # checking to see how many species in each country
-#   trait <- apply(adj_mat, MARGIN = 2, FUN = function(x) unique(x)[unique(x)> 0]) # zeros are not real values and all fruit lengths are non-zero
-#   iterations = 1000
-#   rand <- matrix(rep(NA, iterations * nrow(adj_mat)), nrow = nrow(adj_mat))
-#   for(i in 1:iterations){
-#     # print(i)
-#     randMat <- randomizeMatrix( decostand(adj_mat, "pa"), null.model = "richness") 
-#     # multiplies occurrences with trait values
-#     randMat_trait <- mapply("*", as.data.frame(randMat), unlist(trait)) 
-#     rand[,i] <- apply(randMat_trait, MARGIN = 1, FUN = function(x) {diff(range( log(x[x>0]) ) )})
-#   }
-#   randMean <- apply(rand, MARGIN = 1, FUN = mean)
-#   randSd <- apply(rand, MARGIN = 1, FUN = sd)
-#   z <- (obs-randMean) / randSd
-#   res <- data.frame( z, "LEVEL_3_CO" = names(z))
-#   names(res)[1] <- paste0(prefix, "range_z")
-#   return(res)
-# }
-# 
-# palm_range_z_realm <- ddply(.data = palm_occ_trait2,
-#                             .variables = .(THREEREALM),
-#                             .fun = ses_range,
-#                             prefix = "fruit_realm", value.var = "AverageFruitLength_cm_filled")
-# 
-# palm_range_z_global <- ses_range(palm_occ_trait2, prefix = "fruit_global", value.var = "AverageFruitLength_cm_filled")
-# palm_range_z_res <- merge(palm_range_z_realm, palm_range_z_global, by = "LEVEL_3_CO")
-# tdwg_meanFruit <- merge(tdwg_meanFruit, palm_range_z_res, by = "LEVEL_3_CO", all.x = TRUE)
-
 # Calculate mean and median body sizes of present natural mammal assemblages
 mammal_presnat_occ_trait <- merge(mammal_presnat_comb_occ, phylacine_trait, by.x = "SpecName", by.y = "Binomial.1.2", all.x = TRUE)
 tdwg_presnat_meanBodySize <-
@@ -215,16 +179,7 @@ tdwg_presnat_meanBodySize <-
         presNat_nSp = length(unique(SpecName)),
         presNat_meso_nSp = length(unique(SpecName[Mass.g > 10000])),
         presNat_mega_nSp = length(unique(SpecName[Mass.g > 44000])))
-# mammal_presnat_occ_trait2 <- merge(x = subset(mammal_presnat_occ_trait, LEVEL_3_CO %in% mammal_palm_intersect), y = tdwg_env[c("LEVEL_3_CO", "REALM_LONG", "THREEREALM")], by = "LEVEL_3_CO")
-# mammal_presnat_occ_trait2 <- subset(mammal_presnat_occ_trait2, REALM_LONG %in% c("Neotropics", "Afrotropics", "IndoMalay", "Australasia"))
-# 
-# mam_range_z_realm <- ddply(.data = mammal_presnat_occ_trait2,
-#                            .variables = .(THREEREALM),
-#                            .fun = ses_range,
-#                            prefix = "pnat_realm", value.var = "Mass.g", .progress = "text")
-# mam_range_z_global <- ses_range(mammal_presnat_occ_trait2, prefix = "pnat_global", value.var = "Mass.g")
-# mam_range_z_res <- merge(mam_range_z_realm, mam_range_z_global, by = "LEVEL_3_CO")
-# tdwg_presnat_meanBodySize <- merge(tdwg_presnat_meanBodySize, mam_range_z_res, by = "LEVEL_3_CO", all.x = TRUE)
+write.csv(mammal_presnat_occ_trait, file.path(res.dir, "mammal_curr_occ_trait.csv"), row.names = F)
 
 # Current the mean and median body sizes of current mammal assemblages
 mammal_curr_occ_trait <- merge(mammal_curr_comb_occ, phylacine_trait, by.x = "SpecName", by.y = "Binomial.1.2", all.x = TRUE)
@@ -246,17 +201,7 @@ tdwg_curr_meanBodySize <-
         curr_mega_nSp = length(unique(SpecName[Mass.g > 44000])),
         futr_medianBodySize = median(Mass.g[!IUCN.Status.1.2 %in% c("CR","EW","EN","EX")], na.rm = T),
         futr_maxBodySize = quantile(Mass.g[!IUCN.Status.1.2 %in% c("CR", "EW", "EN", "EX")], probs = 0.95, na.rm = T))
-
-# mammal_curr_occ_trait2 <- merge(x = subset(mammal_curr_occ_trait, LEVEL_3_CO %in% mammal_palm_intersect), y = tdwg_env[c("LEVEL_3_CO", "REALM_LONG", "THREEREALM")], by = "LEVEL_3_CO")
-# mammal_curr_occ_trait2 <- subset(mammal_curr_occ_trait2, REALM_LONG %in% c("Neotropics", "Afrotropics", "IndoMalay", "Australasia"))
-# 
-# mam_curr_range_z_realm <- ddply(.data = mammal_curr_occ_trait2,
-#                            .variables = .(THREEREALM),
-#                            .fun = ses_range,
-#                            prefix = "curr_realm", value.var = "Mass.g", .progress = "text")
-# mam_curr_range_z_global <- ses_range(mammal_curr_occ_trait2, prefix = "curr_global", value.var = "Mass.g")
-# mam_curr_range_z_res <- merge(mam_curr_range_z_realm, mam_curr_range_z_global, by = "LEVEL_3_CO")
-# tdwg_curr_meanBodySize <- merge(tdwg_curr_meanBodySize, mam_curr_range_z_res, by = "LEVEL_3_CO", all.x = TRUE)
+write.csv(mammal_curr_occ_trait, file.path(res.dir, "mammal_curr_occ_trait.csv"), row.names = F)
 
 # NOTE: Pteropus niger (Mascarene fruit bat) is found on both Mauritius and Reunion but is only on Mauritius for the current dataset, as a result, there are no mammals on Reunion in the current case (Pteropus) but 2 in the present-natural dataset
 
