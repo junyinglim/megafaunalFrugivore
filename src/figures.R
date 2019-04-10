@@ -460,3 +460,98 @@ medBS_sarmodavg_plot <- ggplot(data = sar_medBS_modavg_res) +
   labs(title = "Median body size", y = "Standardized\nmodel averaged coefficients", x= "Variables") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ggsave(medBS_sarmodavg_plot, filename = file.path(fig.dir, "sar_medBS_modavg.pdf"), height = 8, width = 14)
+
+
+## Plotting partial residuals
+maxBS_pnat_presid <- readRDS(file.path(res.dir, "maxBS_pnat_presid.rds"))
+maxBS_curr_presid <- readRDS(file.path(res.dir, "maxBS_curr_presid.rds"))
+medBS_pnat_presid <- readRDS(file.path(res.dir, "medBS_pnat_presid.rds"))
+medBS_curr_presid <- readRDS(file.path(res.dir, "medBS_curr_presid.rds"))
+
+library(wesanderson)
+curr_col <- wes_palette("Cavalcanti1",n = 4)[1]
+pnat_col <- wes_palette("Cavalcanti1",n = 4)[2]
+presid_theme <- theme(panel.background = element_blank(), panel.border = element_rect(fill = "transparent"))
+
+medBS_curr_presid_p <- ggplot(data = medBS_curr_presid$points) + geom_point(aes(y = presid, x = curr_logMedBS_scl),shape= 21, color = curr_col) + geom_abline(slope = medBS_curr_presid$slope, intercept = medBS_curr_presid$intercept, color = curr_col) + labs(x = "Current log median body size\n(standard deviations)", y = "Log median fruit size \n(partial residuals)") + presid_theme
+
+medBS_pnat_presid_p <- ggplot(data = medBS_pnat_presid$points) + geom_point(aes(y = presid, x = pnat_logMedBS_scl),shape= 21, color = pnat_col) + geom_abline(slope = medBS_pnat_presid$slope, intercept = medBS_pnat_presid$intercept, color = pnat_col) + labs(x = "Present-natural log median body size\n(standard deviations)", y = "Log median fruit size \n(partial residuals)") + presid_theme
+
+maxBS_curr_presid_p <- ggplot(data = maxBS_curr_presid$points) + geom_point(aes(y = presid, x = curr_logMax95BS_scl),shape= 21, color = curr_col) + geom_abline(slope = maxBS_curr_presid$slope, intercept = maxBS_curr_presid$intercept, color = curr_col) + labs(x = "Current log maximum body size\n(standard deviations)", y = "Log maximum fruit size \n(partial residuals)") + presid_theme
+
+maxBS_pnat_presid_p <- ggplot(data = maxBS_pnat_presid$points) + geom_point(aes(y = presid, x = pnat_logMax95BS_scl),shape= 21, color = pnat_col) + geom_abline(slope = maxBS_pnat_presid$slope, intercept = maxBS_pnat_presid$intercept, color = pnat_col) + labs(x = "Present-natural log maximum body size\n(standard deviations)", y = "Log maximum fruit size \n(partial residuals)") + presid_theme
+
+presid_comb_p <- plot_grid(medBS_curr_presid_p, medBS_pnat_presid_p, maxBS_curr_presid_p, maxBS_pnat_presid_p, nrow = 2, labels = "AUTO", rel_widths = c(1,1))
+ggsave(file.path(fig.dir, "presid_comb.pdf"), presid_comb_p, width = 9, height = 8)
+
+## Plotting partial residuals (alternate combined plot)
+names(maxBS_curr_presid$points) <- c("presid", "x")
+names(maxBS_pnat_presid$points) <- c("presid", "x")
+maxBS_comb_presid <- rbind(maxBS_curr_presid$points, maxBS_pnat_presid$points)
+maxBS_comb_presid$Scenario <- rep(c("Current", "Present-natural"), each = 129)
+
+comb_theme <- theme(legend.position = c(0.05,0.9),
+      legend.background = element_rect(color = "grey90"),
+      panel.background = element_blank(),
+      legend.box.background = element_rect(fill = "white"),
+      legend.title = element_blank(),
+      panel.border = element_rect(fill = NA, color = "grey90"))
+
+max_comb_presid_p <- ggplot(data= maxBS_comb_presid) +
+  geom_point(aes(y = presid, x = x, color = Scenario), shape = 21)+ labs(x = "Log maximum body size\n(standard deviations)", y = "Log maximum fruit size \n(partial residuals)") + 
+  geom_abline(slope = maxBS_curr_presid$slope, intercept = maxBS_curr_presid$intercept, colour = curr_col) +
+  geom_abline(slope = maxBS_pnat_presid$slope, intercept = maxBS_pnat_presid$intercept, colour = pnat_col) +
+  comb_theme +
+  scale_color_manual(values = c(curr_col, pnat_col))
+
+names(medBS_curr_presid$points) <- c("presid", "x")
+names(medBS_pnat_presid$points) <- c("presid", "x")
+medBS_comb_presid <- rbind(medBS_curr_presid$points, medBS_pnat_presid$points)
+medBS_comb_presid$Scenario <- rep(c("Current", "Present-natural"), each = 129)
+
+med_comb_presid_p <- ggplot(data= medBS_comb_presid) +
+  geom_point(aes(y = presid, x = x, color = Scenario), shape = 21) + labs(x = "Log median body size\n(standard deviations)", y = "Log median fruit size \n(partial residuals)") + 
+  geom_abline(slope = medBS_curr_presid$slope, intercept = medBS_curr_presid$intercept, colour = curr_col) +
+  geom_abline(slope = medBS_pnat_presid$slope, intercept = medBS_pnat_presid$intercept, colour = pnat_col) +
+  comb_theme +
+  scale_color_manual(values = c(curr_col, pnat_col))
+
+presid_comb_p2 <- plot_grid(med_comb_presid_p, max_comb_presid_p, labels = "AUTO", nrow = 1)
+ggsave(file.path(fig.dir, "presid_comb2.pdf"), presid_comb_p2, width = 10, height = 5)
+
+## Histograms of changes in frugivore mammal body size
+fruitsizechange <- read.csv(file.path(res.dir, "tdwgFruitSizeChange.csv")) # units are in cm since that is the original fruit length units
+medFSchange_hist <- ggplot(data = fruitsizechange) + geom_histogram(aes(changeInMedFruitSize), bins = 15) +
+  labs(x = "Projected difference in\nmedian fruit length(cm)", y = "Count") +
+  geom_vline(xintercept = mean(fruitsizechange$changeInMedFruitSize, na.rm = T), size = 2, linetype = "dashed", color = "coral")
+
+maxFSchange_hist <- ggplot(data = fruitsizechange) + geom_histogram(aes(changeInMaxFruitSize), bins = 15) +
+  labs(x = "Projected difference in\nmaximum fruit length (cm)", y = "Count") +
+  geom_vline(xintercept = mean(fruitsizechange$changeInMaxFruitSize, na.rm = T), size = 2, linetype = "dashed", color = wes_palette("Cavalcanti1", 5)[4])
+
+FSchange_histcomb <- plot_grid(medFSchange_hist, maxFSchange_hist, labels = "AUTO", nrow = 2)
+ggsave(file.path(fig.dir, "FSchange_histcomb.pdf"), FSchange_histcomb, width = 5, height = 8)
+
+## Geographic distribution of change in frugivore mammal body size
+library(scales)
+zCuts <- quantile(fruitsizechange$changeInMedFruitSize, probs = seq(0,1,length.out = 8), na.rm = TRUE)
+
+fruitsizechange$medFSchange_categ <-  cut(fruitsizechange$changeInMedFruitSize, breaks = zCuts, include.lowest = T, ordered_result = T)
+FSchangemap <- ggplot() +
+  geom_polygon(aes(y = lat, x = long, group = group), data = tdwg_shp2) +
+  geom_point(aes(y = LAT, x= LONG, size = changeInMedFruitSize, color = medFSchange_categ), data = fruitsizechange) + 
+  map_theme +
+  theme(legend.box = 'vertical') +
+  scale_color_manual(values = brewer.pal(9,"RdBu")[c(9,8,7,6,4,3,2,1)])
+
+ggsave(file.path(fig.dir, "FSchangemap.pdf"), FSchangemap, width = 9, height = 6)
+
+
+range(fruitsizechange$changeInMedFruitSize, na.rm = T)
+levels(fruitsizechange$medFSchange_categ)
+library(RColorBrewer)
+fruitsizechange$changeInMedFruitSize[109]
+subset(fruitsizechange, THREEREALM == "NewWorld" & changeInMedFruitSize > 0.2)
+
+mammal_curr_occ_trait <- read.csv(file.path(res.dir, "mammal_curr_occ_trait.csv"))
+subset(mammal_curr_occ_trait, LEVEL_3_CO == "SWC")

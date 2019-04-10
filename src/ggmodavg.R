@@ -24,7 +24,7 @@ summarizeLM <- function(mod, scale = "global", scenario = "current"){
 
 
 
-summarizeRelImportance <- function(x, returnIntercept = FALSE){
+summarizeRelImportance <- function(x, returnIntercept = T){
   # Plots relative
   # x = "averaging" class from MuMIn package
   summaryStats <- data.frame(coefficient = colnames(x$coefficients),
@@ -40,7 +40,8 @@ summarizeRelImportance <- function(x, returnIntercept = FALSE){
   if(!returnIntercept){
     summaryStats <- summaryStats[-1,]    
   }
-  summaryStats <- merge(summaryStats, relimportStats, by = "coefficient")
+  summaryStats <- merge(summaryStats, relimportStats, by = "coefficient", all = T)
+  rownames(summaryStats) <- summaryStats$coefficient
   return(summaryStats)
 }
 
@@ -151,6 +152,7 @@ model.avg2 <- function(model_list){
   # Calculates standardized model averaged coefficients
   # Reference: Cade, B.S. (2015) Model averaging and muddled multimodel inferences. Ecology, 96 (9), 2370 - 2382.
   # model_list <- full_moddr
+  
   predVars <- names(model_list$Models)
   
   avgStdCoef <- vector()
@@ -180,7 +182,6 @@ model.avg2 <- function(model_list){
     avgUnstdSE[i] <- sum(( (UnstdCoefs - avgUnstdCoef[i])^2 + (UnstdSEs)^2)^0.5 * (weights / weight_sum))
     
   }
-  
   
   data.frame("Variable" = predVars,
              "avgStdCoef" = avgStdCoef,
@@ -214,10 +215,10 @@ model.avg2 <- function(model_list){
 # qnorm(p = c(0.975, 0.025))
 
 
-computeModelAvg <- function(x){
+computeModelAvg <- function(x, ...){
   # Takes a full model and performs model averaging on it
   moddr <- dredge(x)
-  summarizeRelImportance(model.avg(moddr))
+  summarizeRelImportance(model.avg(moddr), ...)
 }
 
 computeModelAvg2 <- function(x){
