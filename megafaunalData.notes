@@ -145,10 +145,6 @@ Remove all the threatened species. Galetti, and
 
 < March 2019 >
 - Calculated new standardized coefficients following Cade 2015
-\begin{equation}
-
-\end{equation}
-
 
 - Started spatial regression models
 	- Generate neighbourhoods
@@ -230,6 +226,9 @@ However, because of the irregular spacing and size of geographic units in our st
 We focused on two main neighbourhood definitions. The first is based on k-nearest units, where the closest unit to each focal unit was considered a neighbour. Following Kissling et al 2012, we only allowed for one nearest neighbour. We then forced the neighbourhoods to be symmetrical. For example, the nearest neighbouring unit for islands may be a unit on the continent, but not necessarily vice versa. 2) We also used the sphere of influence to define neighbours. The sphere of influence for each focal unit is defined as a circle of radius equal to the focal unit's distance to its nearest neighbour. Where the sphere of influence of two units overlap, they are considered neighbours under this defintion. We feel that this is more appropriate than distance-based neighbourhood definitions as it takes into account the size and geometry of each unit in our study, whereas under a distance-based defintion that defines neighbours based on distances between centroids, larger units may have fewer neighbours for a given distance than a smaller unit.
 For spatial weighting, we used
 
+< 6 Apr >
+
+- SOI for realms
 
 
 
@@ -318,3 +317,12 @@ Svenning J-C, Borchsenius F, Bjorholm S, Balslev H. 2008a. High tropical net div
 
 
 
+
+
+Closely related species (genetic distance) against climatic mean difference (for shared OTUs do i take the mean?) Is this different for different orders?
+Calculate site vs global mean
+
+
+
+
+5th cerer 10th talk
