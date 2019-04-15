@@ -39,63 +39,28 @@ write.csv(subset(maxBS_ols_modavg2, (!coefficient == "Intercept")),
           file.path(res.dir, "maxBS_ols_modavg_clean.csv"), row.names = F)
 
 # SAR results
-maxBS_sarknn_modavg <- roundNumbers(read.csv(file.path(res.dir, "maxBS_sarknn_modavg.csv")))
-maxBS_sarknn_modavg$Geographic.scale <- factor(maxBS_sarknn_modavg$Geographic.scale, levels = geographic_levels)
-maxBS_sarknn_modavg$coefficient <- factor(maxBS_sarknn_modavg$coefficient,
-                                          levels = max_levels,
-                                          labels = max_labels)
-maxBS_sarknn_modavg2 <- with(maxBS_sarknn_modavg, maxBS_sarknn_modavg[order(Geographic.scale, Scenario, coefficient),])
-maxBS_sarknn_modavg2$ConfidenceInterval <- paste0("(", maxBS_sarknn_modavg2$lower2.5, ", ",
-                                                  maxBS_sarknn_modavg2$upper97.5, ")")
-write.csv(subset(maxBS_sarknn_modavg2, (!coefficient == "Intercept") & Weighting == "No weighting"),
-          file.path(res.dir, "maxBS_sarknn_nw_modavg_clean.csv"),
-          row.names = F)
-write.csv(subset(maxBS_sarknn_modavg2, (!coefficient == "Intercept") & Weighting == "Distance-weighting"),
-          file.path(res.dir, "maxBS_sarknn_dist_modavg_clean.csv"),
-          row.names = F)
+maxBS_sar_modavg <- roundNumbers(read.csv(file.path(res.dir, "maxBS_sar_modavg.csv")) )
+maxBS_sar_modavg <- subset(maxBS_sar_modavg, !coefficient %in% c("(Intercept)", "lambda"))
+maxBS_sar_modavg$Geographic.scale <- factor(maxBS_sar_modavg$Geographic.scale,
+                                            levels = geographic_levels)
+maxBS_sar_modavg$coefficient <- factor(maxBS_sar_modavg$coefficient,
+                                       levels = max_levels,
+                                       labels = max_labels)
+maxBS_sar_modavg2 <- with(maxBS_sar_modavg, maxBS_sar_modavg[order(Geographic.scale, Scenario, coefficient),])
+maxBS_sar_modavg2$ConfidenceInterval <- paste0("(", maxBS_sar_modavg2$lower2.5, ", ",
+                                               maxBS_sar_modavg2$upper97.5, ")")
+write.csv(maxBS_sar_modavg2,
+          file.path(res.dir, "maxBS_sar_modavg_clean.csv"), row.names = F)
 
-maxBS_sarsoi_modavg <- roundNumbers(read.csv(file.path(res.dir, "maxBS_sarsoi_modavg.csv")))
-maxBS_sarsoi_modavg$Geographic.scale <- factor(maxBS_sarsoi_modavg$Geographic.scale, levels = geographic_levels)
-maxBS_sarsoi_modavg$coefficient <- factor(maxBS_sarsoi_modavg$coefficient,
-                                          levels = max_levels,
-                                          labels = max_labels)
-maxBS_sarsoi_modavg2 <- with(maxBS_sarsoi_modavg, maxBS_sarsoi_modavg[order(Geographic.scale, Scenario, coefficient),])
-maxBS_sarsoi_modavg2$ConfidenceInterval <- paste0("(", maxBS_sarsoi_modavg2$lower2.5, ", ",
-                                                  maxBS_sarsoi_modavg2$upper97.5, ")")
-write.csv(subset(maxBS_sarsoi_modavg2, (!coefficient == "Intercept") & Weighting == "No weighting"),
-          file.path(res.dir, "maxBS_sarsoi_nw_modavg_clean.csv"),
-          row.names = F)
-write.csv(subset(maxBS_sarsoi_modavg2, (!coefficient == "Intercept") & Weighting == "Distance-weighting"),
-          file.path(res.dir, "maxBS_sarsoi_dist_modavg_clean.csv"),
-          row.names = F)
-
-medBS_sarknn_modavg <- roundNumbers(read.csv(file.path(res.dir, "medBS_sarknn_modavg.csv")))
-medBS_sarknn_modavg$Geographic.scale <- factor(medBS_sarknn_modavg$Geographic.scale, levels = geographic_levels)
-medBS_sarknn_modavg$coefficient <- factor(medBS_sarknn_modavg$coefficient,
-                                          levels = med_levels,
-                                          labels = med_labels)
-medBS_sarknn_modavg2 <- with(medBS_sarknn_modavg, medBS_sarknn_modavg[order(Geographic.scale, Scenario, coefficient),])
-medBS_sarknn_modavg2$ConfidenceInterval <- paste0("(", medBS_sarknn_modavg2$lower2.5, ", ",
-                                                  medBS_sarknn_modavg2$upper97.5, ")")
-write.csv(subset(medBS_sarknn_modavg2, (!coefficient == "Intercept") & Weighting == "No weighting"),
-          file.path(res.dir, "medBS_sarknn_nw_modavg_clean.csv"),
-          row.names = F)
-write.csv(subset(medBS_sarknn_modavg2, (!coefficient == "Intercept") & Weighting == "Distance-weighting"),
-          file.path(res.dir, "medBS_sarknn_dist_modavg_clean.csv"),
-          row.names = F)
-
-medBS_sarsoi_modavg <- roundNumbers(read.csv(file.path(res.dir, "medBS_sarsoi_modavg.csv")))
-medBS_sarsoi_modavg$Geographic.scale <- factor(medBS_sarsoi_modavg$Geographic.scale, levels = geographic_levels)
-medBS_sarsoi_modavg$coefficient <- factor(medBS_sarsoi_modavg$coefficient,
-                                          levels = med_levels,
-                                          labels = med_labels)
-medBS_sarsoi_modavg2 <- with(medBS_sarsoi_modavg, medBS_sarsoi_modavg[order(Geographic.scale, Scenario, coefficient),])
-medBS_sarsoi_modavg2$ConfidenceInterval <- paste0("(", medBS_sarsoi_modavg2$lower2.5, ", ",
-                                                  medBS_sarsoi_modavg2$upper97.5, ")")
-write.csv(subset(medBS_sarsoi_modavg2, (!coefficient == "Intercept") & Weighting == "No weighting"),
-          file.path(res.dir, "medBS_sarsoi_nw_modavg_clean.csv"),
-          row.names = F)
-write.csv(subset(medBS_sarsoi_modavg2, (!coefficient == "Intercept") & Weighting == "Distance-weighting"),
-          file.path(res.dir, "medBS_sarsoi_dist_modavg_clean.csv"),
-          row.names = F)
-
+medBS_sar_modavg <- roundNumbers(read.csv(file.path(res.dir, "medBS_sar_modavg.csv"))) 
+medBS_sar_modavg <- subset(medBS_sar_modavg, !coefficient %in% c("(Intercept)", "lambda"))
+medBS_sar_modavg$Geographic.scale <- factor(medBS_sar_modavg$Geographic.scale,
+                                            levels = geographic_levels)
+medBS_sar_modavg$coefficient <- factor(medBS_sar_modavg$coefficient,
+                                       levels = med_levels,
+                                       labels = med_labels)
+medBS_sar_modavg2 <- with(medBS_sar_modavg, medBS_sar_modavg[order(Geographic.scale, Scenario, coefficient),])
+medBS_sar_modavg2$ConfidenceInterval <- paste0("(", medBS_sar_modavg2$lower2.5, ", ",
+                                               medBS_sar_modavg2$upper97.5, ")")
+write.csv(medBS_sar_modavg2,
+          file.path(res.dir, "medBS_sar_modavg_clean.csv"), row.names = F)
