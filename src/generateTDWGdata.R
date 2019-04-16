@@ -179,7 +179,7 @@ tdwg_presnat_meanBodySize <-
         presNat_nSp = length(unique(SpecName)),
         presNat_meso_nSp = length(unique(SpecName[Mass.g > 10000])),
         presNat_mega_nSp = length(unique(SpecName[Mass.g > 44000])))
-write.csv(mammal_presnat_occ_trait, file.path(res.dir, "mammal_curr_occ_trait.csv"), row.names = F)
+write.csv(mammal_presnat_occ_trait, file.path(res.dir, "mammal_presnat_occ_trait.csv"), row.names = F)
 
 # Current the mean and median body sizes of current mammal assemblages
 mammal_curr_occ_trait <- merge(mammal_curr_comb_occ, phylacine_trait, by.x = "SpecName", by.y = "Binomial.1.2", all.x = TRUE)
