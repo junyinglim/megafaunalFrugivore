@@ -559,7 +559,7 @@ ggsave(file.path(fig.dir, "presid_comb2.pdf"), presid_comb_p2, width = 10, heigh
 # Notes: One country ROD (Rodriguez) only has one frugivore that is also threatened and so won't have any estimates 
 fruitsizechange <- read.csv(file.path(res.dir, "tdwgFruitSizeChange.csv")) # units are in cm since that is the original fruit length units
 fruitsizechange <- subset(fruitsizechange, !is.na(changeInMedFruitSize))
-medFSchange_hist <- ggplot(data = fruitsizechange) + geom_histogram(aes(changeInMedFruitSize), bins = 15) +
+medFSchange_hist <- ggplot(data = fruitsizechange) + geom_histogram(aes(changeInMedFruitSize), bins = 10) +
   labs(x = "Projected difference in\nmedian fruit length(cm)", y = "Count") +
   geom_vline(xintercept = mean(fruitsizechange$changeInMedFruitSize, na.rm = T), size = 1, linetype = "dashed", color = "coral")
 
@@ -627,6 +627,26 @@ subset(fruitsizechange, THREEREALM == "NewWorld" & changeInMedFruitSize > 0.2)
 mammal_curr_occ_trait <- read.csv(file.path(res.dir, "mammal_curr_occ_trait.csv"))
 mammal_pnat_occ_trait <- read.csv(file.path(res.dir, "mammal_presnat_occ_trait.csv"))
 subset(mammal_curr_occ_trait, CONTINENT == "AUSTRALASIA")
-table(mammal_curr_occ_trait$CON)
 
-subset(tdwg_final, CONTINENT == "AUSTRALASIA")
+subset(mammal_pnat_occ_trait, LEVEL_3_CO == "VIC")[5,]
+
+
+subset(tdwg_final, CONTINENT == "AUSTRALASIA")$presNat_medianBodySize
+subset(tdwg_final, LEVEL_3_CO == "BZN")$presNat_max95BodySize
+subset(tdwg_final, LEVEL_3_CO == "BZN")$curr_max95BodySize
+subset(tdwg_final, LEVEL_3_CO == "BZN")$futr_maxBodySize
+subset(fruitsizechange, LEVEL_3_CO == "BZN")$changeInMaxFruitSize
+
+hist(subset(mammal_curr_occ_trait, LEVEL_3_CO == "BZN")$Mass.g)
+hist(log(subset(mammal_curr_occ_trait, LEVEL_3_CO == "BZN")$Mass.g))
+quantile(subset(mammal_curr_occ_trait, LEVEL_3_CO == "BZN")$Mass.g, probs = 0.95)
+quantile(log(subset(mammal_curr_occ_trait, LEVEL_3_CO == "BZN")$Mass.g), probs = 0.95)
+
+subset(mammal_curr_occ_trait, LEVEL_3_CO == "BZN" & IUCN.Status.1.2 %in% c("VU", "EN", "CR"))$Mass.g
+
+subset(mammal_curr_occ_trait, LEVEL_3_CO == "BZN" & IUCN.Status.1.2 == "VU")
+quantile(subset(mammal_curr_occ_trait, LEVEL_3_CO == "BZN")$Mass.g, probs = 0.95)
+quantile(subset(mammal_curr_occ_trait, LEVEL_3_CO == "BZN" & (!IUCN.Status.1.2 %in% c(c("VU","CR","EW","EN","EX"))))$Mass.g, probs = 0.95)
+table(mammal_curr_occ_trait$IUCN.Status.1.2)
+
+IUCN.Status.1.2 %in% c("CR","EW","EN","EX")

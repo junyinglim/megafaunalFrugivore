@@ -1,28 +1,7 @@
 require(ggplot2)
 require(spdep)
-
-summarizeLM <- function(mod, scale = "global", scenario = "current"){
-  
-  mod_summary <- summary(mod)
-  mod_coeff <- as.data.frame(mod_summary$coefficients)
-  n_coeff <- nrow(mod_coeff)
-  varnames <- gsub(rownames(mod_coeff), pattern = "log\\(", replacement = "log_")
-  varnames <- gsub(varnames, pattern = "scale\\(|\\)|\\(", replacement = "")
-  adj.r.squared <- mod_summary$adj.r.squared
-  mod_coeff_est <- paste(round(mod_coeff$Estimate, 3), "±", round(mod_coeff$`Std. Error`, 3))
-  mod_coeff_p <- mod_coeff$`Pr(>|t|)`
-  mod_coeff_p_sym <- ifelse(mod_coeff_p < 0.001, "***", ifelse(mod_coeff_p < 0.01, "**", ifelse(mod_coeff_p < 0.05, "*", "n.s.") ))
-  mod_aic <- round(AIC(mod), 3)
-  data.frame("Geographic Scale" = c(scale, rep("", n_coeff-1)),
-             "Scenario" = c(scenario, rep("", n_coeff-1)),
-             "Variable" = varnames,
-             "Coefficient" = mod_coeff_est,
-             "P-value" = mod_coeff_p_sym,
-             "Adjusted R sq." = c(round(adj.r.squared, digits = 3), rep("", n_coeff-1)),
-             "AIC" = c(mod_aic, rep("", n_coeff-1)))
-}
-
-
+require(relaimpo)
+require(MuMIn)
 
 summarizeRelImportance <- function(x, returnIntercept = T){
   # Plots relative
@@ -218,13 +197,23 @@ model.avg2 <- function(model_list){
 computeModelAvg <- function(x, ...){
   # Takes a full model and performs model averaging on it
   moddr <- dredge(x)
-  summarizeRelImportance(model.avg(moddr), ...)
+  modvarimpo <- calc.relimp(x, type = "car")
+  modvarimpodf <- data.frame(varexp = as.vector(modvarimpo@car),
+                             totalR2 = modvarimpo@R2,
+                             coefficient = names(modvarimpo@car))
+  df <- summarizeRelImportance(model.avg(moddr), ...)
+  return(merge(df, modvarimpodf, by = "coefficient", all = T))
 }
 
 computeModelAvg2 <- function(x){
   # Takes a full model and performs model averaging but calculates adjusted coefficients (following Cade 2015)
   moddr <- dredge2(x)
-  return(model.avg2(moddr))
+  modvarimpo <- calc.relimp(x, type = "car")
+  modvarimpodf <- data.frame(varexp = as.vector(modvarimpo@car),
+                             totalR2 = modvarimpo@R2,
+                             Variable = names(modvarimpo@car))
+  df <- model.avg2(moddr)
+  return(merge(df, modvarimpodf, by = "Variable", all = T))
 }
 
 roundNumbers <- function(df, digits = 3){

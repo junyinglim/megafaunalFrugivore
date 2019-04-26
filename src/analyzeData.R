@@ -78,7 +78,7 @@ medBS_ols_modavglist <- lapply(list(glob_curr_medBS_mod, glob_pnat_medBS_mod,
                                     nw_curr_medBS_mod, nw_pnat_medBS_mod, 
                                     oww_curr_medBS_mod, oww_pnat_medBS_mod,
                                     owe_curr_medBS_mod, owe_pnat_medBS_mod),
-                               FUN = computeModelAvg, returnIntercept = T )
+                               FUN = computeModelAvg, returnIntercept = T)
 medBS_ols_modavgres <- do.call("rbind", medBS_ols_modavglist)
 medBS_ols_modavgres$Geographic.Scale <- rep(c("Global", "Neotropics", "Afrotropics", "Indotropics"), each = 14)
 medBS_ols_modavgres$Scenario <- rep(c("Current", "Present-natural"), each = 7)
