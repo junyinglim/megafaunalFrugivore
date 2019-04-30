@@ -22,6 +22,8 @@ medBS_ols_modavg$coefficient <- factor(medBS_ols_modavg$coefficient,
 medBS_ols_modavg2 <- with(medBS_ols_modavg, medBS_ols_modavg[order(Geographic.Scale, Scenario, coefficient),])
 medBS_ols_modavg2$ConfidenceInterval <- paste0("(", medBS_ols_modavg2$fulllower2.5, ", ",
                                                medBS_ols_modavg2$fullupper97.5, ")")
+medBS_ols_modavg2$varexp[medBS_ols_modavg2$varexp < 0.001] <- "< 0.001"
+medBS_ols_modavg2$totalR2[duplicated(medBS_ols_modavg2$totalR2)] <- ""
 write.csv(subset(medBS_ols_modavg2, (!coefficient == "Intercept")),
           file.path(res.dir, "medBS_ols_modavg_clean.csv"), row.names = F)
 
@@ -35,6 +37,8 @@ medBS_ols_cade_modavg$coefficient <- factor(medBS_ols_cade_modavg$coefficient,
 medBS_ols_cade_modavg2 <- with(medBS_ols_cade_modavg, medBS_ols_cade_modavg[order(Geographic.Scale, Scenario, coefficient),])
 medBS_ols_cade_modavg2$ConfidenceInterval <- paste0("(", medBS_ols_cade_modavg2$fulllower2.5, ", ",
                                                     medBS_ols_cade_modavg2$fullupper97.5, ")")
+medBS_ols_cade_modavg2$varexp[medBS_ols_cade_modavg2$varexp < 0.001] <- "< 0.001"
+medBS_ols_cade_modavg2$totalR2[duplicated(medBS_ols_cade_modavg2$totalR2)] <- ""
 write.csv(subset(medBS_ols_cade_modavg2, (!coefficient == "Intercept")),
           file.path(res.dir, "medBS_ols_cade_modavg_clean.csv"), row.names = F)
 
@@ -49,6 +53,8 @@ maxBS_ols_modavg$coefficient <- factor(maxBS_ols_modavg$coefficient,
 maxBS_ols_modavg2 <- with(maxBS_ols_modavg, maxBS_ols_modavg[order(Geographic.Scale, Scenario, coefficient),])
 maxBS_ols_modavg2$ConfidenceInterval <- paste0("(", maxBS_ols_modavg2$fulllower2.5, ", ",
                                                maxBS_ols_modavg2$fullupper97.5, ")")
+maxBS_ols_modavg2$varexp[maxBS_ols_modavg2$varexp < 0.001] <- "< 0.001"
+maxBS_ols_modavg2$totalR2[duplicated(maxBS_ols_modavg2$totalR2)] <- ""
 write.csv(subset(maxBS_ols_modavg2, (!coefficient == "Intercept")),
           file.path(res.dir, "maxBS_ols_modavg_clean.csv"), row.names = F)
 
@@ -62,6 +68,8 @@ maxBS_ols_cade_modavg$coefficient <- factor(maxBS_ols_cade_modavg$coefficient,
 maxBS_ols_cade_modavg2 <- with(maxBS_ols_cade_modavg, maxBS_ols_cade_modavg[order(Geographic.Scale, Scenario, coefficient),])
 maxBS_ols_cade_modavg2$ConfidenceInterval <- paste0("(", maxBS_ols_cade_modavg2$fulllower2.5, ", ",
                                                     maxBS_ols_cade_modavg2$fullupper97.5, ")")
+maxBS_ols_cade_modavg2$varexp[maxBS_ols_cade_modavg2$varexp < 0.001] <- "< 0.001"
+maxBS_ols_cade_modavg2$totalR2[duplicated(maxBS_ols_cade_modavg2$totalR2)] <- ""
 write.csv(subset(maxBS_ols_cade_modavg2, (!coefficient == "Intercept")),
           file.path(res.dir, "maxBS_ols_cade_modavg_clean.csv"), row.names = F)
 
@@ -76,6 +84,8 @@ maxBS_sar_modavg$coefficient <- factor(maxBS_sar_modavg$coefficient,
 maxBS_sar_modavg2 <- with(maxBS_sar_modavg, maxBS_sar_modavg[order(Geographic.scale, Scenario, coefficient),])
 maxBS_sar_modavg2$ConfidenceInterval <- paste0("(", maxBS_sar_modavg2$fulllower2.5, ", ",
                                                maxBS_sar_modavg2$fullupper97.5, ")")
+maxBS_sar_modavg2$varexp[maxBS_sar_modavg2$varexp < 0.001] <- "< 0.001"
+maxBS_sar_modavg2$totalR2[duplicated(maxBS_sar_modavg2$totalR2)] <- ""
 write.csv(maxBS_sar_modavg2,
           file.path(res.dir, "maxBS_sar_modavg_clean.csv"), row.names = F)
 
@@ -89,5 +99,7 @@ medBS_sar_modavg$coefficient <- factor(medBS_sar_modavg$coefficient,
 medBS_sar_modavg2 <- with(medBS_sar_modavg, medBS_sar_modavg[order(Geographic.scale, Scenario, coefficient),])
 medBS_sar_modavg2$ConfidenceInterval <- paste0("(", medBS_sar_modavg2$fulllower2.5, ", ",
                                                medBS_sar_modavg2$fullupper97.5, ")")
+medBS_sar_modavg2$varexp[medBS_sar_modavg2$varexp < 0.001] <- "< 0.001"
+medBS_sar_modavg2$totalR2[duplicated(medBS_sar_modavg2$totalR2)] <- ""
 write.csv(medBS_sar_modavg2,
           file.path(res.dir, "medBS_sar_modavg_clean.csv"), row.names = F)
