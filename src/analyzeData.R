@@ -52,6 +52,7 @@ scale.col <- c("logMedFS", "logMax95FS", "dispFruitLengthFilled",
 
 tdwg_final_glob <- scaleVars(x = tdwg_final_glob, col = scale.col, suffix = "_scl")
 
+
 # Individual regions need to be scaled separately 
 tdwg_final_nw <- scaleVars(tdwg_final_nw, col = scale.col, suffix = "_scl")
 tdwg_final_oww <- scaleVars(tdwg_final_oww, col = scale.col, suffix = "_scl")
@@ -78,7 +79,7 @@ medBS_ols_modavglist <- lapply(list(glob_curr_medBS_mod, glob_pnat_medBS_mod,
                                     nw_curr_medBS_mod, nw_pnat_medBS_mod, 
                                     oww_curr_medBS_mod, oww_pnat_medBS_mod,
                                     owe_curr_medBS_mod, owe_pnat_medBS_mod),
-                               FUN = computeModelAvg, returnIntercept = T)
+                               FUN = computeModelAvg)
 medBS_ols_modavgres <- do.call("rbind", medBS_ols_modavglist)
 medBS_ols_modavgres$Geographic.Scale <- rep(c("Global", "Neotropics", "Afrotropics", "Indotropics"), each = 14)
 medBS_ols_modavgres$Scenario <- rep(c("Current", "Present-natural"), each = 7)
@@ -92,11 +93,11 @@ medBS_ols_cade_modavglist <- lapply(list(glob_curr_medBS_mod, glob_pnat_medBS_mo
                                          nw_curr_medBS_mod, nw_pnat_medBS_mod, 
                                          oww_curr_medBS_mod, oww_pnat_medBS_mod,
                                          owe_curr_medBS_mod, owe_pnat_medBS_mod),
-                                    FUN = computeModelAvg2)
+                                    FUN = computeModelAvg, beta = "partial.sd")
 
 medBS_ols_cade_modavgres <- do.call("rbind", medBS_ols_cade_modavglist)
-medBS_ols_cade_modavgres$Geographic.Scale <- rep(c("Global", "Neotropics", "Afrotropics", "Indotropics"), each = 12)
-medBS_ols_cade_modavgres$Scenario <- rep(c("Current", "Present-natural"), each = 6)
+medBS_ols_cade_modavgres$Geographic.Scale <- rep(c("Global", "Neotropics", "Afrotropics", "Indotropics"), each = 14)
+medBS_ols_cade_modavgres$Scenario <- rep(c("Current", "Present-natural"), each = 7)
 medBS_ols_cade_modavgres$Method <- "OLS"
 
 write.csv(roundNumbers(medBS_ols_cade_modavgres), file.path(res.dir, "medBS_ols_cade_modavg.csv"),
@@ -104,7 +105,7 @@ write.csv(roundNumbers(medBS_ols_cade_modavgres), file.path(res.dir, "medBS_ols_
 
 ## OLS - Maximum body size ============
 glob_curr_maxBS_mod <- lm(logMax95FS_scl ~ curr_logMax95BS_scl + globalPC1_scl + globalPC2_scl + globalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data =tdwg_final_glob, na.action = "na.fail")
-glob_pnat_maxBS_mod <- update(glob_curr_maxBS_mod, ~.- curr_logMax95BS_scl + pnat_logMax95BS_scl)
+glob_pnat_maxBS_mod <- update(glob_curr_maxBS_mod, ~.-curr_logMax95BS_scl + pnat_logMax95BS_scl)
 vif(glob_curr_maxBS_mod); vif(glob_pnat_maxBS_mod)
 
 nw_curr_maxBS_mod <- lm(logMax95FS_scl ~ curr_logMax95BS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_nw, na.action = "na.fail")
@@ -123,7 +124,7 @@ maxBS_ols_modavglist <- lapply(list(glob_curr_maxBS_mod, glob_pnat_maxBS_mod,
                                     nw_curr_maxBS_mod, nw_pnat_maxBS_mod, 
                                     oww_curr_maxBS_mod, oww_pnat_maxBS_mod,
                                     owe_curr_maxBS_mod, owe_pnat_maxBS_mod),
-                               FUN = computeModelAvg, returnIntercept = T )
+                               FUN = computeModelAvg)
 maxBS_ols_modavgres <- do.call("rbind", maxBS_ols_modavglist)
 maxBS_ols_modavgres$Geographic.Scale <- rep(c("Global", "Neotropics", "Afrotropics", "Indotropics"), each = 14)
 maxBS_ols_modavgres$Scenario <- rep(c("Current", "Present-natural"), each = 7)
@@ -136,10 +137,10 @@ maxBS_ols_cade_modavglist <- lapply(list(glob_curr_maxBS_mod, glob_pnat_maxBS_mo
                                          nw_curr_maxBS_mod, nw_pnat_maxBS_mod, 
                                          oww_curr_maxBS_mod, oww_pnat_maxBS_mod,
                                          owe_curr_maxBS_mod, owe_pnat_maxBS_mod),
-                                    FUN = computeModelAvg2 )
+                                    FUN = computeModelAvg, beta = "partial.sd" )
 maxBS_ols_cade_modavgres <- do.call("rbind", maxBS_ols_cade_modavglist)
-maxBS_ols_cade_modavgres$Geographic.Scale <- rep(c("Global", "Neotropics", "Afrotropics", "Indotropics"), each = 12)
-maxBS_ols_cade_modavgres$Scenario <- rep(c("Current", "Present-natural"), each = 6)
+maxBS_ols_cade_modavgres$Geographic.Scale <- rep(c("Global", "Neotropics", "Afrotropics", "Indotropics"), each = 14)
+maxBS_ols_cade_modavgres$Scenario <- rep(c("Current", "Present-natural"), each = 7)
 maxBS_ols_cade_modavgres$Method <- "OLS"
 write.csv(roundNumbers(maxBS_ols_cade_modavgres), file.path(res.dir, "maxBS_ols_cade_modavg.csv"), row.names = FALSE)
 
@@ -340,4 +341,46 @@ write.csv(tdwg_final_glob, file.path(res.dir, "tdwgFruitSizeChange.csv"), row.na
 
 # Difference between the fitted log median fruit size (with current body size) and the fitted log median fruit size (with future body size)
 
+# Some summary statistics ========
+
 # Mean changes; largest fruits are going to be disproportionately affected so degree of change is likely to be much larger than suggested by the mean values
+subset(tdwg_final, THREEREALM == "OWEast" & max95FruitLengthFilled > 10)
+palmTrait <- read.csv(file.path(res.dir, "tdwg_palm_occ_trait.csv"))
+quantile(subset(palmTrait, Area_code_L3 == "LSI")$AverageFruitLength_cm_filled, probs = 0.95)
+
+length(tdwg_final$medianFruitLengthFilled)
+mean(tdwg_final$curr_medianBodySize)
+mean(tdwg_final$presNat_medianBodySize)
+mean(tdwg_final$curr_max95BodySize)
+mean(tdwg_final$presNat_max95BodySize)
+summary(glob_pnat_medBS_sar_mod)
+
+# Testing car scores =======
+# glob_curr_medBS_sar_mod
+# mod1 <- errorsarlm(logMax95FS_scl ~ curr_logMax95BS_scl + globalPC1_scl, data = tdwg_final_glob, listw = listw_soi_glob)
+# mod2 <- errorsarlm(logMax95FS_scl ~ curr_logMax95BS_scl, data = tdwg_final_glob, listw = listw_soi_glob)
+# mod3 <- errorsarlm(logMax95FS_scl ~ globalPC1_scl, data = tdwg_final_glob, listw = listw_soi_glob)
+# mod4 <- errorsarlm(logMax95FS_scl ~ 1, data = tdwg_final_glob, listw = listw_soi_glob)
+# summary.sarlm(mod1, Nagelkerke = T) # pseudo R2 = 0.535
+# summary.sarlm(mod2, Nagelkerke = T) # pseudo R2 = 0.491
+# summary.sarlm(mod3, Nagelkerke = T) # pseudo R2 = 0.350
+# summary.sarlm(mod4, Nagelkerke = T) # pseudo R2 = 0.335
+# 
+# tmod1 <- lm(logMax95FS_scl  ~ curr_logMax95BS_scl + globalPC1_scl, data = tdwg_final_glob)
+# summary(tmod1)$adj.r.squared # R2 = 0.436
+# calc.relimp(tmod1, type = "car") # 0.41 + 0.025 (note that caklc)
+# carscore(Ytrain = tdwg_final_glob$logMax95FS_scl, Xtrain = tdwg_final_glob[c("curr_logMax95BS_scl","globalPC1_scl")], lambda = 0)^2
+# 
+# 
+# tmod2 <- lm(logMax95FS_scl ~ curr_logMax95BS_scl , data = tdwg_final_glob)
+# tmod3 <- lm(resid(tmod2) ~ globalPC1_scl, data = tdwg_final_glob)
+# summary(tmod2) # 0.363 of variance
+# summary(tmod3) # 0.1 of remaining variance = 0.1007 * (1 - 0.3631), total var = 0.3631 + 0.1007 * (1 - 0.3631) = 0.4272
+# 
+# glob_medBS_sar_mod <- update(glob_curr_medBS_sar_mod, ~ 1)
+# sum(carscore(Ytrain = residuals(glob_medBS_sar_mod), Xtrain = tdwg_final_glob[names(glob_curr_medBS_sar_mod$coefficients)[-1]], lambda = 0)^2) # total variance explained 0.139
+# summary.sarlm(glob_curr_medBS_sar_mod, Nagelkerke = T) # 0.68825
+# cor(x = print.sarlm.pred(predict.sarlm(glob_curr_medBS_sar_mod))$fit, y = tdwg_final_glob$logMedFS_scl, method = "pearson")^2 # variance explained by full model = 0.768
+# cor(x = print.sarlm.pred(predict.sarlm(glob_curr_medBS_sar_mod))$trend, y = tdwg_final_glob$logMedFS_scl, method = "pearson")^2 # variance explained by juyst pred. variables = 0.299
+# 
+

@@ -2,8 +2,9 @@ require(ggplot2)
 require(spdep)
 require(relaimpo)
 require(MuMIn)
+require(care) # to calculate CAR scores
 
-summarizeRelImportance <- function(x, returnIntercept = T){
+summarizeRelImportance <- function(x){
   # Plots relative
   # x = "averaging" class from MuMIn package
   summaryStats <- data.frame(coefficient = colnames(x$coefficients),
@@ -13,12 +14,12 @@ summarizeRelImportance <- function(x, returnIntercept = T){
                              condAvgSE = summary(x)$coefmat.subset[,2] )
   
   relimportStats <- data.frame(importance = x$importance, coefficient = names(x$importance))
-  confintStats <- data.frame(confint(x))
-  names(confintStats) <- c("lower2.5", "upper97.5")
+  fullconfintStats <- data.frame(confint(x, full = TRUE))
+  names(fullconfintStats) <- c("fulllower2.5CI", "fullupper97.5")
+  subsetconfintStats <- data.frame(confint(x, full = FALSE))
+  names(subsetconfintStats) <- c("subsetlower2.5CI", "subsetupper97.5")
+  confintStats <- cbind(fullconfintStats,subsetconfintStats)
   summaryStats <- cbind(summaryStats, confintStats)
-  if(!returnIntercept){
-    summaryStats <- summaryStats[-1,]    
-  }
   summaryStats <- merge(summaryStats, relimportStats, by = "coefficient", all = T)
   rownames(summaryStats) <- summaryStats$coefficient
   return(summaryStats)
@@ -131,6 +132,7 @@ model.avg2 <- function(model_list){
   # Calculates standardized model averaged coefficients
   # Reference: Cade, B.S. (2015) Model averaging and muddled multimodel inferences. Ecology, 96 (9), 2370 - 2382.
   # model_list <- full_moddr
+  # Note htatthat the new model.avg does have this functionality under the beta argument
   
   predVars <- names(model_list$Models)
   
@@ -195,13 +197,48 @@ model.avg2 <- function(model_list){
 
 
 computeModelAvg <- function(x, ...){
-  # Takes a full model and performs model averaging on it
-  moddr <- dredge(x)
-  modvarimpo <- calc.relimp(x, type = "car")
-  modvarimpodf <- data.frame(varexp = as.vector(modvarimpo@car),
-                             totalR2 = modvarimpo@R2,
-                             coefficient = names(modvarimpo@car))
-  df <- summarizeRelImportance(model.avg(moddr), ...)
+  # Takes a model object and performs model averaging
+  # Calculates relative variable importance in two ways:
+  # 1) Sum of akaike weights of models that include the variable (Burnham & Anderson 2002)
+  # 2) Decomposes variance explained by each predictor variable by calculating marginal
+  #   correlations adjusted for correlation among explanatory variable(Zuber & Strimmer 2011)
+  # 
+  # Args:
+  #         x: "lm" or "errorsarlm" object
+  #       ...: arguments passed to dredge
+  #
+  # Returns:
+  #         data.frame containing coefficients, variance explained and total R2
+  
+  # Perform model averaging
+  moddr <- dredge(x, ...)
+  df <- summarizeRelImportance(model.avg(moddr))
+  
+  # Calculate variable importance sensu Zuber & Strimmer 2011
+  if(class(x) == "lm"){
+    modvarimpo <- calc.relimp(x, type = "car")
+    modvarimpodf <- data.frame(varexp = as.vector(modvarimpo@car),
+                               totalR2 = modvarimpo@R2,
+                               coefficient = names(modvarimpo@car))
+  }
+  if(class(x) == "sarlm"){
+    mod_spatialonly <- update(x, ~1) # fit a spatial model with only the intercept 
+    # mod_spatialonly$lambda <- x$lambda # residuals don't appear to be updated automatically like in lm model class
+    # cor(fitted(mod_spatialonly), tdwg_final_glob$logMax95FS_scl, method = "pearson")^2 # 0.453
+    
+    # Calculate CAR scores, remove first column which is intercept
+    mod_car <- carscore(Ytrain = residuals(mod_spatialonly), Xtrain = x$X[,-1], lambda = 0)
+    modvarimpo <- mod_car^2
+    #cor(print.sarlm.pred(predict.sarlm(x))$trend,
+    #    tdwg_final_glob$logMax95FS_scl, method = "pearson")^2 # very different here, but this is for the full model. Acutall much larger in the full model for some reason.
+    totalR2 <- cor(fitted(x), x$y, method = "pearson")^2
+    # Very similar results when using the predict function
+    # cor(print.sarlm.pred(predict.sarlm(x))$fit,
+    #     x$y, method = "pearson")^2
+    modvarimpodf <- data.frame(varexp = as.vector(modvarimpo),
+                               totalR2 = totalR2,
+                               coefficient = names(modvarimpo))
+  }
   return(merge(df, modvarimpodf, by = "coefficient", all = T))
 }
 
