@@ -144,7 +144,12 @@ mammal_palm_intersect <- intersect(unique(palm_occ_trait$Area_code_L3), mammal_c
 tdwg_meanFruit <- ddply(.data = subset(palm_occ_trait, Area_code_L3 %in% mammal_palm_intersect),
                         .variables = .(Area_code_L3),
                         .fun = summarise,
+                        # No gap filling
                         meanFruitLength = mean(AverageFruitLength_cm, na.rm = T),
+                        medianFruitLength = median(AverageFruitLength_cm, na.rm = T),
+                        max95FruitLength = quantile(AverageFruitLength_cm,
+                                                    probs = 0.95, na.rm = T ),
+                        # Gap filling
                         medianFruitLengthFilled = median(AverageFruitLength_cm_filled, na.rm = T),
                         meanFruitLengthFilled = mean(AverageFruitLength_cm_filled, na.rm = T),
                         maxFruitLengthFilled = max(AverageFruitLength_cm_filled, na.rm = T),

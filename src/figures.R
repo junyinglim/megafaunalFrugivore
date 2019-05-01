@@ -115,7 +115,25 @@ maxFS_p <- ggplot() +
 
 ggsave(file.path(fig.dir, "maxFS.pdf"), maxFS_p, width = 9, height = 5)
 
-## Plotting biogeography data ========================
+## Plot sensitivity of gap filling =========
+medFS_cor <- cor(tdwg_final$medianFruitLengthFilled, tdwg_final$medianFruitLength, method = "pearson")
+medFS_gap <- ggplot() + 
+  geom_point(aes(y = medianFruitLengthFilled, x = medianFruitLength), pch = 21, col = "grey40", data = tdwg_final) +
+  geom_abline(aes(intercept = 0, slope = 1), col = "grey20") +
+  labs(y = "Median fruit length\nwith gap filling (cm)", x = "Median fruit length\nwith gaps excluded (cm)") +
+  annotate("text", x = -Inf, y = Inf, label = paste0("Pearson correlation = ", round(medFS_cor,3)), hjust = -0.1, vjust = 1.5)
+
+maxFS_cor <- cor(tdwg_final$max95FruitLengthFilled, tdwg_final$max95FruitLength, method = "pearson")
+maxFS_gap <- ggplot() +
+  geom_point(aes(y = max95FruitLengthFilled, x = max95FruitLength), pch = 21, col = "grey40", data = tdwg_final) +
+  geom_abline(aes(intercept = 0, slope = 1), col = "grey20") + 
+  labs(y = "Maximum fruit length\nwith gap filling (cm)", x = "Maximum fruit length\nwith gaps excluded (cm)") + 
+  annotate("text", x = -Inf, y = Inf, label = paste0("Pearson correlation = ", round(maxFS_cor,3)), hjust = -0.1, vjust = 1.5)
+
+supp_fig1 <- plot_grid(medFS_gap, maxFS_gap, labels = "auto")
+ggsave(supp_fig1, filename = file.path(fig.dir, "suppfig1_gapfill.pdf"), height = 4, width = 8)
+
+ ## Plotting biogeography data ========================
 threerealmplot <- ggplot() +
   geom_polygon(aes(y = lat, x= long, group = group), data = subset(tdwg_shape_df, !LEVEL_3_CO == "ANT")) +
   geom_point(aes(x = LONG, y = LAT, fill = THREEREALM), data = tdwg_plot_df, shape = 21, size = 3, color = "white")+

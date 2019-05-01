@@ -322,6 +322,7 @@ predictDF <- with(data.frame(globalPC1_scl, globalPC2_scl, globalPC3_scl,
 glob_futr_medBS_mod <- predict(glob_curr_medBS_mod, newdata = predictDF) # fitted FS taking into account future extinctions
 
 changeInMedFruitSize <- exp(fitted(glob_curr_medBS_mod)) - exp(glob_futr_medBS_mod)
+mean(changeInMedFruitSize, na.rm = T)
 
 ## Change in maximum fruit size
 glob_curr_maxBS_mod <- lm(logMax95FS ~ curr_logMax95BS + globalPC1_scl + 
@@ -334,6 +335,7 @@ predictDF <- with(data.frame(globalPC1_scl, globalPC2_scl, globalPC3_scl,
                   data = tdwg_final_glob)
 glob_futr_maxBS_mod <- predict(glob_curr_maxBS_mod, newdata = predictDF) # fitted FS taking into account future extinctions
 changeInMaxFruitSize <- exp(fitted(glob_curr_maxBS_mod)) - exp(glob_futr_maxBS_mod)
+mean(changeInMaxFruitSize, na.rm = T)
 
 tdwg_final_glob$changeInMedFruitSize <- changeInMedFruitSize
 tdwg_final_glob$changeInMaxFruitSize <- changeInMaxFruitSize
