@@ -482,10 +482,6 @@ ggsave(file.path(fig.dir, "medBS_modavg.pdf"), medBS_modavg_plot, height= 9, wid
 modavg_comb_plot <- plot_grid(plotlist = list(medBS_modavg_plot, maxBS_modavg_plot), ncol = 2)
 ggsave(modavg_comb_plot, filename = file.path(fig.dir, "modavg_comb.pdf"), height = 10, width = 15 )
 
-
-
-
-
 ## Plot SAR model averaging results for median body size
 sar_knear_medBS_modavg_res <- read.csv(file.path(res.dir, "sar_knear_medBS_modavg.csv"))
 sar_soi_medBS_modavg_res <- read.csv(file.path(res.dir, "sar_soi_medBS_modavg.csv"))
@@ -501,10 +497,6 @@ sar_medBS_modavg_res$coefficient <- factor(sar_medBS_modavg_res$coefficient,
                                                "PC1", "PC2", "PC3",
                                                "LGM Prec. anomaly", "LGM Temp. anomaly"))
 
-
-
-
-
 medBS_sarmodavg_plot <- ggplot(data = sar_medBS_modavg_res) + 
   geom_hline(aes(yintercept = 0), linetype = "dashed", colour = "grey50") +
   geom_point(aes(y = fullAvgCoef, x = coefficient, colour = Scenario, size = importance), position = position_dodge(0.8)) + 
@@ -514,6 +506,13 @@ medBS_sarmodavg_plot <- ggplot(data = sar_medBS_modavg_res) +
   labs(title = "Median body size", y = "Standardized\nmodel averaged coefficients", x= "Variables") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ggsave(medBS_sarmodavg_plot, filename = file.path(fig.dir, "sar_medBS_modavg.pdf"), height = 8, width = 14)
+
+## Plot variance explained by different variables =========
+maxBS_ols_modavg <- read.csv(file.path(res.dir, "maxBS_ols_modavg.csv"), stringsAsFactors = F)
+medBS_ols_modavg <- read.csv(file.path(res.dir, "medBS_ols_modavg.csv"), stringsAsFactors = F)
+
+ggplot(data = subset(maxBS_ols_modavg, (!coefficient == "(Intercept)") & Geographic.Scale == "Global")) + geom_bar(aes(x = coefficient, y = varexp), stat = "identity") + facet_wrap(~Scenario, nrow = 2)
+
 
 
 ## Plotting partial residuals of FS against median and maximum BS =========
@@ -586,9 +585,6 @@ maxFSchange_hist <- ggplot(data = fruitsizechange) + geom_histogram(aes(changeIn
   geom_vline(xintercept = mean(fruitsizechange$changeInMaxFruitSize, na.rm = T),
              size = 1, linetype = "dashed", color = wes_palette("Cavalcanti1", 5)[4])
 
-#FSchange_histcomb <- plot_grid(medFSchange_hist, maxFSchange_hist, labels = "AUTO", nrow = 2)
-#ggsave(file.path(fig.dir, "FSchange_histcomb.pdf"), FSchange_histcomb, width = 5, height = 8)
-
 ## Geographic distribution of change in frugivore mammal body size
 medFSchange_zCuts <- quantile(fruitsizechange$changeInMedFruitSize, probs = seq(0,1,length.out = 6), na.rm = TRUE)
 fruitsizechange$medFSchange_categ <-  cut(fruitsizechange$changeInMedFruitSize, breaks = medFSchange_zCuts, include.lowest = T, ordered_result = T)
@@ -607,6 +603,7 @@ ggsave(file.path(fig.dir, "medFSchange_map.pdf"), medFSchangemap, width = 9, hei
 maxFSchange_zCuts <- quantile(fruitsizechange$changeInMaxFruitSize, probs = seq(0,1,length.out = 6), na.rm = TRUE)
 fruitsizechange$maxFSchange_categ <-  cut(fruitsizechange$changeInMaxFruitSize, breaks = maxFSchange_zCuts, include.lowest = T, ordered_result = T)
 levels(fruitsizechange$maxFSchange_categ) <- cleanCuts(levels(fruitsizechange$maxFSchange_categ))
+
 maxFSchangemap <- ggplot() +
   geom_polygon(aes(y = lat, x = long, group = group), data = tdwg_shp2) +
   geom_point(aes(y = LAT, x= LONG, size = changeInMaxFruitSize/2, color = maxFSchange_categ), data = fruitsizechange) + 
@@ -617,7 +614,6 @@ maxFSchangemap <- ggplot() +
   theme(legend.box = 'vertical', legend.title = element_text(size = 10), legend.text = element_text(size = 10)) +
   scale_color_manual(values = brewer.pal(9,"RdBu")[c(9,7,6,3,1)])
 ggsave(file.path(fig.dir, "maxFSchange_map.pdf"), maxFSchangemap, width = 9, height = 6, device = cairo_pdf)
-
 
 # Fig 3: change in fruit size =========
 medFSchange_comb <- ggdraw() +
@@ -631,24 +627,20 @@ maxFSchange_comb <- ggdraw() +
 
 medFSchange_comb_wleg <- plot_grid(medFSchange_comb, get_legend(medFSchangemap), nrow = 2, rel_heights = c(1,0.1))
 maxFSchange_comb_wleg <- plot_grid(maxFSchange_comb, get_legend(maxFSchangemap), nrow = 2, rel_heights = c(1,0.1))
-FSchange_comb_wleg <- plot_grid(medFSchange_comb_wleg, maxFSchange_comb_wleg, nrow = 2, labels = "AUTO")
+FSchange_comb_wleg <- plot_grid(medFSchange_comb_wleg, maxFSchange_comb_wleg, nrow = 2, labels = "auto")
 
 ggsave(file.path(fig.dir, "fig3_FSchange.pdf"), FSchange_comb_wleg, device = cairo_pdf, width = 9, height = 10)
 
-
-
 levels(fruitsizechange$medFSchange_categ)
-library(RColorBrewer)
-fruitsizechange$changeInMedFruitSize[109]
-subset(fruitsizechange, THREEREALM == "NewWorld" & changeInMedFruitSize > 0.2)
+subset(fruitsizechange,  changeInMaxFruitSize > 3)[c("curr_max95BodySize", "futr_maxBodySize")]
 
 mammal_curr_occ_trait <- read.csv(file.path(res.dir, "mammal_curr_occ_trait.csv"))
 mammal_pnat_occ_trait <- read.csv(file.path(res.dir, "mammal_presnat_occ_trait.csv"))
-subset(mammal_curr_occ_trait, CONTINENT == "AUSTRALASIA")
+subset(mammal_curr_occ_trait, LEVEL_3_CO == "CBD")[c("SpecName", "IUCN.Status.1.2", "Mass.g")]
 
-subset(mammal_pnat_occ_trait, LEVEL_3_CO == "VIC")[5,]
+mean(fruitsizechange$changeInMedFruitSize)
 
-
+names(fruitsizechange)
 subset(tdwg_final, CONTINENT == "AUSTRALASIA")$presNat_medianBodySize
 subset(tdwg_final, LEVEL_3_CO == "BZN")$presNat_max95BodySize
 subset(tdwg_final, LEVEL_3_CO == "BZN")$curr_max95BodySize
@@ -668,3 +660,7 @@ quantile(subset(mammal_curr_occ_trait, LEVEL_3_CO == "BZN" & (!IUCN.Status.1.2 %
 table(mammal_curr_occ_trait$IUCN.Status.1.2)
 
 IUCN.Status.1.2 %in% c("CR","EW","EN","EX")
+
+
+read.csv()
+

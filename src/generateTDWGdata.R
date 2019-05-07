@@ -233,16 +233,7 @@ tdwg_res$mesoSpLoss <- tdwg_res$presNat_meso_nSp - tdwg_res$curr_meso_nSp
 
 # Merge with tdwg environmental data
 tdwg_final <- merge(tdwg_res, tdwg_env, by = "LEVEL_3_CO", all.x = TRUE)
-
-# Remove remote oceanic islands and countries with no environmental data
-# remoteIslList <- subset(tdwg_final, ISISLAND == 1 & DistToCont_km > 2000) # List of islands to remove
-# tdwg_final2 <- subset(tdwg_final, (!LEVEL_3_CO %in% union(remoteIslList$LEVEL_3_CO, c("MRQ", "TUA", "VNA"))) & Geology_3categ %in% c("continental", "mainland", "volcanic"))
-
-tdwg_final2 <- tdwg_final
-#tdwg_final2 <- subset(tdwg_final2, PALMSR>0)
-# Islands that are greater than 2000 km from closest continent
-# MRQ, TUA, VNA (Venuzuelan antilles removed due to lack of environmental information)
-# In total 13 removed (not including REU which was removed earlier)
+tdwg_final2 <- subset(tdwg_final, REALM_LONG %in% c("IndoMalay", "Australasia", "Neotropics", "Afrotropics"))
 
 # Global level PCA
 env.var <- paste0("bio", c(12, 15, 17, 1, 11, 4), "_mean")
@@ -295,4 +286,12 @@ regionalPCA <- Reduce(rbind, list(tdwg_final_nw[pc.col], tdwg_final_oww[pc.col],
 tdwg_final2 <- merge(tdwg_final2, regionalPCA, by = "LEVEL_3_CO")
 
 write.csv(tdwg_final2, file.path(data.dir,"tdwg_final.csv"))
+
+## Generate some summary statistics
+length(unique(subset(mammal_curr_occ_trait, LEVEL_3_CO %in% tdwg_final2$LEVEL_3_CO)$SpecName)) # 1604 taxa in the current 
+length(unique(subset(mammal_presnat_occ_trait, LEVEL_3_CO %in% tdwg_final2$LEVEL_3_CO)$SpecName)) # 1811 in the present-natural
+curr_status <- table(subset(phylacine_trait, Binomial.1.2 %in% unique(mammal_curr_occ_trait$SpecName))$IUCN.Status.1.2)
+sum(curr_status[names(curr_status) %in% c("CR", "DD", "EN", "LC", "NT", "VU")])
+pnat_status <- table(subset(phylacine_trait, Binomial.1.2 %in% unique(mammal_presnat_occ_trait$SpecName))$IUCN.Status.1.2)
+sum(pnat_status[names(pnat_status) %in% c("CR", "DD", "EN", "LC", "NT", "VU")])
 

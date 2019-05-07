@@ -311,30 +311,30 @@ moran.test(x = residuals(owe_curr_maxBS_sar_mod), listw = listw_soi_owe)
 moran.test(x = residuals(owe_curr_maxBS_sar_mod), listw = listw_soi_owe)
 
 ## Project median fruit size losses 
-glob_curr_medBS_mod <- lm(logMedFS ~ curr_logMedBS + globalPC1_scl + 
+glob_curr_medBS_delta_mod <- lm(logMedFS ~ curr_logMedBS + globalPC1_scl + 
                       globalPC2_scl + globalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, 
                     data = tdwg_final_glob, na.action = "na.fail")
-summary(glob_curr_medBS_mod)
+summary(glob_curr_medBS_delta_mod)
 predictDF <- with(data.frame(globalPC1_scl, globalPC2_scl, globalPC3_scl, 
                         lgm_ens_Tano_scl, lgm_ens_Pano_scl,
-                        curr_logMedBS = log(tdwg_final_glob$futr_medianBodySize) ),
+                        curr_logMedBS = log(glob_curr_medBS_delta_mod$futr_medianBodySize) ),
                   data = tdwg_final_glob)
-glob_futr_medBS_mod <- predict(glob_curr_medBS_mod, newdata = predictDF) # fitted FS taking into account future extinctions
+glob_futr_medBS_delta_mod <- predict(glob_curr_medBS_delta_mod, newdata = predictDF) # fitted FS taking into account future extinctions
 
-changeInMedFruitSize <- exp(fitted(glob_curr_medBS_mod)) - exp(glob_futr_medBS_mod)
+changeInMedFruitSize <- exp(fitted(glob_curr_medBS_delta_mod)) - exp(glob_futr_medBS_delta_mod)
 mean(changeInMedFruitSize, na.rm = T)
 
 ## Change in maximum fruit size
-glob_curr_maxBS_mod <- lm(logMax95FS ~ curr_logMax95BS + globalPC1_scl + 
+glob_curr_maxBS_delta_mod <- lm(logMax95FS ~ curr_logMax95BS + globalPC1_scl + 
                             globalPC2_scl + globalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, 
                           data = tdwg_final_glob, na.action = "na.fail")
-summary(glob_curr_maxBS_mod)
+summary(glob_curr_maxBS_delta_mod)
 predictDF <- with(data.frame(globalPC1_scl, globalPC2_scl, globalPC3_scl, 
                              lgm_ens_Tano_scl, lgm_ens_Pano_scl,
                              curr_logMax95BS = log(tdwg_final_glob$futr_maxBodySize) ),
                   data = tdwg_final_glob)
-glob_futr_maxBS_mod <- predict(glob_curr_maxBS_mod, newdata = predictDF) # fitted FS taking into account future extinctions
-changeInMaxFruitSize <- exp(fitted(glob_curr_maxBS_mod)) - exp(glob_futr_maxBS_mod)
+glob_futr_maxBS_delta_mod <- predict(glob_curr_maxBS_delta_mod, newdata = predictDF) # fitted FS taking into account future extinctions
+changeInMaxFruitSize <- exp(fitted(glob_curr_maxBS_delta_mod)) - exp(glob_futr_maxBS_delta_mod)
 mean(changeInMaxFruitSize, na.rm = T)
 
 tdwg_final_glob$changeInMedFruitSize <- changeInMedFruitSize

@@ -1,4 +1,8 @@
-## Clean up results for manuscript
+## Generate tidy tables for result reporting
+# Author: Jun Ying Lim
+
+
+# Directories 
 main.dir <- "/Users/junyinglim/Dropbox/Projects/2019/palms/projects/megafaunalFrugivore"
 data.dir <- file.path(main.dir, "data")
 res.dir <- file.path(main.dir, "results")
