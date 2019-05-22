@@ -221,24 +221,28 @@ Thoughts:
 
 
 
-To account for spatial autocorrelation, we used spatial autoregressive error models (SAR_error; Dormann et al 2007), which have been shown to be more reliable than other spatial autogressive formulations (Kissling & Carl 2008). Spatial autoregressive models attempt to account for spatial correlation between units within a given neighbourhood / network structure. The correlation between neighbours may be additionally weighted (i.e., spatial weights) based on structural (e.g., geographic distances) or functional similarities between them (Ver Hoef et al 2018).
-However, because of the irregular spacing and size of geographic units in our study (i.e., TDWG botanical country units) in contrast with regular grid based units, we consider neighbourhoods based on distances between the centroids of our spatial units as adjacency-based neighbourhood definitions may not be appropriate. To account for sensitivity of our results, we thus fit various SARs with different neighbourhood definitions and weights.
-We focused on two main neighbourhood definitions. The first is based on k-nearest units, where the closest unit to each focal unit was considered a neighbour. Following Kissling et al 2012, we only allowed for one nearest neighbour. We then forced the neighbourhoods to be symmetrical. For example, the nearest neighbouring unit for islands may be a unit on the continent, but not necessarily vice versa. 2) We also used the sphere of influence to define neighbours. The sphere of influence for each focal unit is defined as a circle of radius equal to the focal unit's distance to its nearest neighbour. Where the sphere of influence of two units overlap, they are considered neighbours under this defintion. We feel that this is more appropriate than distance-based neighbourhood definitions as it takes into account the size and geometry of each unit in our study, whereas under a distance-based defintion that defines neighbours based on distances between centroids, larger units may have fewer neighbours for a given distance than a smaller unit.
-For spatial weighting, we used
+
 
 < 16 Apr >
 - Large median body mass in present-natural in VIC (Victoria), and in 
 
+< 30 Apr > 
+- Using CAR scores to calculate relative variable importance
+- For the SAR models, we fit an SAR model with just an intercept, extract the residuals and then use carscore to calculate the CAR scores
+- Make sure the CAR scores are squared first.
+- Note that the `calc.relimpt` function assumes a lambda of 0 for the `carscore` function (i.e., empirical correlations between variables used)
+
+< 1 May >
+- Global PCA was done on ALL TDWG countries and not just those in the three realms, but the regional PCAs were only done for countries in those realms.
+- Therefore, global results are likely to be errorneous and need to be re-run (but only the global ones)
+
+< 20 May >
+- Extract Miocene anomaly using raw data from Daniel. Go to QGIS, use the Toolbox (top right), and then select in the dropdown menu (Raster nalsis > Zonal Statistics)
+
+
 
 - discrete but in numeric form should be sequential
 
-Test BAMM and TESS on the palm tree
-
-- SEM notes
-# Model Chi-Square with its df and p-value: prefer p-value greater than 0.05 (model does )
-# Root Mean Square Error of Approximation (RMSEA): prefer lower 90%CI to be < 0.05
-# Comparative Fit Index (CFI): prefer value greater than 0.90
-# Mod. indexes should be << 3.84; if higher then may suggest a missing path
 
 lhs ~~ rhs (covariances)
 lhs ~ rhs (actual regression fit)

@@ -75,10 +75,12 @@ owe_curr_medBS_mod <- lm(logMedFS_scl ~ curr_logMedBS_scl + regionalPC1_scl + re
 owe_pnat_medBS_mod <- update(owe_curr_medBS_mod, ~.-curr_logMedBS_scl + pnat_logMedBS_scl )
 vif(owe_curr_medBS_mod); vif(owe_pnat_medBS_mod)
 
-medBS_ols_modavglist <- lapply(list(glob_curr_medBS_mod, glob_pnat_medBS_mod, 
-                                    nw_curr_medBS_mod, nw_pnat_medBS_mod, 
-                                    oww_curr_medBS_mod, oww_pnat_medBS_mod,
-                                    owe_curr_medBS_mod, owe_pnat_medBS_mod),
+medBS_ols_modlist <- list(glob_curr_medBS_mod, glob_pnat_medBS_mod, 
+                          nw_curr_medBS_mod, nw_pnat_medBS_mod, 
+                          oww_curr_medBS_mod, oww_pnat_medBS_mod,
+                          owe_curr_medBS_mod, owe_pnat_medBS_mod)
+
+medBS_ols_modavglist <- lapply(medBS_ols_modlist,
                                FUN = computeModelAvg)
 medBS_ols_modavgres <- do.call("rbind", medBS_ols_modavglist)
 medBS_ols_modavgres$Geographic.Scale <- rep(c("Global", "Neotropics", "Afrotropics", "Indotropics"), each = 14)
@@ -88,11 +90,8 @@ medBS_ols_modavgres$Method <- "OLS"
 write.csv(roundNumbers(medBS_ols_modavgres), file.path(res.dir, "medBS_ols_modavg.csv"),
           row.names = FALSE)
 
-## OLS - Median body size (Cade 2015)
-medBS_ols_cade_modavglist <- lapply(list(glob_curr_medBS_mod, glob_pnat_medBS_mod, 
-                                         nw_curr_medBS_mod, nw_pnat_medBS_mod, 
-                                         oww_curr_medBS_mod, oww_pnat_medBS_mod,
-                                         owe_curr_medBS_mod, owe_pnat_medBS_mod),
+## OLS - Median body size (Cade 2015) ============
+medBS_ols_cade_modavglist <- lapply(medBS_ols_modlist,
                                     FUN = computeModelAvg, beta = "partial.sd")
 
 medBS_ols_cade_modavgres <- do.call("rbind", medBS_ols_cade_modavglist)
@@ -120,10 +119,11 @@ owe_curr_maxBS_mod <- lm(logMax95FS_scl ~ curr_logMax95BS_scl + regionalPC1_scl 
 owe_pnat_maxBS_mod <- update(owe_curr_maxBS_mod, ~.-curr_logMax95BS_scl + pnat_logMax95BS_scl)
 vif(owe_curr_maxBS_mod); vif(owe_pnat_maxBS_mod)
 
-maxBS_ols_modavglist <- lapply(list(glob_curr_maxBS_mod, glob_pnat_maxBS_mod, 
-                                    nw_curr_maxBS_mod, nw_pnat_maxBS_mod, 
-                                    oww_curr_maxBS_mod, oww_pnat_maxBS_mod,
-                                    owe_curr_maxBS_mod, owe_pnat_maxBS_mod),
+maxBS_ols_modlist <- list(glob_curr_maxBS_mod, glob_pnat_maxBS_mod, 
+                          nw_curr_maxBS_mod, nw_pnat_maxBS_mod, 
+                          oww_curr_maxBS_mod, oww_pnat_maxBS_mod,
+                          owe_curr_maxBS_mod, owe_pnat_maxBS_mod)
+maxBS_ols_modavglist <- lapply(maxBS_ols_modlist,
                                FUN = computeModelAvg)
 maxBS_ols_modavgres <- do.call("rbind", maxBS_ols_modavglist)
 maxBS_ols_modavgres$Geographic.Scale <- rep(c("Global", "Neotropics", "Afrotropics", "Indotropics"), each = 14)
@@ -133,10 +133,7 @@ maxBS_ols_modavgres$Method <- "OLS"
 write.csv(roundNumbers(maxBS_ols_modavgres), file.path(res.dir, "maxBS_ols_modavg.csv"), row.names = FALSE)
 
 ## OLS - Maximum body size (Cade) ============
-maxBS_ols_cade_modavglist <- lapply(list(glob_curr_maxBS_mod, glob_pnat_maxBS_mod, 
-                                         nw_curr_maxBS_mod, nw_pnat_maxBS_mod, 
-                                         oww_curr_maxBS_mod, oww_pnat_maxBS_mod,
-                                         owe_curr_maxBS_mod, owe_pnat_maxBS_mod),
+maxBS_ols_cade_modavglist <- lapply(maxBS_ols_modlist,
                                     FUN = computeModelAvg, beta = "partial.sd" )
 maxBS_ols_cade_modavgres <- do.call("rbind", maxBS_ols_cade_modavglist)
 maxBS_ols_cade_modavgres$Geographic.Scale <- rep(c("Global", "Neotropics", "Afrotropics", "Indotropics"), each = 14)
@@ -233,7 +230,7 @@ reg_curr_medBS_modf <- formula(logMedFS_scl ~ curr_logMedBS_scl + regionalPC1_sc
 
 reg_curr_maxBS_modf <- formula(logMax95FS_scl ~ curr_logMax95BS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl)
 
-# SAR - median body size
+# SAR - median body size =======
 glob_curr_medBS_sar_mod <- errorsarlm(glob_curr_medBS_modf, data = tdwg_final_glob, listw = listw_soi_glob, na.action = "na.fail")
 glob_pnat_medBS_sar_mod <- update(glob_curr_medBS_sar_mod, ~. -curr_logMedBS_scl + pnat_logMedBS_scl)
 
@@ -259,31 +256,25 @@ oww_pnat_maxBS_sar_mod <- update(oww_curr_maxBS_sar_mod, ~. -curr_logMax95BS_scl
 owe_curr_maxBS_sar_mod <- errorsarlm(reg_curr_maxBS_modf, data = tdwg_final_owe, listw = listw_soi_owe, na.action = "na.fail")
 owe_pnat_maxBS_sar_mod <- update(owe_curr_maxBS_sar_mod, ~. -curr_logMax95BS_scl + pnat_logMax95BS_scl)
 
-
-# perform model averaging
-medBS_sar_modelavglist <- lapply(list(glob_curr_medBS_sar_mod,
-                                      glob_pnat_medBS_sar_mod,
-                                      nw_curr_medBS_sar_mod,
-                                      nw_pnat_medBS_sar_mod,
-                                      oww_curr_medBS_sar_mod,
-                                      oww_pnat_medBS_sar_mod,
-                                      owe_curr_medBS_sar_mod,
-                                      owe_pnat_medBS_sar_mod),
-                                    FUN = computeModelAvg)
+# Perform model averaging
+medBS_sar_modlist <- list(glob_curr_medBS_sar_mod, glob_pnat_medBS_sar_mod,
+                          nw_curr_medBS_sar_mod, nw_pnat_medBS_sar_mod,
+                          oww_curr_medBS_sar_mod,oww_pnat_medBS_sar_mod,
+                          owe_curr_medBS_sar_mod,owe_pnat_medBS_sar_mod)
+medBS_sar_modelavglist <- lapply(medBS_sar_modlist,
+                                 FUN = computeModelAvg)
 medBS_sar_modelavgdf <- Reduce( medBS_sar_modelavglist, f = "rbind")
 medBS_sar_modelavgdf$Geographic.scale <- rep(c("Global", "Neotropics", "Afrotropics", "Indotropics"), each = 16)
 medBS_sar_modelavgdf$Scenario <- rep(c("Current", "Present-Natural") , each = 8 )
 write.csv(medBS_sar_modelavgdf,
           file.path(res.dir, "medBS_sar_modavg.csv"), row.names = FALSE)
 
-maxBS_sar_modelavglist <- lapply(list(glob_curr_maxBS_sar_mod,
-                                      glob_pnat_maxBS_sar_mod,
-                                      nw_curr_maxBS_sar_mod,
-                                      nw_pnat_maxBS_sar_mod,
-                                      oww_curr_maxBS_sar_mod,
-                                      oww_pnat_maxBS_sar_mod,
-                                      owe_curr_maxBS_sar_mod,
-                                      owe_pnat_maxBS_sar_mod),
+
+maxBS_sar_modlist <- list(glob_curr_maxBS_sar_mod, glob_pnat_maxBS_sar_mod,
+                          nw_curr_maxBS_sar_mod, nw_pnat_maxBS_sar_mod,
+                          oww_curr_maxBS_sar_mod, oww_pnat_maxBS_sar_mod,
+                          owe_curr_maxBS_sar_mod, owe_pnat_maxBS_sar_mod)
+maxBS_sar_modelavglist <- lapply(maxBS_sar_modlist,
                                     FUN = computeModelAvg)
 maxBS_sar_modelavgdf <- Reduce( maxBS_sar_modelavglist, f = "rbind")
 maxBS_sar_modelavgdf$Geographic.scale <- rep(c("Global", "Neotropics", "Afrotropics", "Indotropics"), each = 16)
@@ -317,7 +308,7 @@ glob_curr_medBS_delta_mod <- lm(logMedFS ~ curr_logMedBS + globalPC1_scl +
 summary(glob_curr_medBS_delta_mod)
 predictDF <- with(data.frame(globalPC1_scl, globalPC2_scl, globalPC3_scl, 
                         lgm_ens_Tano_scl, lgm_ens_Pano_scl,
-                        curr_logMedBS = log(glob_curr_medBS_delta_mod$futr_medianBodySize) ),
+                        curr_logMedBS = log(futr_medianBodySize) ),
                   data = tdwg_final_glob)
 glob_futr_medBS_delta_mod <- predict(glob_curr_medBS_delta_mod, newdata = predictDF) # fitted FS taking into account future extinctions
 
@@ -331,7 +322,7 @@ glob_curr_maxBS_delta_mod <- lm(logMax95FS ~ curr_logMax95BS + globalPC1_scl +
 summary(glob_curr_maxBS_delta_mod)
 predictDF <- with(data.frame(globalPC1_scl, globalPC2_scl, globalPC3_scl, 
                              lgm_ens_Tano_scl, lgm_ens_Pano_scl,
-                             curr_logMax95BS = log(tdwg_final_glob$futr_maxBodySize) ),
+                             curr_logMax95BS = log(futr_maxBodySize) ),
                   data = tdwg_final_glob)
 glob_futr_maxBS_delta_mod <- predict(glob_curr_maxBS_delta_mod, newdata = predictDF) # fitted FS taking into account future extinctions
 changeInMaxFruitSize <- exp(fitted(glob_curr_maxBS_delta_mod)) - exp(glob_futr_maxBS_delta_mod)
@@ -386,3 +377,35 @@ summary(glob_pnat_medBS_sar_mod)
 # cor(x = print.sarlm.pred(predict.sarlm(glob_curr_medBS_sar_mod))$trend, y = tdwg_final_glob$logMedFS_scl, method = "pearson")^2 # variance explained by juyst pred. variables = 0.299
 # 
 
+## Summary of largest frugivores in each realm ========
+afrolist <- subset(tdwg_final, THREEREALM == "OWWest")$LEVEL_3_CO
+indolist <- subset(tdwg_final, THREEREALM == "OWEast")$LEVEL_3_CO
+neolist <- subset(tdwg_final, THREEREALM == "NewWorld")$LEVEL_3_CO
+
+afro_curr_trait <- subset(mammal_curr_occ_trait, LEVEL_3_CO %in% afrolist)[c("SpecName","Mass.g")]
+afro_curr_trait <- afro_curr_trait[!duplicated(afro_curr_trait),]
+head(afro_curr_trait[order(afro_curr_trait$Mass.g, decreasing = T),], n = 10)
+
+indo_curr_trait <- subset(mammal_curr_occ_trait, LEVEL_3_CO %in% indolist)[c("SpecName","Mass.g")]
+indo_curr_trait <- indo_curr_trait[!duplicated(indo_curr_trait),]
+head(indo_curr_trait[order(indo_curr_trait$Mass.g, decreasing = T),], n = 10)
+
+neo_curr_trait <- subset(mammal_curr_occ_trait, LEVEL_3_CO %in% neolist)[c("SpecName","Mass.g")]
+neo_curr_trait <- neo_curr_trait[!duplicated(neo_curr_trait),]
+head(neo_curr_trait[order(neo_curr_trait$Mass.g, decreasing = T),], n = 10)
+
+afro_pnat_trait <- subset(mammal_presnat_occ_trait, LEVEL_3_CO %in% afrolist)[c("SpecName","Mass.g")]
+afro_pnat_trait <- afro_pnat_trait[!duplicated(afro_pnat_trait),]
+head(afro_pnat_trait[order(afro_pnat_trait$Mass.g, decreasing = T),], n = 10)
+
+indo_pnat_trait <- subset(mammal_presnat_occ_trait, LEVEL_3_CO %in% indolist)[c("SpecName","Mass.g")]
+indo_pnat_trait <- indo_pnat_trait[!duplicated(indo_pnat_trait),]
+head(indo_pnat_trait[order(indo_pnat_trait$Mass.g, decreasing = T),], n = 10)
+
+neo_curr_trait <- subset(mammal_presnat_occ_trait, LEVEL_3_CO %in% neolist)[c("SpecName","Mass.g")]
+neo_curr_trait <- neo_curr_trait[!duplicated(neo_curr_trait),]
+head(neo_curr_trait[order(neo_curr_trait$Mass.g, decreasing = T),], n = 10)
+
+
+tapply(tdwg_final$curr_max95BodySize, INDEX = tdwg_final$THREEREALM, FUN = mean)
+tapply(tdwg_final$presNat_max95BodySize, INDEX = tdwg_final$THREEREALM, FUN = mean)
