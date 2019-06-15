@@ -13,14 +13,14 @@ summarizeRelImportance <- function(x){
                              fullAvgSE = summary(x)$coefmat.full[,2],
                              condAvgSE = summary(x)$coefmat.subset[,2] )
   
-  relimportStats <- data.frame(importance = x$importance, coefficient = names(x$importance))
+  #relimportStats <- data.frame(importance = x$importance, coefficient = names(x$importance))
   fullconfintStats <- data.frame(confint(x, full = TRUE))
   names(fullconfintStats) <- c("fulllower2.5CI", "fullupper97.5")
   subsetconfintStats <- data.frame(confint(x, full = FALSE))
   names(subsetconfintStats) <- c("subsetlower2.5CI", "subsetupper97.5")
   confintStats <- cbind(fullconfintStats,subsetconfintStats)
   summaryStats <- cbind(summaryStats, confintStats)
-  summaryStats <- merge(summaryStats, relimportStats, by = "coefficient", all = T)
+  #summaryStats <- merge(summaryStats, relimportStats, by = "coefficient", all = T)
   rownames(summaryStats) <- summaryStats$coefficient
   return(summaryStats)
 }
