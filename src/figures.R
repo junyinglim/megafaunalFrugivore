@@ -404,7 +404,7 @@ maxBS_modavg_plot <- ggplot(data = maxBS_modavg_res) +
   
 ggsave(file.path(fig.dir, "maxBS_modavg.pdf"), maxBS_modavg_plot, height= 9, width = 8)
 
-## Fig XX: Plot variance explained in full BS models ===============
+## Fig 3: Plot variance explained in full BS models ===============
 varexp_theme <- theme(axis.text.x = element_text(angle = 46, hjust = 1),
                       strip.background = element_blank(),
                       strip.text = element_text(color = "grey20", size = 18))
@@ -560,7 +560,7 @@ med_comb_presid_p <- ggplot(data= medBS_comb_presid) +
 presid_comb_p2 <- plot_grid(med_comb_presid_p, max_comb_presid_p, labels = "auto", nrow = 1)
 ggsave(file.path(fig.dir, "fig2_presid_comb2.pdf"), presid_comb_p2, width = 8, height = 4)
 
-# Fig 3: change in fruit size =========
+# Fig 4: change in fruit size =========
 # Generate histograms of fruit size changee
 fruitsizechange <- read.csv(file.path(res.dir, "tdwgFruitSizeChange.csv")) # units are in cm since that is the original fruit length units
 fruitsizechange <- subset(fruitsizechange, !is.na(changeInMedFruitSize))
@@ -589,7 +589,7 @@ medFSchangemap <- ggplot() +
   geom_point(aes(y = LAT, x= LONG, size = changeInMedFruitSize/2, color = medFSchange_categ), data = fruitsizechange) + 
   map_theme +
   coord_fixed() +
-  ggtitle(label = "Projected change in median fruit size") +
+  #ggtitle(label = "Projected change in median fruit size") +
   guides(size = FALSE, colour = guide_legend(title = "Change in fruit length (cm)")) +
   theme(legend.box = 'vertical', legend.title = element_text(size = 10), legend.text = element_text(size = 10)) +
   annotation_custom(smallfruitGrob, xmin = -Inf, xmax = Inf, ymin = Inf, ymax = Inf) +
@@ -603,7 +603,7 @@ levels(fruitsizechange$maxFSchange_categ) <- cleanCuts(levels(fruitsizechange$ma
 maxFSchangemap <- ggplot() +
   geom_polygon(aes(y = lat, x = long, group = group), data = tdwg_shp2) +
   geom_point(aes(y = LAT, x= LONG, size = changeInMaxFruitSize/2, color = maxFSchange_categ), data = fruitsizechange) + 
-  ggtitle(label = "Projected change in maximum (95th percentile) fruit size") +
+  #ggtitle(label = "Projected change in maximum (95th percentile) fruit size") +
   guides(size = FALSE, colour = guide_legend(title = "Change in fruit length (cm)")) +
   coord_fixed() +
   map_theme +
@@ -626,7 +626,7 @@ medFSchange_comb_wleg <- plot_grid(medFSchange_comb, get_legend(medFSchangemap),
 maxFSchange_comb_wleg <- plot_grid(maxFSchange_comb, get_legend(maxFSchangemap), nrow = 2, rel_heights = c(1,0.1))
 FSchange_comb_wleg <- plot_grid(medFSchange_comb_wleg, maxFSchange_comb_wleg, nrow = 2, labels = "auto")
 
-ggsave(file.path(fig.dir, "fig3_FSchange.pdf"), FSchange_comb_wleg, device = cairo_pdf, width = 9, height = 10)
+ggsave(file.path(fig.dir, "fig4_FSchange.pdf"), FSchange_comb_wleg, device = cairo_pdf, width = 9, height = 10)
 
 
 ## Supplementary Figure 1: Plot sensitivity of gap filling =========
@@ -646,3 +646,28 @@ maxFS_gap <- ggplot() +
 
 supp_fig1 <- plot_grid(medFS_gap, maxFS_gap, labels = "auto")
 ggsave(supp_fig1, filename = file.path(fig.dir, "suppfig1_gapfill.pdf"), height = 4, width = 8)
+
+
+## Test Fig 1.2: histogram of 
+tdwg_BS_hist <- melt(tdwg_final, id.vars = "LEVEL_3_CO",
+     measure.vars = c("presNat_medianBodySize", "curr_medianBodySize", "futr_medianBodySize"))
+
+ggplot(tdwg_BS_hist, aes(log10(value), fill = variable)) + 
+  geom_density(alpha = 0.5, aes(y = ..density..), position = 'identity')
+
+tdwg_final$
+tdwg_final$presNat_medianBodySize
+
+target_col <- c("SpecName", "Mass.g", "IUCN.Status.1.2")
+presnat_mamm <- read.csv(file.path(res.dir,"mammal_presNat_occ_trait.csv"))
+test <- subset(presnat_mamm, LEVEL_3_CO %in% tdwg_final$LEVEL_3_CO)[target_col]
+test2 <- test[!duplicated(test),]
+
+test2$Status <- NA
+test2$Status[test2$IUCN.Status.1.2 %in% c("DD", "LC", "NT")] <- "Survivors"
+test2$Status[test2$IUCN.Status.1.2 %in% c("EW","EX","EP")] <- "Pleistocene + Recent extinctions"
+test2$Status[test2$IUCN.Status.1.2 %in% c("EN", "VU", "CR")] <- "Possible future"
+
+test3 <- ggplot(aes(fill = Status, x = log10(Mass.g)), data = test2) + geom_histogram(binwidth = 0.3) #+ facet_wrap(~Scenario, nrow = 3)
+ggsave(test3, filename = file.path(fig.dir, "figXX_BS_time.pdf"))
+                                           

@@ -3,6 +3,7 @@
 
 
 # Directories 
+rm(list = ls())
 main.dir <- "/Users/junyinglim/Dropbox/Projects/2019/palms/projects/megafaunalFrugivore"
 data.dir <- file.path(main.dir, "data")
 res.dir <- file.path(main.dir, "results")
@@ -16,6 +17,8 @@ med_labels <- c("Intercept", "Log median body size", "Log median body size", "Cl
 max_levels <- c("(Intercept)", "curr_logMax95BS_scl","pnat_logMax95BS_scl","globalPC1_scl", "globalPC2_scl","globalPC3_scl", "regionalPC1_scl","regionalPC2_scl", "regionalPC3_scl","lgm_ens_Pano_scl", "lgm_ens_Tano_scl")
 max_labels <- c("Intercept", "Log maximum body size", "Log maximum body size", "Climate PC1", "Climate PC2", "Climate PC3", "Climate PC1","Climate PC2", "Climate PC3","LGM Prec. Anom.", "LGM Temp. Anom.")
 
+target_col <- c("Geographic.Scale", "Scenario", "coefficient", "fullAvgCoef", "fullAvgSE", "ConfidenceInterval","varexp", "totalR2")
+
 # OLS Median
 medBS_ols_modavg <- read.csv(file.path(res.dir, "medBS_ols_modavg.csv"))
 medBS_ols_modavg$Geographic.Scale <- factor(medBS_ols_modavg$Geographic.Scale,
@@ -28,7 +31,7 @@ medBS_ols_modavg2$ConfidenceInterval <- paste0("(", medBS_ols_modavg2$fulllower2
                                                medBS_ols_modavg2$fullupper97.5, ")")
 medBS_ols_modavg2$varexp[medBS_ols_modavg2$varexp < 0.001] <- "< 0.001"
 medBS_ols_modavg2$totalR2[duplicated(medBS_ols_modavg2$totalR2)] <- ""
-write.csv(subset(medBS_ols_modavg2, (!coefficient == "Intercept")),
+write.csv(subset(medBS_ols_modavg2, (!coefficient == "Intercept"))[target_col],
           file.path(res.dir, "medBS_ols_modavg_clean.csv"), row.names = F)
 
 # OLS Median Partial SD
@@ -43,7 +46,7 @@ medBS_ols_cade_modavg2$ConfidenceInterval <- paste0("(", medBS_ols_cade_modavg2$
                                                     medBS_ols_cade_modavg2$fullupper97.5, ")")
 medBS_ols_cade_modavg2$varexp[medBS_ols_cade_modavg2$varexp < 0.001] <- "< 0.001"
 medBS_ols_cade_modavg2$totalR2[duplicated(medBS_ols_cade_modavg2$totalR2)] <- ""
-write.csv(subset(medBS_ols_cade_modavg2, (!coefficient == "Intercept")),
+write.csv(subset(medBS_ols_cade_modavg2, (!coefficient == "Intercept"))[target_col],
           file.path(res.dir, "medBS_ols_cade_modavg_clean.csv"), row.names = F)
 
 
@@ -59,7 +62,7 @@ maxBS_ols_modavg2$ConfidenceInterval <- paste0("(", maxBS_ols_modavg2$fulllower2
                                                maxBS_ols_modavg2$fullupper97.5, ")")
 maxBS_ols_modavg2$varexp[maxBS_ols_modavg2$varexp < 0.001] <- "< 0.001"
 maxBS_ols_modavg2$totalR2[duplicated(maxBS_ols_modavg2$totalR2)] <- ""
-write.csv(subset(maxBS_ols_modavg2, (!coefficient == "Intercept")),
+write.csv(subset(maxBS_ols_modavg2, (!coefficient == "Intercept"))[target_col],
           file.path(res.dir, "maxBS_ols_modavg_clean.csv"), row.names = F)
 
 # OLS Maximum BS Partial SD
@@ -74,36 +77,37 @@ maxBS_ols_cade_modavg2$ConfidenceInterval <- paste0("(", maxBS_ols_cade_modavg2$
                                                     maxBS_ols_cade_modavg2$fullupper97.5, ")")
 maxBS_ols_cade_modavg2$varexp[maxBS_ols_cade_modavg2$varexp < 0.001] <- "< 0.001"
 maxBS_ols_cade_modavg2$totalR2[duplicated(maxBS_ols_cade_modavg2$totalR2)] <- ""
-write.csv(subset(maxBS_ols_cade_modavg2, (!coefficient == "Intercept")),
+write.csv(subset(maxBS_ols_cade_modavg2, (!coefficient == "Intercept"))[target_col],
           file.path(res.dir, "maxBS_ols_cade_modavg_clean.csv"), row.names = F)
 
 # SAR results
 maxBS_sar_modavg <- roundNumbers(read.csv(file.path(res.dir, "maxBS_sar_modavg.csv")) )
 maxBS_sar_modavg <- subset(maxBS_sar_modavg, !coefficient %in% c("(Intercept)", "lambda"))
-maxBS_sar_modavg$Geographic.scale <- factor(maxBS_sar_modavg$Geographic.scale,
+
+maxBS_sar_modavg$Geographic.Scale <- factor(maxBS_sar_modavg$Geographic.Scale,
                                             levels = geographic_levels)
 maxBS_sar_modavg$coefficient <- factor(maxBS_sar_modavg$coefficient,
                                        levels = max_levels,
                                        labels = max_labels)
-maxBS_sar_modavg2 <- with(maxBS_sar_modavg, maxBS_sar_modavg[order(Geographic.scale, Scenario, coefficient),])
+maxBS_sar_modavg2 <- with(maxBS_sar_modavg, maxBS_sar_modavg[order(Geographic.Scale, Scenario, coefficient),])
 maxBS_sar_modavg2$ConfidenceInterval <- paste0("(", maxBS_sar_modavg2$fulllower2.5, ", ",
                                                maxBS_sar_modavg2$fullupper97.5, ")")
 maxBS_sar_modavg2$varexp[maxBS_sar_modavg2$varexp < 0.001] <- "< 0.001"
 maxBS_sar_modavg2$totalR2[duplicated(maxBS_sar_modavg2$totalR2)] <- ""
-write.csv(maxBS_sar_modavg2,
+write.csv(maxBS_sar_modavg2[target_col],
           file.path(res.dir, "maxBS_sar_modavg_clean.csv"), row.names = F)
 
 medBS_sar_modavg <- roundNumbers(read.csv(file.path(res.dir, "medBS_sar_modavg.csv"))) 
 medBS_sar_modavg <- subset(medBS_sar_modavg, !coefficient %in% c("(Intercept)", "lambda"))
-medBS_sar_modavg$Geographic.scale <- factor(medBS_sar_modavg$Geographic.scale,
+medBS_sar_modavg$Geographic.Scale <- factor(medBS_sar_modavg$Geographic.Scale,
                                             levels = geographic_levels)
 medBS_sar_modavg$coefficient <- factor(medBS_sar_modavg$coefficient,
                                        levels = med_levels,
                                        labels = med_labels)
-medBS_sar_modavg2 <- with(medBS_sar_modavg, medBS_sar_modavg[order(Geographic.scale, Scenario, coefficient),])
+medBS_sar_modavg2 <- with(medBS_sar_modavg, medBS_sar_modavg[order(Geographic.Scale, Scenario, coefficient),])
 medBS_sar_modavg2$ConfidenceInterval <- paste0("(", medBS_sar_modavg2$fulllower2.5, ", ",
                                                medBS_sar_modavg2$fullupper97.5, ")")
 medBS_sar_modavg2$varexp[medBS_sar_modavg2$varexp < 0.001] <- "< 0.001"
 medBS_sar_modavg2$totalR2[duplicated(medBS_sar_modavg2$totalR2)] <- ""
-write.csv(medBS_sar_modavg2,
+write.csv(medBS_sar_modavg2[target_col],
           file.path(res.dir, "medBS_sar_modavg_clean.csv"), row.names = F)

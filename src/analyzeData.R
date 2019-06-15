@@ -222,40 +222,32 @@ listw_soi_nw <- nb2listw(nb_soi_nw, style = "W")
 listw_soi_oww <- nb2listw(nb_soi_oww, style = "W")
 listw_soi_owe <- nb2listw(nb_soi_owe, style = "W")
 
-# Define global model formulae
-glob_curr_medBS_modf <- formula(logMedFS_scl ~ curr_logMedBS_scl + globalPC1_scl + globalPC2_scl + globalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl)
-
-glob_curr_maxBS_modf <- formula(logMax95FS_scl ~ curr_logMax95BS_scl + globalPC1_scl + globalPC2_scl + globalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl)
-
-reg_curr_medBS_modf <- formula(logMedFS_scl ~ curr_logMedBS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl)
-
-reg_curr_maxBS_modf <- formula(logMax95FS_scl ~ curr_logMax95BS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl)
-
 # SAR - median body size =======
-glob_curr_medBS_sar_mod <- errorsarlm(glob_curr_medBS_modf, data = tdwg_final_glob, listw = listw_soi_glob, na.action = "na.fail")
-glob_pnat_medBS_sar_mod <- update(glob_curr_medBS_sar_mod, ~. -curr_logMedBS_scl + pnat_logMedBS_scl)
+# Apparently update doesn't work on the new errorsarlm
+glob_curr_medBS_sar_mod <- spatialreg::errorsarlm(logMedFS_scl ~ curr_logMedBS_scl + globalPC1_scl + globalPC2_scl + globalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, listw = listw_soi_glob, na.action = "na.fail", data = tdwg_final_glob)
+glob_pnat_medBS_sar_mod <- spatialreg::errorsarlm(logMedFS_scl ~ pnat_logMedBS_scl + globalPC1_scl + globalPC2_scl + globalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, listw = listw_soi_glob, na.action = "na.fail", data = tdwg_final_glob)
 
-nw_curr_medBS_sar_mod <- errorsarlm(reg_curr_medBS_modf, data = tdwg_final_nw, listw = listw_soi_nw, na.action = "na.fail")
-nw_pnat_medBS_sar_mod <- update(nw_curr_medBS_sar_mod, ~. -curr_logMedBS_scl + pnat_logMedBS_scl)
+nw_curr_medBS_sar_mod <- spatialreg::errorsarlm(logMedFS_scl ~ curr_logMedBS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_nw, listw = listw_soi_nw, na.action = "na.fail")
+nw_pnat_medBS_sar_mod <- spatialreg::errorsarlm(logMedFS_scl ~ pnat_logMedBS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_nw, listw = listw_soi_nw, na.action = "na.fail")
 
-oww_curr_medBS_sar_mod <- errorsarlm(reg_curr_medBS_modf, data = tdwg_final_oww, listw = listw_soi_oww, na.action = "na.fail")
-oww_pnat_medBS_sar_mod <- update(oww_curr_medBS_sar_mod, ~. -curr_logMedBS_scl + pnat_logMedBS_scl)
+oww_curr_medBS_sar_mod <- spatialreg::errorsarlm(logMedFS_scl ~ curr_logMedBS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_oww, listw = listw_soi_oww, na.action = "na.fail")
+oww_pnat_medBS_sar_mod <- spatialreg::errorsarlm(logMedFS_scl ~ pnat_logMedBS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_oww, listw = listw_soi_oww, na.action = "na.fail")
 
-owe_curr_medBS_sar_mod <- errorsarlm(reg_curr_medBS_modf, data = tdwg_final_owe, listw = listw_soi_owe, na.action = "na.fail")
-owe_pnat_medBS_sar_mod <- update(owe_curr_medBS_sar_mod, ~. -curr_logMedBS_scl + pnat_logMedBS_scl)
+owe_curr_medBS_sar_mod <- spatialreg::errorsarlm(logMedFS_scl ~ curr_logMedBS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_owe, listw = listw_soi_owe, na.action = "na.fail")
+owe_pnat_medBS_sar_mod <- spatialreg::errorsarlm(logMedFS_scl ~ pnat_logMedBS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_owe, listw = listw_soi_owe, na.action = "na.fail")
 
 # SAR - max body size
-glob_curr_maxBS_sar_mod <- errorsarlm(glob_curr_maxBS_modf, data = tdwg_final_glob, listw = listw_soi_glob, na.action = "na.fail")
-glob_pnat_maxBS_sar_mod <- update(glob_curr_maxBS_sar_mod, ~. -curr_logMax95BS_scl + pnat_logMax95BS_scl)
+glob_curr_maxBS_sar_mod <- spatialreg::errorsarlm(logMax95FS_scl ~ curr_logMax95BS_scl + globalPC1_scl + globalPC2_scl + globalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_glob, listw = listw_soi_glob, na.action = "na.fail")
+glob_pnat_maxBS_sar_mod <- spatialreg::errorsarlm(logMax95FS_scl ~ pnat_logMax95BS_scl + globalPC1_scl + globalPC2_scl + globalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_glob, listw = listw_soi_glob, na.action = "na.fail")
 
-nw_curr_maxBS_sar_mod <- errorsarlm(reg_curr_maxBS_modf, data = tdwg_final_nw, listw = listw_soi_nw, na.action = "na.fail")
-nw_pnat_maxBS_sar_mod <- update(nw_curr_maxBS_sar_mod, ~. -curr_logMax95BS_scl + pnat_logMax95BS_scl)
+nw_curr_maxBS_sar_mod <- spatialreg::errorsarlm(logMax95FS_scl ~ curr_logMax95BS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_nw, listw = listw_soi_nw, na.action = "na.fail")
+nw_pnat_maxBS_sar_mod <- spatialreg::errorsarlm(logMax95FS_scl ~ pnat_logMax95BS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_nw, listw = listw_soi_nw, na.action = "na.fail")
 
-oww_curr_maxBS_sar_mod <- errorsarlm(reg_curr_maxBS_modf, data = tdwg_final_oww, listw = listw_soi_oww, na.action = "na.fail")
-oww_pnat_maxBS_sar_mod <- update(oww_curr_maxBS_sar_mod, ~. -curr_logMax95BS_scl + pnat_logMax95BS_scl)
+oww_curr_maxBS_sar_mod <- spatialreg::errorsarlm(logMax95FS_scl ~ curr_logMax95BS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_oww, listw = listw_soi_oww, na.action = "na.fail")
+oww_pnat_maxBS_sar_mod <- spatialreg::errorsarlm(logMax95FS_scl ~ pnat_logMax95BS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_oww, listw = listw_soi_oww, na.action = "na.fail")
 
-owe_curr_maxBS_sar_mod <- errorsarlm(reg_curr_maxBS_modf, data = tdwg_final_owe, listw = listw_soi_owe, na.action = "na.fail")
-owe_pnat_maxBS_sar_mod <- update(owe_curr_maxBS_sar_mod, ~. -curr_logMax95BS_scl + pnat_logMax95BS_scl)
+owe_curr_maxBS_sar_mod <- spatialreg::errorsarlm(logMax95FS_scl ~ curr_logMax95BS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_owe, listw = listw_soi_owe, na.action = "na.fail")
+owe_pnat_maxBS_sar_mod <- spatialreg::errorsarlm(logMax95FS_scl ~ pnat_logMax95BS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_owe, listw = listw_soi_owe, na.action = "na.fail")
 
 # Perform model averaging
 medBS_sar_modlist <- list(glob_curr_medBS_sar_mod, glob_pnat_medBS_sar_mod,
