@@ -1,4 +1,5 @@
-## Analyze Data
+## Generate body size and fruit size at the scale of botanical countries
+# Author: Jun Ying Lim
 # Generate summary statistics at the TDWG-level scale
 
 ## Directories ========================
@@ -13,7 +14,7 @@ options(stringsAsFactors =FALSE)
 
 ## Packages ========================
 library(plyr); library(dplyr); library(reshape2)
-library(ggplot2); library(sp); library(rgdal); library(viridis); library(gridExtra); library(ggrepel)
+library(sp); library(rgdal)
 library(car); library(MuMIn)
 library(readxl)
 library(picante)
@@ -188,6 +189,7 @@ write.csv(mammal_presnat_occ_trait, file.path(res.dir, "mammal_presnat_occ_trait
 
 # Current the mean and median body sizes of current mammal assemblages
 mammal_curr_occ_trait <- merge(mammal_curr_comb_occ, phylacine_trait, by.x = "SpecName", by.y = "Binomial.1.2", all.x = TRUE)
+
 tdwg_curr_meanBodySize <- 
   ddply(.data = subset(mammal_curr_occ_trait, LEVEL_3_CO %in% mammal_palm_intersect),
         .variables = .(LEVEL_3_CO),
@@ -203,12 +205,65 @@ tdwg_curr_meanBodySize <-
         curr_medRangeSize = median(Number.Cells.Current.Range, na.rm = T),
         curr_nSp = length(unique(SpecName)),
         curr_meso_nSp = length(unique(SpecName[Mass.g > 10000])),
-        curr_mega_nSp = length(unique(SpecName[Mass.g > 44000])),
-        futr_medianBodySize = median(Mass.g[!IUCN.Status.1.2 %in% c("CR","EW","EN","EX")], na.rm = T),
-        futr_maxBodySize = quantile(Mass.g[!IUCN.Status.1.2 %in% c("CR", "EW", "EN", "EX")], probs = 0.95, na.rm = T))
+        curr_mega_nSp = length(unique(SpecName[Mass.g > 44000]))
+        #futr_medianBodySize = median(Mass.g[!IUCN.Status.1.2 %in% c("CR","EW","EN","EX")], na.rm = T),
+        #futr_maxBodySize = quantile(Mass.g[!IUCN.Status.1.2 %in% c("CR", "EW", "EN", "EX")], probs = 0.95, na.rm = T)
+)
+# NOTE: Pteropus niger (Mascarene fruit bat) is found on both Mauritius and Reunion but is only on Mauritius for the current dataset, as a result, there are no mammals on Reunion in the current case (Pteropus) but 2 in the present-natural dataset
 write.csv(mammal_curr_occ_trait, file.path(res.dir, "mammal_curr_occ_trait.csv"), row.names = F)
 
-# NOTE: Pteropus niger (Mascarene fruit bat) is found on both Mauritius and Reunion but is only on Mauritius for the current dataset, as a result, there are no mammals on Reunion in the current case (Pteropus) but 2 in the present-natural dataset
+# Simulate extinction
+mammal_curr_splist <- unique(mammal_curr_occ_trait$SpecName)
+mammal_curr_sp <- subset(phylacine_trait, Binomial.1.2 %in% mammal_curr_splist)[c("Binomial.1.2", "IUCN.Status.1.2")]
+
+extinctionProb <- data.frame(
+  IUCN.Status.1.2 = c("LC", "NT", "VU", "EN", "CR", "DD"),
+  extP50 = c(0.00005, 0.004, 0.05, 0.42, 0.97, 0.00005),
+  extP100 = c(0.0001, 0.01, 0.1, 0.667, 0.999, 0.0001)
+)
+
+mammal_curr_sp_status <- merge(mammal_curr_sp, extinctionProb, by = "IUCN.Status.1.2")
+
+simulateExtinction <- function(df){
+  mammal_futr_splist <- vector()  
+  for(i in 1:nrow(df)){
+    mammal_futr_splist[i] <- sample(x = c(df$Binomial.1.2[i], NA),
+                                    prob = c(1-df$extP50[i], df$extP50[i]),
+                                    size = 1)
+  } 
+  return(mammal_futr_splist)
+}
+
+# Simulate 100 extinctions
+mammal_futr_splist <- list()
+for(i in 1:100){ mammal_futr_splist[[i]] <- simulateExtinction(mammal_curr_sp_status) }
+
+# Calculate body size for 100 replicates
+tdwg_futr_meanBodySize_reps <- list()
+for(i in 1:100){
+  tdwg_futr_meanBodySize_reps [[i]] <- 
+    ddply(.data = subset(mammal_curr_occ_trait,
+                         LEVEL_3_CO %in% mammal_palm_intersect &
+                           SpecName %in% mammal_futr_splist[[i]]),
+        .variables = .(LEVEL_3_CO),
+        .fun = summarize,
+        futr_medianBodySize = median(Mass.g, na.rm = T),
+        futr_maxBodySize = quantile(Mass.g, probs = 0.95, na.rm = T))
+}
+
+tdwg_futr_meanBodySize <- Reduce(tdwg_futr_meanBodySize_reps, f = "rbind")
+
+saveRDS(tdwg_futr_meanBodySize, file = file.path(res.dir, "tdwg_futrBS_reps.rds"))
+
+tdwg_futr_meanBodySize_summary <- 
+  ddply(.data = tdwg_futr_meanBodySize,
+        .variable = .(LEVEL_3_CO),
+        .fun = summarize,
+        futr_medianBodySize = median(futr_medianBodySize, na.rm = T),
+        futr_maxBodySize = median(futr_maxBodySize, na.rm = T),
+        nreps = length(LEVEL_3_CO))
+
+tdwg_curr_meanBodySize <- merge(tdwg_curr_meanBodySize, tdwg_futr_meanBodySize_summary, by = "LEVEL_3_CO", all = TRUE)
 
 # Merge present natural and current mammal assemblage summary statistics and fruit statistics
 tdwg_mammal_all <- merge(tdwg_presnat_meanBodySize, tdwg_curr_meanBodySize, by = "LEVEL_3_CO", all = TRUE)
@@ -288,8 +343,15 @@ tdwg_final2 <- merge(tdwg_final2, regionalPCA, by = "LEVEL_3_CO")
 write.csv(tdwg_final2, file.path(data.dir,"tdwg_final.csv"))
 
 ## Generate some summary statistics
+mammal_curr_occ_trait <- read.csv(file.path(res.dir, "mammal_curr_occ_trait.csv"))
+mammal_presnat_occ_trait <- read.csv(file.path(res.dir, "mammal_presnat_occ_trait.csv"))
+tdwg_final2 <- read.csv(file.path(data.dir,"tdwg_final.csv"))
+phylacine.dir <- file.path(frug.dir, "PHYLACINE")
+phylacine_trait <- read.csv(file.path(phylacine.dir, "Trait_data.csv"))
+
 length(unique(subset(mammal_curr_occ_trait, LEVEL_3_CO %in% tdwg_final2$LEVEL_3_CO)$SpecName)) # 1604 taxa in the current 
 length(unique(subset(mammal_presnat_occ_trait, LEVEL_3_CO %in% tdwg_final2$LEVEL_3_CO)$SpecName)) # 1811 in the present-natural
+
 curr_status <- table(subset(phylacine_trait, Binomial.1.2 %in% unique(mammal_curr_occ_trait$SpecName))$IUCN.Status.1.2)
 sum(curr_status[names(curr_status) %in% c("CR", "DD", "EN", "LC", "NT", "VU")])
 pnat_status <- table(subset(phylacine_trait, Binomial.1.2 %in% unique(mammal_presnat_occ_trait$SpecName))$IUCN.Status.1.2)
