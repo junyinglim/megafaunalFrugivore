@@ -276,6 +276,13 @@ Palm fruit size distribution and mammal body size distribution
 
 
 
+
+
+
+
+
+
+
 < IMPORTANT REFERENCES >
 
 Hansen & Galetti (2008) The Forgotten Megafauna. Science
@@ -295,33 +302,7 @@ Goldel et al (2015) Environmental correlates of , Bot J. Linn Soc.
 - Sizes of frugivores increases towards the higher latitudes, but is out of the range of palms
 
 
-
-- Point estimates of body size and fruit size
-Median body size
-Max body size
-
-- Dispersion of body size and fruit size
-Average distance to centroid / median
-Range
-
-Control using null models?
-- Higher or lower than expected given a null model?
-
-Linear regression of dispersion against various abiotic and biotic variables
-
-Dependent variables: fruit size dispersion ~ climate + mammal body size dispersion
-
-
-
-Saturday
-- Split up into smaller taxonomic groups
-- Include birds
-
-
 Svenning J-C, Borchsenius F, Bjorholm S, Balslev H. 2008a. High tropical net diversification drives the New World latitudinal gradient in palm (Arecaceae) species richness. J. Biogeogr. 35:394–406
-
-
-
 
 
 Closely related species (genetic distance) against climatic mean difference (for shared OTUs do i take the mean?) Is this different for different orders?
@@ -330,4 +311,41 @@ Calculate site vs global mean
 
 
 
-5th cerer 10th talk
+We do not know how general ecological anachronisms can exist
+See Onstein paper for references. 
+
+CLIMATE ADAPTABILITY
+
+Tiffney 2004 Vertebrate dispersal of seed plants through time. Ann Review
+
+Make sure to cite Corlett on SEA
+
+Secondary dispersal by scatter hoarding rodents?
+
+Not enough time to respond? Rhinos are already extirpated from much of their range
+
+
+
+Afrotropics vs. neotropics fruit-frugivore interactions
+- afrotropics have much fewer frugivores, so it looks more specialized but it's really 
+
+
+
+Manuscript:
+
+- And even if ecosystems are able to respond to the same degree, there is no guarantee that the remaining frugivorous community are effective dispersers
+
+
+Discussion
+- May take uo to 25,000 years for a palm to go extinct (Doughty 201)
+- What about evolution not off size but of endocarp hardness
+- Maybe why the median body size isn't so strong is because of other potential frugivores such as birds (see Zona & Henderson). Even large frugivorous birds will have a huge issues with gape size.
+
+- Large fruited palms are more likely to survive and recruit than small fruited palms in a no dispersal scenario
+
+Suggested references:
+- Hamrick et al 1993 (): gene flow?
+- New plant extinction paper? Humphreys et al, Nature Ecology and Evolution
+
+Follow up:
+- Write to Renske about writing a perspective on extinction risk of large-megafaunal dispersed fruit...

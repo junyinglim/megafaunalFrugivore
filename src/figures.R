@@ -8,7 +8,7 @@ library(reshape2)
 library(cowplot)
 library(wesanderson); library(RColorBrewer); library(viridis)
 library(scales)
-library(stringr)
+library(stringr); library(scales)
 library(png); library(grid)
 
 ## Directories ========================
@@ -22,15 +22,37 @@ frug.dir <- file.path(rawdata.dir, "frugivores")
 options(stringsAsFactors =FALSE)
 
 ## Utility functions ========================
-cleanCuts <- function(x, round = TRUE){
+changeSciNot <- function(n) {
+  # courtesy of https://stackoverflow.com/questions/29785555/in-r-using-scientific-notation-10-rather-than-e
+  output <- format(n, scientific = TRUE) #Transforms the number into scientific notation even if small
+  output <- sub("e", "*10^", output) #Replace e with 10^
+  output <- sub("\\+0?", "", output) #Remove + symbol and leading zeros on expoent, if > 1
+  output <- sub("-0?", "-", output) #Leaves - symbol but removes leading zeros on expoent, if < 1
+  output
+}
+
+cleanCuts <- function(x){
   # Cleans up vector of factor levels generated using `cut` function for nicer plotting
   x <- gsub(",", " - ",x)
   x <- gsub("\\[|\\(|\\]|\\)", "", x)
-  if(round){
-    num <- str_split_fixed(x, pattern = " - ", n=2)
-    x <- paste(round(as.numeric(num[,1]), 3), round(as.numeric(num[,2]), 3), sep = " \u2013 ")
+  num <- str_split_fixed(x, pattern = " - ", n=2)
+  new <- rep(NA, length(x))
+  for(i in 1:length(x)){
+    if(abs(as.numeric(num[i,1])) < 0.001){
+      #start <- changeSciNot(scales::scientific(as.numeric(num[i,1]), 0))
+      start <- scales::scientific(as.numeric(num[i,1]), 1)
+    } else {
+      start <- round(as.numeric(num[i,1]), 3 )
+    }  
+    if(abs(as.numeric(num[i,2])) < 0.001){
+      #end <- changeSciNot(scales::scientific(as.numeric(num[i,2]), 0))
+      end <- scales::scientific(as.numeric(num[i,2]), 1)
+    } else {
+      end <- round(as.numeric(num[i,2]), 3 )
+    }
+    new[i] <- paste(start,end, sep = " \u2013 ")# em-dash
   }
-  return(x)
+  return(new)
 }
 
 roundCorrectly <- function(x){
@@ -68,17 +90,15 @@ map_theme <- theme(panel.background = element_blank(),
                    axis.title = element_blank(),
                    legend.position = "bottom",
                    legend.justification = "center",
+                   legend.title.align = 0,
                    strip.background = element_blank(),
+                   legend.key = element_blank(),
                    strip.text = element_text(size = 18))
 
-point_theme <- theme(
-                     axis.text = element_text(color = "grey20"),
+point_theme <- theme(axis.text = element_text(color = "grey20"),
                      legend.position = "bottom",
                      strip.background = element_blank(),
                      strip.text = element_text(size = 18))
-
-sloth_grob <- readPNG(file.path(fig.dir, "symbols", "megasloth.png"))
-rhino_grob <- readPNG(file.path(fig.dir, "symbols", "rhino.png"))
 
 ## Plot biogeography panels =========================
 neot_countrylist <- subset(tdwg_final, THREEREALM == "NewWorld")$LEVEL_3_CO
@@ -137,9 +157,8 @@ medFS_p <- ggplot() +
   geom_point(aes(x = LONG, y = LAT,
                  colour = medFS_q, size = value), data = tdwg_medFS, alpha = 0.9) +
   coord_fixed() +
-  ggtitle("Median fruit size") +
   map_theme + title_theme +
-  guides(size=FALSE, colour = guide_legend(title = "Fruit length (cm)", override.aes = list(size=5))) +
+  guides(size=FALSE, colour = guide_legend(title = "Median fruit length (cm)", override.aes = list(size=5))) +
   scale_color_viridis(discrete = TRUE)
 ggsave(file.path(fig.dir, "medFS.pdf"), medFS_p, width = 9, height = 5)
 
@@ -157,9 +176,8 @@ maxFS_p <- ggplot() +
                  colour = maxFS_q, size = value),
              data =tdwg_maxFS, alpha = 0.9) +
   coord_fixed() +
-  ggtitle("Maximum (95th percentile) fruit size") +
   map_theme + title_theme +
-  guides(size=FALSE, colour = guide_legend(title = "Fruit length (cm)", override.aes = list(size=5))) +
+  guides(size=FALSE, colour = guide_legend(title = "Maximum (95th percentile)\nfruit length (cm)", override.aes = list(size=5))) +
   scale_color_viridis(discrete = TRUE)
 
 ggsave(file.path(fig.dir, "maxFS.pdf"), maxFS_p, width = 9, height = 5)
@@ -178,7 +196,8 @@ medBS_arthm_max <- max(tdwg_medBS_melt$value)/1000
 
 medBS_p <- ggplot() + 
   geom_polygon(aes(y = lat, x = long, group = group), fill = "grey60", data = tdwg_shp2) +
-  geom_point(aes(y = LAT, x= LONG, colour = (value/1000), size = log(value)), data = tdwg_medBS_melt) +
+  geom_point(aes(y = LAT, x= LONG, colour = (value/1000),
+                 size = log(value)), data = tdwg_medBS_melt) +
   facet_wrap(~variable, nrow = 2)+
   # some padding so the legend takes up same space as the maximum BS
   scale_colour_viridis(discrete = FALSE,
@@ -186,8 +205,7 @@ medBS_p <- ggplot() +
                        trans = log10_trans(),
                        labels = c(round(medBS_arthm_min,2), 0.1, 1, 10, round(medBS_arthm_max) )) +
   coord_fixed() +
-  ggtitle("Median body size") +
-  guides(size = FALSE, colour = guide_colorbar(title = "Body mass (kg)",
+  guides(size = FALSE, colour = guide_colorbar(title = "Median\nbody mass (kg)",
                                                label.theme = element_text(angle = 45, vjust = 0.5))) +
   map_theme +
   title_theme +
@@ -212,9 +230,8 @@ maxBS_p <- ggplot() +
                        breaks = c(maxBS_arthm_min, 0.1, 1, 10, 100, 1000, maxBS_arthm_max),
                        trans = log10_trans(),
                        labels = c(round(maxBS_arthm_min, 2), 0.1, 1, 10, 100, 1000, round(maxBS_arthm_max))) +  
-  ggtitle("Maximum (95th percentile) body size") +
   guides(size = FALSE,
-         colour = guide_colorbar(title = "Body mass (kg)",
+         colour = guide_colorbar(title = "Maximum (95th percentile)\nbody mass (kg)",
                                  label.theme = element_text(angle = 45, vjust = 0.5))) +
   map_theme +
   title_theme +
@@ -566,19 +583,14 @@ fruitsizechange <- read.csv(file.path(res.dir, "tdwgFruitSizeChange.csv")) # uni
 fruitsizechange <- subset(fruitsizechange, !is.na(changeInMedFruitSize))
 medFSchange_hist <- ggplot(data = fruitsizechange) + geom_histogram(aes(changeInMedFruitSize), bins = 10) +
   labs(x = "Projected difference in\nmedian fruit length(cm)", y = "Count") +
-  geom_vline(xintercept = mean(fruitsizechange$changeInMedFruitSize, na.rm = T), size = 1, linetype = "dashed", color = "coral")
+  geom_vline(xintercept = mean(fruitsizechange$changeInMedFruitSize, na.rm = T), size = 1, linetype = "dashed", color = "coral") +
+  theme(panel.background = element_blank())
 
 maxFSchange_hist <- ggplot(data = fruitsizechange) + geom_histogram(aes(changeInMaxFruitSize), bins = 10) +
   labs(x = "Projected difference in\nmaximum fruit length (cm)", y = "Count") +
   geom_vline(xintercept = mean(fruitsizechange$changeInMaxFruitSize, na.rm = T),
-             size = 1, linetype = "dashed", color = wes_palette("Cavalcanti1", 5)[4])
-
-## Import photos
-library(png)
-smallfruitphoto <- readPNG(file.path(data.dir,"Arecaceae; Calyptrocalyx sp.; Baker 571_William J. Baker.png"))
-largefruitphoto <- readPNG(file.path(data.dir,"Lemurophoenix halleuxii.png"))
-smallfruitGrob <- grid::rasterGrob(smallfruitphoto)
-largefruitGrob <- grid::rasterGrob(largefruitphoto)
+             size = 1, linetype = "dashed", color = wes_palette("Cavalcanti1", 5)[4]) +
+  theme(panel.background = element_blank())
 
 ## Geographic distribution of change in frugivore mammal body size
 medFSchange_zCuts <- quantile(fruitsizechange$changeInMedFruitSize, probs = seq(0,1,length.out = 6), na.rm = TRUE)
@@ -590,9 +602,12 @@ medFSchangemap <- ggplot() +
   map_theme +
   coord_fixed() +
   #ggtitle(label = "Projected change in median fruit size") +
-  guides(size = FALSE, colour = guide_legend(title = "Change in fruit length (cm)")) +
-  theme(legend.box = 'vertical', legend.title = element_text(size = 10), legend.text = element_text(size = 10)) +
-  annotation_custom(smallfruitGrob, xmin = -Inf, xmax = Inf, ymin = Inf, ymax = Inf) +
+  guides(size = FALSE, colour = guide_legend(title = "Change in median\nfruit length (cm)")) +
+  theme(legend.box = 'vertical',
+        legend.title = element_text(size = 10),
+        legend.text = element_text(size = 10),
+        legend.key = element_blank(),
+        legend.key.size = unit(2, "line")) +
   scale_color_manual(values = brewer.pal(9,"RdBu")[c(9,7,6,3,1)])
 ggsave(file.path(fig.dir, "medFSchange_map.pdf"), medFSchangemap, width = 9, height = 6, device = cairo_pdf)
 
@@ -604,30 +619,35 @@ maxFSchangemap <- ggplot() +
   geom_polygon(aes(y = lat, x = long, group = group), data = tdwg_shp2) +
   geom_point(aes(y = LAT, x= LONG, size = changeInMaxFruitSize/2, color = maxFSchange_categ), data = fruitsizechange) + 
   #ggtitle(label = "Projected change in maximum (95th percentile) fruit size") +
-  guides(size = FALSE, colour = guide_legend(title = "Change in fruit length (cm)")) +
+  guides(size = FALSE, colour = guide_legend(title = "Change in maximum\n(95th percentile) fruit length (cm)")) +
   coord_fixed() +
   map_theme +
-  theme(legend.box = 'vertical', legend.title = element_text(size = 10), legend.text = element_text(size = 10)) +
+  theme(legend.box = 'vertical',
+        legend.key = element_blank(),
+        legend.title = element_text(size = 10),
+        legend.text = element_text(size = 10)) +
   scale_color_manual(values = brewer.pal(9,"RdBu")[c(9,7,6,3,1)])
 ggsave(file.path(fig.dir, "maxFSchange_map.pdf"), maxFSchangemap, width = 9, height = 6, device = cairo_pdf)
 
 medFSchange_comb <- ggdraw() +
   draw_plot(medFSchangemap + theme(legend.position = "none"), 0,0, 1,1) +
-  draw_plot(smallfruitGrob, x = 0.14, y = 0.3, 0.12, 0.18) +
   draw_plot(medFSchange_hist + theme(text = element_text(size = 8),
                                      axis.text = element_text(size = 6)), 0.05, 0.1, 0.2, 0.4)
 maxFSchange_comb <- ggdraw() +
   draw_plot(maxFSchangemap + theme(legend.position = "none"), 0,0, 1,1) +
-  draw_plot(largefruitGrob, x = 0.14, y = 0.3, 0.12, 0.18) +
   draw_plot(maxFSchange_hist + theme(text = element_text(size = 8),
                                      axis.text = element_text(size = 6)), 0.05, 0.1, 0.2, 0.4)
 
 medFSchange_comb_wleg <- plot_grid(medFSchange_comb, get_legend(medFSchangemap), nrow = 2, rel_heights = c(1,0.1))
 maxFSchange_comb_wleg <- plot_grid(maxFSchange_comb, get_legend(maxFSchangemap), nrow = 2, rel_heights = c(1,0.1))
-FSchange_comb_wleg <- plot_grid(medFSchange_comb_wleg, maxFSchange_comb_wleg, nrow = 2, labels = "auto")
+FSchange_comb_wleg <- plot_grid(medFSchange_comb_wleg, maxFSchange_comb_wleg, nrow = 2, labels = "auto", label_size = 20)
 
-ggsave(file.path(fig.dir, "fig4_FSchange.pdf"), FSchange_comb_wleg, device = cairo_pdf, width = 9, height = 10)
+ggsave(file.path(fig.dir, "fig4_FSchange.pdf"), FSchange_comb_wleg, device = cairo_pdf, width = 9, height = 9)
 
+mean(fruitsizechange$changeInMedFruitSize)
+sd(fruitsizechange$changeInMedFruitSize)
+mean(fruitsizechange$changeInMaxFruitSize)
+sd(fruitsizechange$changeInMaxFruitSize)
 
 ## Supplementary Figure 1: Plot sensitivity of gap filling =========
 medFS_cor <- cor(tdwg_final$medianFruitLengthFilled, tdwg_final$medianFruitLength, method = "pearson")
@@ -671,3 +691,7 @@ test2$Status[test2$IUCN.Status.1.2 %in% c("EN", "VU", "CR")] <- "Possible future
 test3 <- ggplot(aes(fill = Status, x = log10(Mass.g)), data = test2) + geom_histogram(binwidth = 0.3) #+ facet_wrap(~Scenario, nrow = 3)
 ggsave(test3, filename = file.path(fig.dir, "figXX_BS_time.pdf"))
                                            
+names(phylacine_trait)
+
+subset(phylacine_trait,  Genus.1.2 == "Muntiacus")
+subset(mammalDiet, Genus == "Muntiacus")

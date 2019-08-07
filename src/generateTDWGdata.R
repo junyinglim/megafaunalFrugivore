@@ -357,3 +357,4 @@ sum(curr_status[names(curr_status) %in% c("CR", "DD", "EN", "LC", "NT", "VU")])
 pnat_status <- table(subset(phylacine_trait, Binomial.1.2 %in% unique(mammal_presnat_occ_trait$SpecName))$IUCN.Status.1.2)
 sum(pnat_status[names(pnat_status) %in% c("CR", "DD", "EN", "LC", "NT", "VU")])
 
+
