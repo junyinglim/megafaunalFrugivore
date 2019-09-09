@@ -45,8 +45,8 @@ scaleVars <- function(x, col, suffix){
   return(x)
 }
 scale.col <- c("logMedFS", "logMax95FS",
-               "curr_logMedBS", "curr_logMax95BS", "curr_dispBodySize",
-               "pnat_logMedBS", "pnat_logMax95BS", "presNat_dispBodySize",
+               "curr_logMedBS", "curr_logMax95BS",
+               "pnat_logMedBS", "pnat_logMax95BS",
                "globalPC1", "globalPC2", "globalPC3",
                "regionalPC1", "regionalPC2", "regionalPC3",
                "lgm_ens_Pano", "lgm_ens_Tano", "soilcount")
@@ -143,6 +143,28 @@ maxBS_ols_cade_modavgres$Method <- "OLS"
 write.csv(roundNumbers(maxBS_ols_cade_modavgres), file.path(res.dir, "maxBS_ols_cade_modavg.csv"), row.names = FALSE)
 
 ## Generate global partial residuals ============
+generatePartialResiduals <- function(mod, modcoeff){
+  target_col <- c("curr_logMax95BS_scl", "pnat_logMax95BS_scl")
+  temp_mod <- mod
+  modelavgcoeff <- setNames(modcoeff$fullAvgCoef, modcoeff$coefficient)
+  # Replace model coefficients with model averaged coefficients
+  temp_mod$coefficients <- modelavgcoeff[match(names(modelavgcoeff), names(temp_mod$coefficients))]
+  presid_temp <- resid(temp_mod, type = "partial")
+  list("points" =
+         data.frame(presid = presid_temp[,colnames(presid_temp) %in% target_col],
+                    x = mod$model[,names(mod$model) %in% target_col]), 
+       "intercept" = modcoeff$fullAvgCoef[modcoeff$coefficient=="(Intercept)"],
+       "slope" = modcoeff$fullAvgCoef[modcoeff$coefficient %in% target_col])
+}
+
+#maxBS_ols_modlist <- list(glob_curr_maxBS_mod, glob_pnat_maxBS_mod, 
+#                          nw_curr_maxBS_mod, nw_pnat_maxBS_mod, 
+#                          oww_curr_maxBS_mod, oww_pnat_maxBS_mod,
+#                          owe_curr_maxBS_mod, owe_pnat_maxBS_mod)
+
+maxBS_ModPartialResid <- mapply(FUN = generatePartialResiduals, mod = maxBS_ols_modlist, modcoeff = maxBS_ols_modavglist, SIMPLIFY = F)
+saveRDS(maxBS_ModPartialResid, file.path(res.dir, "maxBS_partialresid.rds"))
+
 full_mod <- glob_curr_medBS_mod
 modelavgcoeff <- setNames(medBS_ols_modavglist[[1]]$fullAvgCoef, medBS_ols_modavglist[[1]]$coefficient)
 full_mod$coefficients <- modelavgcoeff[match(names(modelavgcoeff), names(full_mod$coefficients))]
@@ -151,6 +173,7 @@ medBS_curr_presid <- list( points = data.frame(presid = presid_temp[,colnames(pr
                            intercept = medBS_ols_modavglist[[1]]$fullAvgCoef[1],
                            slope  = medBS_ols_modavglist[[1]]$fullAvgCoef[2])
 saveRDS(medBS_curr_presid, file.path(res.dir, "medBS_curr_presid.rds"))
+
 
 full_mod <- glob_pnat_medBS_mod
 modelavgcoeff <- setNames(medBS_ols_modavglist[[2]]$fullAvgCoef, medBS_ols_modavglist[[2]]$coefficient)

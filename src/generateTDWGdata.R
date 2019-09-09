@@ -3,6 +3,7 @@
 # Generate summary statistics at the TDWG-level scale
 
 ## Directories ========================
+rm(list = ls())
 main.dir <- "/Users/junyinglim/Dropbox/Projects/2019/palms/projects/megafaunalFrugivore"
 data.dir <- file.path(main.dir, "data")
 res.dir <- file.path(main.dir, "results")
@@ -149,23 +150,19 @@ tdwg_meanFruit <- ddply(.data = subset(palm_occ_trait, Area_code_L3 %in% mammal_
                         meanFruitLength = mean(AverageFruitLength_cm, na.rm = T),
                         medianFruitLength = median(AverageFruitLength_cm, na.rm = T),
                         max95FruitLength = quantile(AverageFruitLength_cm,
-                                                    probs = 0.95, na.rm = T ),
+                                                    probs = 0.95, na.rm = T, type = 8 ),
                         # Gap filling
                         medianFruitLengthFilled = median(AverageFruitLength_cm_filled, na.rm = T),
                         meanFruitLengthFilled = mean(AverageFruitLength_cm_filled, na.rm = T),
-                        maxFruitLengthFilled = max(AverageFruitLength_cm_filled, na.rm = T),
                         max95FruitLengthFilled = quantile(AverageFruitLength_cm_filled,
-                                                          probs = 0.95, na.rm = T ),
-                        minFruitLengthFilled  = min(AverageFruitLength_cm_filled, na.rm = T),
-                        rangeFruitLengthFilled = log(maxFruitLengthFilled)-log(minFruitLengthFilled),
-                        dispFruitLengthFilled = mean(abs(log(AverageFruitLength_cm_filled) - 
-                                                       log(medianFruitLengthFilled)), na.rm = T) ,
+                                                          probs = 0.95, na.rm = T, type = 8 ),
                         sdLogFruitLengthFilled = sd(log(AverageFruitLength_cm_filled), na.rm = T),
                         megapalm_nsp = sum(AverageFruitLength_cm_filled > 4, na.rm = T),
                         palm_nSp = length(AverageFruitLength_cm))
 names(tdwg_meanFruit)[names(tdwg_meanFruit) == "Area_code_L3"] <- "LEVEL_3_CO"
 
 write.csv(subset(palm_occ_trait, Area_code_L3 %in% mammal_palm_intersect), file = file.path(res.dir, "tdwg_palm_occ_trait.csv"), row.names = F)
+
 
 # Calculate mean and median body sizes of present natural mammal assemblages
 mammal_presnat_occ_trait <- merge(mammal_presnat_comb_occ, phylacine_trait, by.x = "SpecName", by.y = "Binomial.1.2", all.x = TRUE)
@@ -174,18 +171,13 @@ tdwg_presnat_meanBodySize <-
         .variables = .(LEVEL_3_CO),
         .fun = summarize,
         presNat_meanBodySize = mean(Mass.g, na.rm = T),
-        presNat_medianBodySize = median(Mass.g, na.rm = T),
-        presNat_maxBodySize = max(Mass.g, na.rm = T),
-        presNat_max95BodySize = quantile(Mass.g, probs = 0.95, na.rm = T ),
-        presNat_minBodySize = min(Mass.g, na.rm = T),
-        presNat_dispBodySize = mean(abs(log(Mass.g) - log(presNat_medianBodySize)), na.rm = T) ,
-        presNat_rangeBodySize = log(presNat_maxBodySize) - log(presNat_minBodySize),
+        presNat_medianBodySize = quantile(Mass.g, probs = 0.5, na.rm = T),
+        presNat_max95BodySize = quantile(Mass.g, probs = 0.95, type = 8, na.rm = T ),
         presNat_sdBodySize = sd(log(Mass.g), na.rm = T),
-        presNat_medRangeSize = median(Number.Cells.Present.Natural.Range, na.rm = T),
         presNat_nSp = length(unique(SpecName)),
         presNat_meso_nSp = length(unique(SpecName[Mass.g > 10000])),
         presNat_mega_nSp = length(unique(SpecName[Mass.g > 44000])))
-write.csv(mammal_presnat_occ_trait, file.path(res.dir, "mammal_presnat_occ_trait.csv"), row.names = F)
+write.csv(subset(mammal_presnat_occ_trait, LEVEL_3_CO %in% mammal_palm_intersect), file.path(res.dir, "mammal_presnat_occ_trait.csv"), row.names = F)
 
 # Current the mean and median body sizes of current mammal assemblages
 mammal_curr_occ_trait <- merge(mammal_curr_comb_occ, phylacine_trait, by.x = "SpecName", by.y = "Binomial.1.2", all.x = TRUE)
@@ -195,14 +187,9 @@ tdwg_curr_meanBodySize <-
         .variables = .(LEVEL_3_CO),
         .fun = summarize,
         curr_meanBodySize = mean(Mass.g, na.rm = T),
-        curr_medianBodySize = median(Mass.g, na.rm = T),
-        curr_maxBodySize = max(Mass.g, na.rm = T),
-        curr_max95BodySize = quantile(Mass.g, probs = 0.95, na.rm = T),
-        curr_minBodySize = min(Mass.g, na.rm = T),
-        curr_rangeBodySize = log(curr_maxBodySize) - log(curr_minBodySize),
-        curr_dispBodySize = mean(abs(log(Mass.g) - log(curr_medianBodySize)), na.rm = T) ,
+        curr_medianBodySize = quantile(Mass.g, probs = 0.5, type = 8, na.rm = T),
+        curr_max95BodySize = quantile(Mass.g, probs = 0.95, type = 8, na.rm = T),
         curr_sdBodySize = sd(log(Mass.g), na.rm = T),
-        curr_medRangeSize = median(Number.Cells.Current.Range, na.rm = T),
         curr_nSp = length(unique(SpecName)),
         curr_meso_nSp = length(unique(SpecName[Mass.g > 10000])),
         curr_mega_nSp = length(unique(SpecName[Mass.g > 44000]))
@@ -210,17 +197,24 @@ tdwg_curr_meanBodySize <-
         #futr_maxBodySize = quantile(Mass.g[!IUCN.Status.1.2 %in% c("CR", "EW", "EN", "EX")], probs = 0.95, na.rm = T)
 )
 # NOTE: Pteropus niger (Mascarene fruit bat) is found on both Mauritius and Reunion but is only on Mauritius for the current dataset, as a result, there are no mammals on Reunion in the current case (Pteropus) but 2 in the present-natural dataset
-write.csv(mammal_curr_occ_trait, file.path(res.dir, "mammal_curr_occ_trait.csv"), row.names = F)
+write.csv(subset(mammal_curr_occ_trait, LEVEL_3_CO %in% mammal_palm_intersect), file.path(res.dir, "mammal_curr_occ_trait.csv"), row.names = F)
 
-# Simulate extinction
+## Simulate extinction ====================s
 mammal_curr_splist <- unique(mammal_curr_occ_trait$SpecName)
 mammal_curr_sp <- subset(phylacine_trait, Binomial.1.2 %in% mammal_curr_splist)[c("Binomial.1.2", "IUCN.Status.1.2")]
 
 extinctionProb <- data.frame(
   IUCN.Status.1.2 = c("LC", "NT", "VU", "EN", "CR", "DD"),
-  extP50 = c(0.00005, 0.004, 0.05, 0.42, 0.97, 0.00005),
-  extP100 = c(0.0001, 0.01, 0.1, 0.667, 0.999, 0.0001)
+  #extP50 = c(0.00005, 0.004, 0.0513, 0.4276, 0.9688, 0.00005)
+  extP50 = c(0.0009, 0.0071, 0.0513, 0.4276, 0.9688, 0.0009)
 )
+# Values from Moore are 0.00005, 0.004, 0.05, 0.42, 0.97, 0.00005
+# Mooers uses the IUCN 2001 designations, i.e., P(ext_CR, 10 years) = 0.5; P(ext_EN, 20 years) = 0.2 and P(ext_VU, 100 years) = 0.1
+# Rearranging the equations P(r, t) = 1 - exp(-rt) , the rates for CR = -log(0.5)/10, EN = -log(0.8)/20, VU = -log(0.9) / 100
+# For LC and NT, they just assumed P(ext_LC, 100) of 0.0001, ext_LC = -log(0.9999)/100
+# Using these same rates, you can standardize them for the same time horizons, we then get
+# P(CR,50) = 0.96875, P(EN,50) = 0.427; P(VU,50) = 0.0513
+# Ext prob after 50 years (Davis et al 2018) = 0.0009, 0.0071, 0.0513, 0.4276, 0.9688, 0.0009
 
 mammal_curr_sp_status <- merge(mammal_curr_sp, extinctionProb, by = "IUCN.Status.1.2")
 
@@ -236,11 +230,11 @@ simulateExtinction <- function(df){
 
 # Simulate 100 extinctions
 mammal_futr_splist <- list()
-for(i in 1:100){ mammal_futr_splist[[i]] <- simulateExtinction(mammal_curr_sp_status) }
+for(i in 1:1000){ mammal_futr_splist[[i]] <- simulateExtinction(mammal_curr_sp_status) }
 
 # Calculate body size for 100 replicates
 tdwg_futr_meanBodySize_reps <- list()
-for(i in 1:100){
+for(i in 1:1000){
   tdwg_futr_meanBodySize_reps [[i]] <- 
     ddply(.data = subset(mammal_curr_occ_trait,
                          LEVEL_3_CO %in% mammal_palm_intersect &
@@ -282,7 +276,6 @@ tdwg_res$propMegaPalm <- tdwg_res$megapalm_nsp / tdwg_res$palm_nSp
 tdwg_res$propMegaMam_curr <- tdwg_res$curr_mega_nSp / tdwg_res$curr_nSp
 tdwg_res$propMegaMam_presnat <- tdwg_res$presNat_mega_nSp / tdwg_res$presNat_nSp
 tdwg_res$deltaMedianBodySize = log(tdwg_res$presNat_medianBodySize) - log(tdwg_res$curr_medianBodySize)
-
 tdwg_res$megaSpLoss <- tdwg_res$presNat_mega_nSp - tdwg_res$curr_mega_nSp 
 tdwg_res$mesoSpLoss <- tdwg_res$presNat_meso_nSp - tdwg_res$curr_meso_nSp
 
@@ -357,4 +350,8 @@ sum(curr_status[names(curr_status) %in% c("CR", "DD", "EN", "LC", "NT", "VU")])
 pnat_status <- table(subset(phylacine_trait, Binomial.1.2 %in% unique(mammal_presnat_occ_trait$SpecName))$IUCN.Status.1.2)
 sum(pnat_status[names(pnat_status) %in% c("CR", "DD", "EN", "LC", "NT", "VU")])
 
-
+table(mammal_presnat_occ_trait$CONTINENT)
+asd <- subset(mammal_presnat_occ_trait, IUCN.Status.1.2 == "EP" & CONTINENT == "ASIA-TROPICAL")
+asdlsit <- unique(asd$SpecName)
+test <- subset(phylacine_trait, Binomial.1.2 %in% asdlsit)
+test[order(test$Mass.g), names(test) %in% c("Binomial.1.2", "Mass.g")]
