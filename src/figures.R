@@ -180,7 +180,7 @@ maxFS_p <- ggplot() +
              data =tdwg_maxFS, alpha = 0.9) +
   coord_fixed() +
   map_theme + theme(plot.title = element_blank()) +
-  guides(size=FALSE, colour = guide_legend(title = "Maximum (95th percentile)\nfruit length (cm)",
+  guides(size=FALSE, colour = guide_legend(title = "Maximum\n(95th percentile)\nfruit length (cm)",
                                            override.aes = list(size=sqrt(max_q_mdpt)))) +
   scale_x_continuous(expand = c(0,0)) +
   scale_y_continuous(expand = c(0,0)) +
@@ -259,26 +259,6 @@ maxBS_p <- ggplot() +
         legend.box = "vertical")
         #legend.box.just = "center"
 ggsave(file.path(fig.dir, "maxBS.pdf"), maxBS_p, width = 9, height = 10)
-
-# Combine fruit size and body size 
-# fig1_label_size = 20
-# FS_comb <- plot_grid(medFS_p + theme(legend.position = "none"),
-#                      maxFS_p + theme(legend.position = "none"),
-#                      nrow = 1, labels = c("a","b"), label_size = fig1_label_size)
-# 
-# FS_comb_leg <- plot_grid(get_legend(medFS_p), get_legend(maxFS_p), nrow = 1)
-# FS_comb_wleg <- plot_grid(FS_comb, FS_comb_leg, rel_heights = c(1, 0.2), nrow = 2)
-# 
-# BS_comb <- plot_grid(medBS_p + theme(legend.position = "none"),
-#                      maxBS_p + theme(legend.position = "none"), 
-#                      nrow = 1, labels= c("c", "d"), label_size = fig1_label_size)
-# 
-# BS_comb_leg <- plot_grid(get_legend(medBS_p), get_legend(maxBS_p), nrow = 1)
-# 
-# fig1_BSFS <- plot_grid(FS_comb, FS_comb_leg, BS_comb, BS_comb_leg,
-#                        nrow = 4, rel_heights = c(1,0.2,2,0.2))
-# 
-# ggsave(file.path(fig.dir, "fig1_BSFS.pdf"), fig1_BSFS, width = 18, height = 12)
 
 ## Model-averaged coefficients ===============
 maxBS_modavg_res <- read.csv(file.path(res.dir, "maxBS_ols_modavg.csv"), stringsAsFactors = TRUE)
@@ -570,27 +550,9 @@ maxFSchangemap <- ggplot() +
   scale_color_manual(values = brewer.pal(9,"RdBu")[c(9,7,6,3,1)])
 ggsave(file.path(fig.dir, "maxFSchange_map.pdf"), maxFSchangemap, width = 9, height = 6, device = cairo_pdf)
 
-
-## Supplementary Figure 1: Plot sensitivity of gap filling =========
-medFS_cor <- cor(tdwg_final$medianFruitLengthFilled, tdwg_final$medianFruitLength, method = "pearson")
-medFS_gap <- ggplot() + 
-  geom_point(aes(y = medianFruitLengthFilled, x = medianFruitLength), pch = 21, col = "grey40", data = tdwg_final) +
-  geom_abline(aes(intercept = 0, slope = 1), col = "grey20") +
-  labs(y = "Median fruit length\nwith gap filling (cm)", x = "Median fruit length\nwith gaps excluded (cm)") +
-  annotate("text", x = -Inf, y = Inf, label = paste0("Pearson correlation = ", round(medFS_cor,3)), hjust = -0.1, vjust = 1.5)
-
-maxFS_cor <- cor(tdwg_final$max95FruitLengthFilled, tdwg_final$max95FruitLength, method = "pearson")
-maxFS_gap <- ggplot() +
-  geom_point(aes(y = max95FruitLengthFilled, x = max95FruitLength), pch = 21, col = "grey40", data = tdwg_final) +
-  geom_abline(aes(intercept = 0, slope = 1), col = "grey20") + 
-  labs(y = "Maximum fruit length\nwith gap filling (cm)", x = "Maximum fruit length\nwith gaps excluded (cm)") + 
-  annotate("text", x = -Inf, y = Inf, label = paste0("Pearson correlation = ", round(maxFS_cor,3)), hjust = -0.1, vjust = 1.5)
-
-supp_fig1 <- plot_grid(medFS_gap, maxFS_gap, labels = "auto")
-ggsave(supp_fig1, filename = file.path(fig.dir, "suppfig1_gapfill.pdf"), height = 4, width = 8)
-
 ## Extinction and body size ==========
 tdwg_final <- read.csv(file.path(data.dir,"tdwg_final.csv"))
+tdwg_env <- read.csv(file.path(data.dir, "TDWG_Environment_AllData_2019Feb.csv"))
 presnat_mamm <- read.csv(file.path(res.dir,"mammal_presNat_occ_trait.csv"))
 presnat_mamm <- subset(presnat_mamm, LEVEL_3_CO %in% tdwg_final$LEVEL_3_CO)
 presnat_mamm <- merge(x = presnat_mamm,  y = tdwg_env[c("LEVEL_3_CO", "REALM_LONG")], by = "LEVEL_3_CO")
@@ -616,12 +578,13 @@ mamm_df3$REALM_LONG <- factor(mamm_df3$REALM_LONG, levels = c("Global", "Afrotro
 
 CurrVsPnatBSHist <- ggplot(aes(fill = CurrVsPnat, x = log10(Mass.g/1000)), data = mamm_df3) +
   geom_histogram(binwidth = 0.5) +
-  facet_wrap(~REALM_LONG, nrow = 4) +
+  facet_wrap(~REALM_LONG, nrow = 4, scales = "free") +
   scale_fill_manual(values = wes_palette("Royal1", n = 2)) +
-  scale_y_continuous(name = "Number of mammal frugivores species", expand = c(0,0)) +
+  scale_y_continuous(name = "Number of mammalian frugivores", expand = c(0,0)) +
   labs(x=expression(paste(Log[10], " body mass (kg)", sep = " ")))+
   scale_x_continuous(expand = c(0,0)) +
-  theme(strip.background = element_blank(),
+  theme(axis.title = element_text(size = 12),
+        strip.background = element_blank(),
         strip.text = element_text(size = 12, colour = "grey20"),
         panel.background = element_blank(), 
         legend.position = "bottom", 
@@ -630,9 +593,9 @@ ggsave(CurrVsPnatBSHist, filename = file.path(fig.dir, "figXX_CurrVsPnatBSHist.p
                                            
 CurrVsFutrBSHist <- ggplot(aes(fill = FutrVsCurr, x = log10(Mass.g/1000)), data = subset(mamm_df3, !IUCN.Status.1.2 %in% c("EX", "EP", "EW"))) +
   geom_histogram(binwidth = 0.5) +
-  facet_wrap(~REALM_LONG, nrow = 1) +
+  facet_wrap(~REALM_LONG, nrow = 1, scales = "free") +
   scale_fill_manual(values = wes_palette("Royal1", n = 2)) +
-  scale_y_continuous(name = "Number of mammal\nfrugivores species", expand = c(0,0)) +
+  scale_y_continuous(name = "Number of\nmammalian frugivores", expand = c(0,0)) +
   labs(x=expression(paste(Log[10], " body mass (kg)", sep = " ")))+
   scale_x_continuous(expand = c(0,0)) +
   theme(strip.background = element_blank(),
@@ -643,10 +606,15 @@ CurrVsFutrBSHist <- ggplot(aes(fill = FutrVsCurr, x = log10(Mass.g/1000)), data 
 ggsave(CurrVsFutrBSHist, filename = file.path(fig.dir, "figXX_CurrVsFutrBSHist.pdf"), width = 9, height = 5)
 
 ## FIG 1: Maximum fruit size, body size and changes in body size ==========
-fig1 <- plot_grid(maxFS_p,
-                  plot_grid(maxBS_p + theme(legend.title.align = 0.5), CurrVsPnatBSHist,
-                            nrow = 1, rel_widths = c(0.7, 0.3), labels = c("b","c"), label_size = 16),
-                  nrow = 2, rel_heights = c(0.8, 1.2), labels = "a", label_size = 16)
+fig1 <- plot_grid(maxFS_p + theme(legend.title = element_text(size = 14),
+                                  legend.text = element_text(size = 11)),
+                  plot_grid(maxBS_p + theme(legend.title =  element_text(size = 14),
+                                            legend.key.height = unit(0.8, "cm"),
+                                            legend.text = element_text(size = 11)),
+                                            #legend.title.align = 0.5),
+                            CurrVsPnatBSHist,
+                            nrow = 1, rel_widths = c(0.75, 0.25), labels = c("b","c"), label_size = 20),
+                  nrow = 2, rel_heights = c(0.8, 1.2), labels = "a", label_size = 20)
 ggsave(fig1, filename = file.path(fig.dir,"fig1_prelim.pdf"), height = 11, width = 12)
 
 ## FIG 2: Partial residual + model coeff ==========
@@ -671,10 +639,10 @@ fig2 <- plot_grid(plot_grid(maxBS_modavg_plot +
 ggsave(file.path(fig.dir, "fig2_presid_modcoeff.pdf"), fig2, width = 7, height = 7)
 
 ## FIG 3: Variance explained ===============
-ggsave(file.path(fig.dir, "fig3_varexp.pdf"),
-  maxBS_ols_modavg_plot + theme(axis.title.y = element_text(size = 26),
-                                axis.text.x = element_text(size = 14, angle = 50)),
-  width = 10, height = 10)
+fig3 <- maxBS_ols_modavg_plot + theme(axis.title.y = element_text(size = 26),
+                                axis.text.y = element_text(size = 16),
+                                axis.text.x = element_text(size = 16, angle = 50))
+ggsave(file.path(fig.dir, "fig3_varexp.pdf"), fig3, width = 10, height = 10)
 
 ## FIG 4: Change in fruit size ===============
 maxFSchange_comb <- ggdraw() +
@@ -683,16 +651,39 @@ maxFSchange_comb <- ggdraw() +
                                      axis.text = element_text(size = 6)), 0.05, 0.1, 0.2, 0.4)
 
 maxFSchange_comb_wleg <- plot_grid(maxFSchange_comb, get_legend(maxFSchangemap), nrow = 2, rel_heights = c(1,0.1))
-fig4 <- plot_grid(maxFSchange_comb_wleg,
-                  CurrVsFutrBSHist, nrow = 2, rel_heights = c(1, 0.8), scale = c(1,0.8),
+
+fig4 <- plot_grid(CurrVsFutrBSHist + theme(legend.position = "right"),
+                  maxFSchange_comb_wleg, nrow = 2, rel_heights = c(0.6, 1.2), scale = c(1,1),
                   labels = "auto")
 
-ggsave(file.path(fig.dir, "fig4_FSchange.pdf"), fig4, device = cairo_pdf, width = 9, height = 8)
+ggsave(file.path(fig.dir, "fig4_FSchange.pdf"), fig4, device = cairo_pdf, width = 9, height = 6)
 
 mean(fruitsizechange$changeInMedFruitSize)
 sd(fruitsizechange$changeInMedFruitSize)
 mean(fruitsizechange$changeInMaxFruitSize)
 sd(fruitsizechange$changeInMaxFruitSize)
+mean(fruitsizechange$futr_maxBodySize)
+mean(fruitsizechange$curr_max95BodySize)
+mean(fruitsizechange$presNat_max95BodySize)
+
+## SUPP FIG 1: Plot sensitivity of gap filling =========
+medFS_cor <- cor(tdwg_final$medianFruitLengthFilled, tdwg_final$medianFruitLength, method = "pearson")
+medFS_gap <- ggplot() + 
+  geom_point(aes(y = medianFruitLengthFilled, x = medianFruitLength), pch = 21, col = "grey40", data = tdwg_final) +
+  geom_abline(aes(intercept = 0, slope = 1), col = "grey20") +
+  labs(y = "Median fruit length\nwith gap filling (cm)", x = "Median fruit length\nwith gaps excluded (cm)") +
+  annotate("text", x = -Inf, y = Inf, label = paste0("Pearson correlation = ", round(medFS_cor,3)), hjust = -0.1, vjust = 1.5)
+
+maxFS_cor <- cor(tdwg_final$max95FruitLengthFilled, tdwg_final$max95FruitLength, method = "pearson")
+maxFS_gap <- ggplot() +
+  geom_point(aes(y = max95FruitLengthFilled, x = max95FruitLength), pch = 21, col = "grey40", data = tdwg_final) +
+  geom_abline(aes(intercept = 0, slope = 1), col = "grey20") + 
+  labs(y = "Maximum fruit length\nwith gap filling (cm)", x = "Maximum fruit length\nwith gaps excluded (cm)") + 
+  annotate("text", x = -Inf, y = Inf, label = paste0("Pearson correlation = ", round(maxFS_cor,3)), hjust = -0.1, vjust = 1.5)
+
+supp_fig1 <- plot_grid(medFS_gap, maxFS_gap, labels = "auto")
+ggsave(supp_fig1, filename = file.path(fig.dir, "suppfig1_gapfill.pdf"), height = 4, width = 8)
+
 
 ## OTHER PLOTS  ===============
 biotic_melt <- melt(tdwg_final,
