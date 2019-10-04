@@ -1,6 +1,6 @@
 ## Generate body size and fruit size at the scale of botanical countries
 # Author: Jun Ying Lim
-# Generate summary statistics at the TDWG-level scale
+# Reference: Lim, J.Y., Svenning, J.-C., Göldel, B., Faurby, S. & Kissling, W.D. Past and future extinctions shape the body size - fruit size relationship between palms and mammalian frugivores.
 
 ## Directories ========================
 rm(list = ls())

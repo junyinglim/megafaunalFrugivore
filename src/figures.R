@@ -469,6 +469,8 @@ maxBS_abline <- data.frame(slope = maxBS_partialresid_slopes,
                            Geographic.scale = factor(rep(c("Global", "Neotropics", "Afrotropics", "Indo-Australia"), each = 2), levels = geog_scale),
                            Scenario = rep(c("Current", "Present-natural"), 4))
 
+maxBS_abline$slope[maxBS_abline$Geographic.scale == "Afrotropics"] <- NA
+maxBS_abline$intercept[maxBS_abline$Geographic.scale == "Afrotropics"] <- NA
 maxBS_presid_plot <- ggplot(aes(y = presid, x = x, group = Scenario, color = Scenario), data = maxBS_partialresid_pts) + 
   geom_point(shape = 21) + 
   geom_abline(aes(slope = slope, intercept = intercept, colour = Scenario), data = maxBS_abline, show.legend = F) + 
