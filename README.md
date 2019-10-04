@@ -1,9 +1,11 @@
 # megafaunalFrugivore
 
 ## Author & Reference
-*Author:* Jun Ying Lim
-*Contact:* junyinglim@gmail.com
-*Reference:* Lim, J.Y., Svenning, J.-C., Göldel, B., Faurby, S. & Kissling, W.D. Past and future extinctions shape the body size - fruit size relationship between palms and mammalian frugivores.
+**Author:** Jun Ying Lim
+
+**Contact:** junyinglim@gmail.com
+
+**Reference:** Lim, J.Y., Svenning, J.-C., Göldel, B., Faurby, S. & Kissling, W.D. Past and future extinctions shape the body size - fruit size relationship between palms and mammalian frugivores.
 
 ## System requirements
 To run this code you will need a current installation of R and some R packages. This includes both the analysis of data and the plotting of the figures in the manuscript. 
