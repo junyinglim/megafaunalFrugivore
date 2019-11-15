@@ -94,10 +94,48 @@ palm_tdwg_list <- unique(palm_occ$Area_code_L3)
 mammal_presnat_comb_occ <- subset(mammal_presnat_occ_final, LEVEL_3_CO %in% palm_tdwg_list)
 mammal_curr_comb_occ <- subset(mammal_curr_occ_final, LEVEL_3_CO %in% palm_tdwg_list)
 
-
 # Export data
 write.csv(mammal_presnat_comb_occ, file.path(data.dir, "mammal_presnat_occ.csv"), row.names = FALSE)
 write.csv(mammal_curr_comb_occ, file.path(data.dir, "mammal_curr_occ.csv"), row.names = FALSE)
+
+## Explore sensitivity of extinct mammals
+mammalDiet$SpecName <- paste(mammalDiet$Genus, mammalDiet$Species, sep = "_")
+
+mammalDietFamilyList <- unique(mammalDiet$Family)
+mammalDietFam_summary <- ddply(.data = mammalDiet, .variables = .(Family),
+                               summarize,
+                               Order = Order[1],
+                               famPropFrug =  sum(Fruit %in% 1:2, na.rm = T)/length(Fruit),
+                               famPropOblgFrug = sum(Fruit == 1, na.rm = T)/ length(Fruit))
+
+mammalDietOrder_summary <- ddply(.data = mammalDiet, .variables = .(Order),
+                                 summarize,
+                                 orderPropFrug =  sum(Fruit %in% 1:2, na.rm = T)/length(Fruit),
+                                 orderPropOblgFrug = sum(Fruit == 1, na.rm = T)/ length(Fruit))
+
+propFrugHigherTaxa <- merge(mammalDietFam_summary, mammalDietOrder_summary)
+
+phylacine_trait$Family <- toupper(phylacine_trait$Family.1.2)
+phylacine_trait$Order <- toupper(phylacine_trait$Order.1.2)
+ep_frug <- merge(subset(phylacine_trait, IUCN.Status.1.2 == "EP" & Diet.Plant >= 50), y = propFrugHigherTaxa,
+      by =c("Order", "Family"), all.x = TRUE)
+
+classifyFrug <- function(x){
+  frugCons <- NA
+  if( is.na(x$famPropFrug) & is.na(x$orderPropFrug) ){
+    frugCons <- 0
+  } else if( is.na(x$famPropFrug) & x$orderPropFrug >= 0.75 ){
+    frugCons <- 1
+  } else if( x$famPropFrug >= 0.75  ){
+    frugCons <- 1
+  } else {
+    frugCons <- 0
+  }
+  data.frame(frugCons)
+}
+
+ep_frug_class <- ddply(.data = ep_frug, .variables=.(Binomial.1.2), .fun = classifyFrug)
+
 
 ## Genus-level gap filling for palm fruit sizes ======================== 
 # Define function for gap filling
@@ -142,8 +180,8 @@ mammal_countrylist <- Reduce(union, list(unique(mammal_presnat_occ$LEVEL_3_CO),
 # Find list of countries where palms and mammals overlap
 mammal_palm_intersect <- intersect(unique(palm_occ_trait$Area_code_L3), mammal_countrylist) # 190 countries in total
 
-# Calculate mean fruit size of TDWG units
-tdwg_meanFruit <- ddply(.data = subset(palm_occ_trait, Area_code_L3 %in% mammal_palm_intersect),
+# Calculate maximum and median fruit size
+tdwg_fruit_summary <- ddply(.data = subset(palm_occ_trait, Area_code_L3 %in% mammal_palm_intersect),
                         .variables = .(Area_code_L3),
                         .fun = summarise,
                         # No gap filling
@@ -159,30 +197,33 @@ tdwg_meanFruit <- ddply(.data = subset(palm_occ_trait, Area_code_L3 %in% mammal_
                         sdLogFruitLengthFilled = sd(log(AverageFruitLength_cm_filled), na.rm = T),
                         megapalm_nsp = sum(AverageFruitLength_cm_filled > 4, na.rm = T),
                         palm_nSp = length(AverageFruitLength_cm))
-names(tdwg_meanFruit)[names(tdwg_meanFruit) == "Area_code_L3"] <- "LEVEL_3_CO"
-
+names(tdwg_fruit_summary)[names(tdwg_fruit_summary) == "Area_code_L3"] <- "LEVEL_3_CO"
 write.csv(subset(palm_occ_trait, Area_code_L3 %in% mammal_palm_intersect), file = file.path(res.dir, "tdwg_palm_occ_trait.csv"), row.names = F)
 
-
-# Calculate mean and median body sizes of present natural mammal assemblages
+# Calculate maximum and median body sizes of present natural mammal assemblages
 mammal_presnat_occ_trait <- merge(mammal_presnat_comb_occ, phylacine_trait, by.x = "SpecName", by.y = "Binomial.1.2", all.x = TRUE)
-tdwg_presnat_meanBodySize <-
+mammal_presnat_occ_trait <- merge(mammal_presnat_occ_trait, ep_frug_class, by.x = "SpecName", by.y = "Binomial.1.2", all.x = TRUE)
+mammal_presnat_occ_trait$frugCons[is.na(mammal_presnat_occ_trait$frugCons)] <- 1
+
+tdwg_presnat_summary <-
   ddply(.data = subset(mammal_presnat_occ_trait, LEVEL_3_CO %in% mammal_palm_intersect),
         .variables = .(LEVEL_3_CO),
         .fun = summarize,
         presNat_meanBodySize = mean(Mass.g, na.rm = T),
         presNat_medianBodySize = quantile(Mass.g, probs = 0.5, na.rm = T),
         presNat_max95BodySize = quantile(Mass.g, probs = 0.95, type = 8, na.rm = T ),
+        presNat_medianBodySize_cons = quantile(Mass.g[frugCons == 1], probs = 0.5, na.rm = T),
+        presNat_max95BodySize_cons = quantile(Mass.g[frugCons == 1], probs = 0.95, na.rm = T),
         presNat_sdBodySize = sd(log(Mass.g), na.rm = T),
         presNat_nSp = length(unique(SpecName)),
         presNat_meso_nSp = length(unique(SpecName[Mass.g > 10000])),
         presNat_mega_nSp = length(unique(SpecName[Mass.g > 44000])))
 write.csv(subset(mammal_presnat_occ_trait, LEVEL_3_CO %in% mammal_palm_intersect), file.path(res.dir, "mammal_presnat_occ_trait.csv"), row.names = F)
 
-# Current the mean and median body sizes of current mammal assemblages
+# Current the maximum and median body sizes of current mammal assemblages
 mammal_curr_occ_trait <- merge(mammal_curr_comb_occ, phylacine_trait, by.x = "SpecName", by.y = "Binomial.1.2", all.x = TRUE)
 
-tdwg_curr_meanBodySize <- 
+tdwg_curr_summary <- 
   ddply(.data = subset(mammal_curr_occ_trait, LEVEL_3_CO %in% mammal_palm_intersect),
         .variables = .(LEVEL_3_CO),
         .fun = summarize,
@@ -193,8 +234,6 @@ tdwg_curr_meanBodySize <-
         curr_nSp = length(unique(SpecName)),
         curr_meso_nSp = length(unique(SpecName[Mass.g > 10000])),
         curr_mega_nSp = length(unique(SpecName[Mass.g > 44000]))
-        #futr_medianBodySize = median(Mass.g[!IUCN.Status.1.2 %in% c("CR","EW","EN","EX")], na.rm = T),
-        #futr_maxBodySize = quantile(Mass.g[!IUCN.Status.1.2 %in% c("CR", "EW", "EN", "EX")], probs = 0.95, na.rm = T)
 )
 # NOTE: Pteropus niger (Mascarene fruit bat) is found on both Mauritius and Reunion but is only on Mauritius for the current dataset, as a result, there are no mammals on Reunion in the current case (Pteropus) but 2 in the present-natural dataset
 write.csv(subset(mammal_curr_occ_trait, LEVEL_3_CO %in% mammal_palm_intersect), file.path(res.dir, "mammal_curr_occ_trait.csv"), row.names = F)
@@ -203,11 +242,13 @@ write.csv(subset(mammal_curr_occ_trait, LEVEL_3_CO %in% mammal_palm_intersect), 
 mammal_curr_splist <- unique(mammal_curr_occ_trait$SpecName)
 mammal_curr_sp <- subset(phylacine_trait, Binomial.1.2 %in% mammal_curr_splist)[c("Binomial.1.2", "IUCN.Status.1.2")]
 
-extinctionProb <- data.frame(
-  IUCN.Status.1.2 = c("LC", "NT", "VU", "EN", "CR", "DD"),
-  #extP50 = c(0.00005, 0.004, 0.0513, 0.4276, 0.9688, 0.00005)
-  extP50 = c(0.0009, 0.0071, 0.0513, 0.4276, 0.9688, 0.0009)
-)
+ctmc_pExt <- read.csv(file.path(data.dir, "ctmc_pExt.csv"))
+
+# extinctionProb <- data.frame(
+#   IUCN.Status.1.2 = c("LC", "NT", "VU", "EN", "CR", "DD"),
+#   #extP50 = c(0.00005, 0.004, 0.0513, 0.4276, 0.9688, 0.00005)
+#   extP50 = c(0.0009, 0.0071, 0.0513, 0.4276, 0.9688, 0.0009)
+# )
 # Values from Moore are 0.00005, 0.004, 0.05, 0.42, 0.97, 0.00005
 # Mooers uses the IUCN 2001 designations, i.e., P(ext_CR, 10 years) = 0.5; P(ext_EN, 20 years) = 0.2 and P(ext_VU, 100 years) = 0.1
 # Rearranging the equations P(r, t) = 1 - exp(-rt) , the rates for CR = -log(0.5)/10, EN = -log(0.8)/20, VU = -log(0.9) / 100
@@ -216,52 +257,66 @@ extinctionProb <- data.frame(
 # P(CR,50) = 0.96875, P(EN,50) = 0.427; P(VU,50) = 0.0513
 # Ext prob after 50 years (Davis et al 2018) = 0.0009, 0.0071, 0.0513, 0.4276, 0.9688, 0.0009
 
-mammal_curr_sp_status <- merge(mammal_curr_sp, extinctionProb, by = "IUCN.Status.1.2")
+mammal_curr_sp_status <- merge(x = mammal_curr_sp, y = ctmc_pExt, by.x = "IUCN.Status.1.2", by.y = "IUCN.Status")
 
-simulateExtinction <- function(df){
+simulateExtinction <- function(df, col){
   mammal_futr_splist <- vector()  
   for(i in 1:nrow(df)){
     mammal_futr_splist[i] <- sample(x = c(df$Binomial.1.2[i], NA),
-                                    prob = c(1-df$extP50[i], df$extP50[i]),
+                                    prob = c(1-df[[col]][i], df[[col]][i]),
                                     size = 1)
   } 
   return(mammal_futr_splist)
 }
 
-# Simulate 100 extinctions
-mammal_futr_splist <- list()
-for(i in 1:1000){ mammal_futr_splist[[i]] <- simulateExtinction(mammal_curr_sp_status) }
+# Simulate 1000 extinction scenarios
+mammal_dimarco_futr_splist <- list()
+mammal_hoffmann_futr_splist <- list()
+for(i in 1:1000){
+  pb = txtProgressBar(min = 0., max = 1000, initial = 0, style = 3)
+  setTxtProgressBar(pb, i)
+  mammal_dimarco_futr_splist[[i]] <- simulateExtinction(mammal_curr_sp_status, col = "dimarco")
+  mammal_hoffmann_futr_splist[[i]] <- simulateExtinction(mammal_curr_sp_status, col = "hoffmann")
+}
+close(pb)
 
-# Calculate body size for 100 replicates
+# Calculate body size for the 1000 extinction simulations
 tdwg_futr_meanBodySize_reps <- list()
 for(i in 1:1000){
+  pb = txtProgressBar(min = 0., max = 1000, initial = 0, style = 3)
+  setTxtProgressBar(pb, i)
   tdwg_futr_meanBodySize_reps [[i]] <- 
     ddply(.data = subset(mammal_curr_occ_trait,
-                         LEVEL_3_CO %in% mammal_palm_intersect &
-                           SpecName %in% mammal_futr_splist[[i]]),
+                         LEVEL_3_CO %in% mammal_palm_intersect),
         .variables = .(LEVEL_3_CO),
         .fun = summarize,
-        futr_medianBodySize = median(Mass.g, na.rm = T),
-        futr_maxBodySize = quantile(Mass.g, probs = 0.95, na.rm = T))
+        futr_dimarco_medianBodySize = median(Mass.g[SpecName %in% mammal_dimarco_futr_splist[[i]] ] , na.rm = T),
+        futr_dimarco_maxBodySize = quantile(Mass.g[SpecName %in% mammal_dimarco_futr_splist[[i]]],
+                                    probs = 0.95, na.rm = T),
+        futr_hoffmann_medianBodySize = median(Mass.g[SpecName %in% mammal_hoffmann_futr_splist[[i]] ] , na.rm = T),
+        futr_hoffmann_maxBodySize = quantile(Mass.g[SpecName %in% mammal_hoffmann_futr_splist[[i]]],
+                                            probs = 0.95, na.rm = T))
 }
+close(pb)
 
 tdwg_futr_meanBodySize <- Reduce(tdwg_futr_meanBodySize_reps, f = "rbind")
-
 saveRDS(tdwg_futr_meanBodySize, file = file.path(res.dir, "tdwg_futrBS_reps.rds"))
 
 tdwg_futr_meanBodySize_summary <- 
   ddply(.data = tdwg_futr_meanBodySize,
         .variable = .(LEVEL_3_CO),
         .fun = summarize,
-        futr_medianBodySize = median(futr_medianBodySize, na.rm = T),
-        futr_maxBodySize = median(futr_maxBodySize, na.rm = T),
+        futr_dimarco_medianBodySize = median(futr_dimarco_medianBodySize, na.rm = T),
+        futr_dimarco_maxBodySize = median(futr_dimarco_maxBodySize, na.rm = T),
+        futr_hoffmann_medianBodySize = median(futr_hoffmann_medianBodySize, na.rm = T),
+        futr_hoffmann_maxBodySize = median(futr_hoffmann_maxBodySize, na.rm = T),
         nreps = length(LEVEL_3_CO))
 
-tdwg_curr_meanBodySize <- merge(tdwg_curr_meanBodySize, tdwg_futr_meanBodySize_summary, by = "LEVEL_3_CO", all = TRUE)
+tdwg_curr_summary <- merge(tdwg_curr_summary, tdwg_futr_meanBodySize_summary, by = "LEVEL_3_CO", all = TRUE)
 
 # Merge present natural and current mammal assemblage summary statistics and fruit statistics
-tdwg_mammal_all <- merge(tdwg_presnat_meanBodySize, tdwg_curr_meanBodySize, by = "LEVEL_3_CO", all = TRUE)
-tdwg_res <- merge(tdwg_meanFruit, tdwg_mammal_all, by = "LEVEL_3_CO")
+tdwg_mammal_all <- merge(tdwg_presnat_summary, tdwg_curr_summary, by = "LEVEL_3_CO", all = TRUE)
+tdwg_res <- merge(tdwg_fruit_summary, tdwg_mammal_all, by = "LEVEL_3_CO")
 
 # Remove Reunion from dataset
 tdwg_res <- tdwg_res[!(is.na(tdwg_res$curr_medianBodySize) | is.na(tdwg_res$presNat_medianBodySize)),]

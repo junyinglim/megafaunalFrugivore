@@ -35,6 +35,9 @@ tdwg_final_glob$curr_logMax95BS <- log(tdwg_final_glob$curr_max95BodySize)
 tdwg_final_glob$pnat_logMedBS <- log(tdwg_final_glob$presNat_medianBodySize)
 tdwg_final_glob$pnat_logMax95BS <- log(tdwg_final_glob$presNat_max95BodySize)
 
+tdwg_final_glob$pnat_logMedBS_cons <- log(tdwg_final_glob$presNat_medianBodySize_cons)
+tdwg_final_glob$pnat_logMax95BS_cons <- log(tdwg_final_glob$presNat_max95BodySize_cons)
+
 tdwg_final_nw <- subset(tdwg_final_glob, REALM_LONG == "Neotropics")
 tdwg_final_oww <- subset(tdwg_final_glob, REALM_LONG == "Afrotropics")
 tdwg_final_owe <- subset(tdwg_final_glob, REALM_LONG %in% c("Australasia","IndoMalay"))
@@ -44,12 +47,14 @@ scaleVars <- function(x, col, suffix){
   x[paste0(col, suffix)] <- scale(x[col], scale = T, center = T)
   return(x)
 }
+
 scale.col <- c("logMedFS", "logMax95FS",
                "curr_logMedBS", "curr_logMax95BS",
                "pnat_logMedBS", "pnat_logMax95BS",
+               "pnat_logMedBS_cons", "pnat_logMax95BS_cons",
                "globalPC1", "globalPC2", "globalPC3",
                "regionalPC1", "regionalPC2", "regionalPC3",
-               "lgm_ens_Pano", "lgm_ens_Tano", "soilcount")
+               "lgm_ens_Pano", "lgm_ens_Tano")
 
 tdwg_final_glob <- scaleVars(x = tdwg_final_glob, col = scale.col, suffix = "_scl")
 
@@ -76,16 +81,21 @@ owe_curr_medBS_mod <- lm(logMedFS_scl ~ curr_logMedBS_scl + regionalPC1_scl + re
 owe_pnat_medBS_mod <- update(owe_curr_medBS_mod, ~.-curr_logMedBS_scl + pnat_logMedBS_scl )
 vif(owe_curr_medBS_mod); vif(owe_pnat_medBS_mod)
 
-medBS_ols_modlist <- list(glob_curr_medBS_mod, glob_pnat_medBS_mod, 
-                          nw_curr_medBS_mod, nw_pnat_medBS_mod, 
-                          oww_curr_medBS_mod, oww_pnat_medBS_mod,
-                          owe_curr_medBS_mod, owe_pnat_medBS_mod)
+glob_pnat_medBS_cons_mod <- update(glob_curr_medBS_mod, ~.-curr_logMedBS_scl + pnat_logMedBS_cons_scl)
+nw_pnat_medBS_cons_mod <- update(nw_curr_medBS_mod, ~.-curr_logMedBS_scl + pnat_logMedBS_cons_scl)
+oww_pnat_medBS_cons_mod <- update(oww_curr_medBS_mod, ~.-curr_logMedBS_scl + pnat_logMedBS_cons_scl)
+owe_pnat_medBS_cons_mod <- update(owe_curr_medBS_mod, ~.-curr_logMedBS_scl + pnat_logMedBS_cons_scl)
+
+medBS_ols_modlist <- list(glob_curr_medBS_mod, glob_pnat_medBS_mod, glob_pnat_medBS_cons_mod,
+                          nw_curr_medBS_mod, nw_pnat_medBS_mod, nw_pnat_medBS_cons_mod,
+                          oww_curr_medBS_mod, oww_pnat_medBS_mod, oww_pnat_medBS_cons_mod,
+                          owe_curr_medBS_mod, owe_pnat_medBS_mod, owe_pnat_medBS_cons_mod)
 
 medBS_ols_modavglist <- lapply(medBS_ols_modlist,
                                FUN = computeModelAvg)
 medBS_ols_modavgres <- do.call("rbind", medBS_ols_modavglist)
-medBS_ols_modavgres$Geographic.Scale <- rep(c("Global", "Neotropics", "Afrotropics", "Indotropics"), each = 14)
-medBS_ols_modavgres$Scenario <- rep(c("Current", "Present-Natural"), each = 7)
+medBS_ols_modavgres$Geographic.Scale <- rep(c("Global", "Neotropics", "Afrotropics", "Indotropics"), each = 21)
+medBS_ols_modavgres$Scenario <- rep(c("Current", "Present-Natural", "Present-Natural (Conservative)"), each = 7)
 medBS_ols_modavgres$Method <- "OLS"
 
 write.csv(roundNumbers(medBS_ols_modavgres), file.path(res.dir, "medBS_ols_modavg.csv"),
@@ -96,8 +106,8 @@ medBS_ols_cade_modavglist <- lapply(medBS_ols_modlist,
                                     FUN = computeModelAvg, beta = "partial.sd")
 
 medBS_ols_cade_modavgres <- do.call("rbind", medBS_ols_cade_modavglist)
-medBS_ols_cade_modavgres$Geographic.Scale <- rep(c("Global", "Neotropics", "Afrotropics", "Indotropics"), each = 14)
-medBS_ols_cade_modavgres$Scenario <- rep(c("Current", "Present-Natural"), each = 7)
+medBS_ols_cade_modavgres$Geographic.Scale <- rep(c("Global", "Neotropics", "Afrotropics", "Indotropics"), each = 21)
+medBS_ols_cade_modavgres$Scenario <- rep(c("Current", "Present-Natural", "Present-Natural (Conservative)"), each = 7)
 medBS_ols_cade_modavgres$Method <- "OLS"
 
 write.csv(roundNumbers(medBS_ols_cade_modavgres), file.path(res.dir, "medBS_ols_cade_modavg.csv"),
@@ -120,15 +130,21 @@ owe_curr_maxBS_mod <- lm(logMax95FS_scl ~ curr_logMax95BS_scl + regionalPC1_scl 
 owe_pnat_maxBS_mod <- update(owe_curr_maxBS_mod, ~.-curr_logMax95BS_scl + pnat_logMax95BS_scl)
 vif(owe_curr_maxBS_mod); vif(owe_pnat_maxBS_mod)
 
-maxBS_ols_modlist <- list(glob_curr_maxBS_mod, glob_pnat_maxBS_mod, 
-                          nw_curr_maxBS_mod, nw_pnat_maxBS_mod, 
-                          oww_curr_maxBS_mod, oww_pnat_maxBS_mod,
-                          owe_curr_maxBS_mod, owe_pnat_maxBS_mod)
+# conservative present
+glob_pnat_maxBS_cons_mod <- update(glob_curr_maxBS_mod, ~.-curr_logMax95BS_scl + pnat_logMax95BS_cons_scl)
+nw_pnat_maxBS_cons_mod <- update(nw_curr_maxBS_mod, ~.-curr_logMax95BS_scl + pnat_logMax95BS_cons_scl)
+oww_pnat_maxBS_cons_mod <- update(oww_curr_maxBS_mod, ~.-curr_logMax95BS_scl + pnat_logMax95BS_cons_scl)
+owe_pnat_maxBS_cons_mod <- update(owe_curr_maxBS_mod, ~.-curr_logMax95BS_scl + pnat_logMax95BS_cons_scl)
+
+maxBS_ols_modlist <- list(glob_curr_maxBS_mod, glob_pnat_maxBS_mod, glob_pnat_maxBS_cons_mod,
+                          nw_curr_maxBS_mod, nw_pnat_maxBS_mod, nw_pnat_maxBS_cons_mod,
+                          oww_curr_maxBS_mod, oww_pnat_maxBS_mod, oww_pnat_maxBS_cons_mod,
+                          owe_curr_maxBS_mod, owe_pnat_maxBS_mod, owe_pnat_maxBS_cons_mod)
 maxBS_ols_modavglist <- lapply(maxBS_ols_modlist,
                                FUN = computeModelAvg)
 maxBS_ols_modavgres <- do.call("rbind", maxBS_ols_modavglist)
-maxBS_ols_modavgres$Geographic.Scale <- rep(c("Global", "Neotropics", "Afrotropics", "Indotropics"), each = 14)
-maxBS_ols_modavgres$Scenario <- rep(c("Current", "Present-Natural"), each = 7)
+maxBS_ols_modavgres$Geographic.Scale <- rep(c("Global", "Neotropics", "Afrotropics", "Indotropics"), each = 21)
+maxBS_ols_modavgres$Scenario <- rep(c("Current", "Present-Natural", "Present-Natural (Conservative)"), each = 7)
 maxBS_ols_modavgres$Method <- "OLS"
 
 write.csv(roundNumbers(maxBS_ols_modavgres), file.path(res.dir, "maxBS_ols_modavg.csv"), row.names = FALSE)
@@ -137,8 +153,8 @@ write.csv(roundNumbers(maxBS_ols_modavgres), file.path(res.dir, "maxBS_ols_modav
 maxBS_ols_cade_modavglist <- lapply(maxBS_ols_modlist,
                                     FUN = computeModelAvg, beta = "partial.sd" )
 maxBS_ols_cade_modavgres <- do.call("rbind", maxBS_ols_cade_modavglist)
-maxBS_ols_cade_modavgres$Geographic.Scale <- rep(c("Global", "Neotropics", "Afrotropics", "Indotropics"), each = 14)
-maxBS_ols_cade_modavgres$Scenario <- rep(c("Current", "Present-Natural"), each = 7)
+maxBS_ols_cade_modavgres$Geographic.Scale <- rep(c("Global", "Neotropics", "Afrotropics", "Indotropics"), each = 21)
+maxBS_ols_cade_modavgres$Scenario <- rep(c("Current", "Present-Natural", "Present-Natural (Conservative)"), each = 7)
 maxBS_ols_cade_modavgres$Method <- "OLS"
 write.csv(roundNumbers(maxBS_ols_cade_modavgres), file.path(res.dir, "maxBS_ols_cade_modavg.csv"), row.names = FALSE)
 
@@ -156,11 +172,6 @@ generatePartialResiduals <- function(mod, modcoeff){
        "intercept" = modcoeff$fullAvgCoef[modcoeff$coefficient=="(Intercept)"],
        "slope" = modcoeff$fullAvgCoef[modcoeff$coefficient %in% target_col])
 }
-
-#maxBS_ols_modlist <- list(glob_curr_maxBS_mod, glob_pnat_maxBS_mod, 
-#                          nw_curr_maxBS_mod, nw_pnat_maxBS_mod, 
-#                          oww_curr_maxBS_mod, oww_pnat_maxBS_mod,
-#                          owe_curr_maxBS_mod, owe_pnat_maxBS_mod)
 
 maxBS_ModPartialResid <- mapply(FUN = generatePartialResiduals, mod = maxBS_ols_modlist, modcoeff = maxBS_ols_modavglist, SIMPLIFY = F)
 saveRDS(maxBS_ModPartialResid, file.path(res.dir, "maxBS_partialresid.rds"))
@@ -249,52 +260,60 @@ listw_soi_owe <- nb2listw(nb_soi_owe, style = "W")
 # Apparently update doesn't work on the new errorsarlm
 glob_curr_medBS_sar_mod <- spatialreg::errorsarlm(logMedFS_scl ~ curr_logMedBS_scl + globalPC1_scl + globalPC2_scl + globalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, listw = listw_soi_glob, na.action = "na.fail", data = tdwg_final_glob)
 glob_pnat_medBS_sar_mod <- spatialreg::errorsarlm(logMedFS_scl ~ pnat_logMedBS_scl + globalPC1_scl + globalPC2_scl + globalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, listw = listw_soi_glob, na.action = "na.fail", data = tdwg_final_glob)
+glob_pnat_medBS_cons_sar_mod <- spatialreg::errorsarlm(logMedFS_scl ~ pnat_logMedBS_cons_scl + globalPC1_scl + globalPC2_scl + globalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, listw = listw_soi_glob, na.action = "na.fail", data = tdwg_final_glob)
 
 nw_curr_medBS_sar_mod <- spatialreg::errorsarlm(logMedFS_scl ~ curr_logMedBS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_nw, listw = listw_soi_nw, na.action = "na.fail")
 nw_pnat_medBS_sar_mod <- spatialreg::errorsarlm(logMedFS_scl ~ pnat_logMedBS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_nw, listw = listw_soi_nw, na.action = "na.fail")
+nw_pnat_medBS_cons_sar_mod <- spatialreg::errorsarlm(logMedFS_scl ~ pnat_logMedBS_cons_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_nw, listw = listw_soi_nw, na.action = "na.fail")
 
 oww_curr_medBS_sar_mod <- spatialreg::errorsarlm(logMedFS_scl ~ curr_logMedBS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_oww, listw = listw_soi_oww, na.action = "na.fail")
 oww_pnat_medBS_sar_mod <- spatialreg::errorsarlm(logMedFS_scl ~ pnat_logMedBS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_oww, listw = listw_soi_oww, na.action = "na.fail")
+oww_pnat_medBS_cons_sar_mod <- spatialreg::errorsarlm(logMedFS_scl ~ pnat_logMedBS_cons_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_oww, listw = listw_soi_oww, na.action = "na.fail")
 
 owe_curr_medBS_sar_mod <- spatialreg::errorsarlm(logMedFS_scl ~ curr_logMedBS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_owe, listw = listw_soi_owe, na.action = "na.fail")
 owe_pnat_medBS_sar_mod <- spatialreg::errorsarlm(logMedFS_scl ~ pnat_logMedBS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_owe, listw = listw_soi_owe, na.action = "na.fail")
+owe_pnat_medBS_cons_sar_mod <- spatialreg::errorsarlm(logMedFS_scl ~ pnat_logMedBS_cons_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_owe, listw = listw_soi_owe, na.action = "na.fail")
 
 # SAR - max body size
 glob_curr_maxBS_sar_mod <- spatialreg::errorsarlm(logMax95FS_scl ~ curr_logMax95BS_scl + globalPC1_scl + globalPC2_scl + globalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_glob, listw = listw_soi_glob, na.action = "na.fail")
 glob_pnat_maxBS_sar_mod <- spatialreg::errorsarlm(logMax95FS_scl ~ pnat_logMax95BS_scl + globalPC1_scl + globalPC2_scl + globalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_glob, listw = listw_soi_glob, na.action = "na.fail")
+glob_pnat_maxBS_cons_sar_mod <- spatialreg::errorsarlm(logMax95FS_scl ~ pnat_logMax95BS_cons_scl + globalPC1_scl + globalPC2_scl + globalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_glob, listw = listw_soi_glob, na.action = "na.fail")
 
 nw_curr_maxBS_sar_mod <- spatialreg::errorsarlm(logMax95FS_scl ~ curr_logMax95BS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_nw, listw = listw_soi_nw, na.action = "na.fail")
 nw_pnat_maxBS_sar_mod <- spatialreg::errorsarlm(logMax95FS_scl ~ pnat_logMax95BS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_nw, listw = listw_soi_nw, na.action = "na.fail")
+nw_pnat_maxBS_cons_sar_mod <- spatialreg::errorsarlm(logMax95FS_scl ~ pnat_logMax95BS_cons_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_nw, listw = listw_soi_nw, na.action = "na.fail")
 
 oww_curr_maxBS_sar_mod <- spatialreg::errorsarlm(logMax95FS_scl ~ curr_logMax95BS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_oww, listw = listw_soi_oww, na.action = "na.fail")
 oww_pnat_maxBS_sar_mod <- spatialreg::errorsarlm(logMax95FS_scl ~ pnat_logMax95BS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_oww, listw = listw_soi_oww, na.action = "na.fail")
+oww_pnat_maxBS_cons_sar_mod <- spatialreg::errorsarlm(logMax95FS_scl ~ pnat_logMax95BS_cons_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_oww, listw = listw_soi_oww, na.action = "na.fail")
 
 owe_curr_maxBS_sar_mod <- spatialreg::errorsarlm(logMax95FS_scl ~ curr_logMax95BS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_owe, listw = listw_soi_owe, na.action = "na.fail")
 owe_pnat_maxBS_sar_mod <- spatialreg::errorsarlm(logMax95FS_scl ~ pnat_logMax95BS_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_owe, listw = listw_soi_owe, na.action = "na.fail")
+owe_pnat_maxBS_cons_sar_mod <- spatialreg::errorsarlm(logMax95FS_scl ~ pnat_logMax95BS_cons_scl + regionalPC1_scl + regionalPC2_scl + regionalPC3_scl + lgm_ens_Tano_scl + lgm_ens_Pano_scl, data = tdwg_final_owe, listw = listw_soi_owe, na.action = "na.fail")
 
 # Perform model averaging
-medBS_sar_modlist <- list(glob_curr_medBS_sar_mod, glob_pnat_medBS_sar_mod,
-                          nw_curr_medBS_sar_mod, nw_pnat_medBS_sar_mod,
-                          oww_curr_medBS_sar_mod,oww_pnat_medBS_sar_mod,
-                          owe_curr_medBS_sar_mod,owe_pnat_medBS_sar_mod)
+medBS_sar_modlist <- list(glob_curr_medBS_sar_mod, glob_pnat_medBS_sar_mod, glob_pnat_medBS_cons_sar_mod,
+                          nw_curr_medBS_sar_mod, nw_pnat_medBS_sar_mod, nw_pnat_medBS_cons_sar_mod,
+                          oww_curr_medBS_sar_mod,oww_pnat_medBS_sar_mod, oww_pnat_medBS_cons_sar_mod,
+                          owe_curr_medBS_sar_mod,owe_pnat_medBS_sar_mod, owe_pnat_medBS_cons_sar_mod)
 medBS_sar_modelavglist <- lapply(medBS_sar_modlist,
                                  FUN = computeModelAvg)
 medBS_sar_modelavgdf <- Reduce( medBS_sar_modelavglist, f = "rbind")
-medBS_sar_modelavgdf$Geographic.Scale <- rep(c("Global", "Neotropics", "Afrotropics", "Indotropics"), each = 16)
-medBS_sar_modelavgdf$Scenario <- rep(c("Current", "Present-Natural") , each = 8 )
+medBS_sar_modelavgdf$Geographic.Scale <- rep(c("Global", "Neotropics", "Afrotropics", "Indotropics"), each = 24)
+medBS_sar_modelavgdf$Scenario <- rep(c("Current", "Present-Natural", "Present-Natural (Conservative)") , each = 8 )
 write.csv(medBS_sar_modelavgdf,
           file.path(res.dir, "medBS_sar_modavg.csv"), row.names = FALSE)
 
 
-maxBS_sar_modlist <- list(glob_curr_maxBS_sar_mod, glob_pnat_maxBS_sar_mod,
-                          nw_curr_maxBS_sar_mod, nw_pnat_maxBS_sar_mod,
-                          oww_curr_maxBS_sar_mod, oww_pnat_maxBS_sar_mod,
-                          owe_curr_maxBS_sar_mod, owe_pnat_maxBS_sar_mod)
+maxBS_sar_modlist <- list(glob_curr_maxBS_sar_mod, glob_pnat_maxBS_sar_mod, glob_pnat_maxBS_cons_sar_mod,
+                          nw_curr_maxBS_sar_mod, nw_pnat_maxBS_sar_mod, nw_pnat_maxBS_cons_sar_mod,
+                          oww_curr_maxBS_sar_mod, oww_pnat_maxBS_sar_mod, oww_pnat_maxBS_cons_sar_mod,
+                          owe_curr_maxBS_sar_mod, owe_pnat_maxBS_sar_mod, owe_pnat_maxBS_cons_sar_mod)
 maxBS_sar_modelavglist <- lapply(maxBS_sar_modlist,
                                     FUN = computeModelAvg)
 maxBS_sar_modelavgdf <- Reduce( maxBS_sar_modelavglist, f = "rbind")
-maxBS_sar_modelavgdf$Geographic.Scale <- rep(c("Global", "Neotropics", "Afrotropics", "Indotropics"), each = 16)
-maxBS_sar_modelavgdf$Scenario <- rep(c("Current", "Present-Natural") , each = 8 )
+maxBS_sar_modelavgdf$Geographic.Scale <- rep(c("Global", "Neotropics", "Afrotropics", "Indotropics"), each = 24)
+maxBS_sar_modelavgdf$Scenario <- rep(c("Current", "Present-Natural", "Present-Natural (Conservative)") , each = 8 )
 write.csv(maxBS_sar_modelavgdf,
           file.path(res.dir, "maxBS_sar_modavg.csv"), row.names = FALSE)
 

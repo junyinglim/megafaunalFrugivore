@@ -11,10 +11,10 @@ source(file.path(src.dir, "ggmodavg.R"))
 
 # Define labels, and order of table
 geographic_levels <- c("Global","Afrotropics","Neotropics","Indotropics")
-med_levels <- c("(Intercept)", "curr_logMedBS_scl","pnat_logMedBS_scl","globalPC1_scl", "globalPC2_scl","globalPC3_scl", "regionalPC1_scl","regionalPC2_scl", "regionalPC3_scl","lgm_ens_Pano_scl", "lgm_ens_Tano_scl")
-med_labels <- c("Intercept", "Log median body size", "Log median body size", "Climate PC1", "Climate PC2", "Climate PC3", "Climate PC1","Climate PC2", "Climate PC3","LGM Prec. Anom.", "LGM Temp. Anom.")
-max_levels <- c("(Intercept)", "curr_logMax95BS_scl","pnat_logMax95BS_scl","globalPC1_scl", "globalPC2_scl","globalPC3_scl", "regionalPC1_scl","regionalPC2_scl", "regionalPC3_scl","lgm_ens_Pano_scl", "lgm_ens_Tano_scl")
-max_labels <- c("Intercept", "Log maximum body size", "Log maximum body size", "Climate PC1", "Climate PC2", "Climate PC3", "Climate PC1","Climate PC2", "Climate PC3","LGM Prec. Anom.", "LGM Temp. Anom.")
+med_levels <- c("(Intercept)", "curr_logMedBS_scl","pnat_logMedBS_scl", "pnat_logMedBS_cons_scl","globalPC1_scl", "globalPC2_scl","globalPC3_scl", "regionalPC1_scl","regionalPC2_scl", "regionalPC3_scl","lgm_ens_Pano_scl", "lgm_ens_Tano_scl")
+med_labels <- c("Intercept", "Log median body size", "Log median body size", "Log median body size", "Climate PC1", "Climate PC2", "Climate PC3", "Climate PC1","Climate PC2", "Climate PC3","LGM Prec. Anom.", "LGM Temp. Anom.")
+max_levels <- c("(Intercept)", "curr_logMax95BS_scl","pnat_logMax95BS_scl", "pnat_logMax95BS_cons_scl","globalPC1_scl", "globalPC2_scl","globalPC3_scl", "regionalPC1_scl","regionalPC2_scl", "regionalPC3_scl","lgm_ens_Pano_scl", "lgm_ens_Tano_scl")
+max_labels <- c("Intercept", "Log maximum body size", "Log maximum body size", "Log maximum body size", "Climate PC1", "Climate PC2", "Climate PC3", "Climate PC1","Climate PC2", "Climate PC3","LGM Prec. Anom.", "LGM Temp. Anom.")
 
 target_col <- c("Geographic.Scale", "Scenario", "coefficient", "fullAvgCoef", "fullAvgSE", "ConfidenceInterval","varexp", "totalR2")
 
