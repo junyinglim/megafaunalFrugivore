@@ -50,7 +50,8 @@ cleanCuts <- function(x){
     } else {
       end <- round(as.numeric(num[i,2]), 3 )
     }
-    new[i] <- paste(start,end, sep = " \u2013 ")# em-dash
+    new[i] <- paste(start,end, sep = " - ")# em-dash
+    #new[i] <- paste(start,end, sep = " \u2013 ")# em-dash
   }
   return(new)
 }
@@ -139,16 +140,6 @@ map_indotropics <- ggplot() +
 ggsave(map_indotropics, filename = file.path(fig.dir, "map_indotropics.pdf"), height = 6, width = 14)
 
 # Fruit size mapped  ========================
-target.col <- c("LAT", "LONG", "LEVEL_3_CO", "medianFruitLengthFilled")
-tdwg_medFS <- melt(tdwg_final[,target.col], id.vars = c("LAT", "LONG", "LEVEL_3_CO"), measure.vars = "medianFruitLengthFilled")
-q_probs = seq(0.0, 1.0, 0.125)
-q_values <- as.numeric(quantile(tdwg_medFS$value, probs = q_probs, na.rm = T, type = 8))
-med_q_mdpt <- vector()
-for(i in 1:(length(q_values)-1)){ med_q_mdpt[i] <- (q_values[i] + q_values[i+1])/2 }
-tdwg_medFS$medFS_q <- cut(tdwg_medFS$value, q_values, include.lowest = T)
-levels(tdwg_medFS$medFS_q) <- gsub(levels(tdwg_medFS$medFS_q), pattern = ",", replacement = " - ")
-levels(tdwg_medFS$medFS_q) <- gsub(levels(tdwg_medFS$medFS_q), pattern = "\\(|\\[|\\]", replacement = "")
-
 target.col <- c("LAT", "LONG", "LEVEL_3_CO", "max95FruitLengthFilled")
 tdwg_maxFS <- melt(tdwg_final[,target.col], id.vars = c("LAT", "LONG", "LEVEL_3_CO"), measure.vars = "max95FruitLengthFilled")
 q_probs = seq(0.0, 1.0, 0.125)
@@ -159,21 +150,8 @@ tdwg_maxFS$maxFS_q <- cut(tdwg_maxFS$value, q_values, include.lowest = T)
 levels(tdwg_maxFS$maxFS_q) <- gsub(levels(tdwg_maxFS$maxFS_q), pattern = ",", replacement = " - ")
 levels(tdwg_maxFS$maxFS_q) <- gsub(levels(tdwg_maxFS$maxFS_q), pattern = "\\(|\\[|\\]", replacement = "")
 
-medFS_p <- ggplot() +
-  geom_polygon(aes(y = lat, x = long, group = group), fill = "grey60",
-              data = tdwg_shp2) +
-  geom_point(aes(x = LONG, y = LAT,
-                 colour = medFS_q, size = medFS_q), data = tdwg_medFS, alpha = 0.9) +
-  coord_fixed() +
-  map_theme + theme(plot.title = element_blank()) +
-  guides(size=FALSE, colour = guide_legend(title = "Median fruit length (cm)",
-                                           override.aes = list(size=sqrt(med_q_mdpt)))) +
-  scale_size_manual(values = sqrt(med_q_mdpt)) +
-  scale_color_viridis(discrete = TRUE)
-ggsave(file.path(fig.dir, "medFS.pdf"), medFS_p, width = 9, height = 5)
-
 maxFS_p <- ggplot() +
-  geom_polygon(aes(y = lat, x = long, group = group), fill = "grey60",
+  geom_polygon(aes(y = lat, x = long, group = group), fill = "grey80", size = 0.1, colour = "white",
                data = tdwg_shp2) +
   geom_point(aes(x = LONG, y = LAT,
                  colour = maxFS_q, size = maxFS_q),
@@ -193,35 +171,6 @@ ggsave(file.path(fig.dir, "maxFS.pdf"), maxFS_p, width = 9, height = 5)
 # Body size mapped  ========================
 target.col <- c("LAT", "LONG", "LEVEL_3_CO", "curr_medianBodySize", "presNat_medianBodySize","curr_max95BodySize","presNat_max95BodySize")
 
-tdwg_medBS_melt <- melt(tdwg_final[,target.col],
-                        id.vars = c("LAT", "LONG", "LEVEL_3_CO"),
-                        measure.vars = c("curr_medianBodySize",
-                                         "presNat_medianBodySize"))
-tdwg_medBS_melt$variable <- factor(tdwg_medBS_melt$variable, levels = c("curr_medianBodySize", "presNat_medianBodySize"), labels = c("Current", "Present-natural"))
-
-medBS_arthm_min <- min(tdwg_medBS_melt$value)/1000
-medBS_arthm_max <- max(tdwg_medBS_melt$value)/1000
-
-medBS_p <- ggplot() + 
-  #geom_polygon(aes(y = lat, x = long, group = group), fill = "grey60", data = tdwg_shp2) +
-  geom_point(aes(y = LAT, x= LONG, colour = (value/1000),
-                 size = log10(value)), data = tdwg_medBS_melt) +
-  facet_wrap(~variable, nrow = 2)+
-  # some padding so the legend takes up same space as the maximum BS
-  scale_colour_viridis(discrete = FALSE,
-                       breaks = c(medBS_arthm_min, 0.1, 1, 10, medBS_arthm_max),
-                       trans = log10_trans(),
-                       labels = c(round(medBS_arthm_min,2), 0.1, 1, 10, round(medBS_arthm_max) )) +
-  coord_fixed() +
-  guides(colour = guide_colorbar(title = "Median\nbody mass (kg)",
-                                 label.theme = element_text(angle = 45, vjust = 0.5),
-                                 order = 1),
-         size = guide_legend(title = "", order = 2) ) +
-  scale_size_continuous(breaks = c(1.30103, 2, 3, 4, 4.74), labels = c(0.02, 0.1, 1, 10, 56)) +
-  map_theme +
-  theme(plot.title = element_blank(), legend.key.width = unit(1, "cm"))
-ggsave(file.path(fig.dir, "medBS.pdf"), medBS_p, width = 9, height = 10)
-
 tdwg_maxBS_melt <- melt(tdwg_final[,target.col],
                         id.vars = c("LAT", "LONG", "LEVEL_3_CO"),
                         measure.vars = c("curr_max95BodySize",
@@ -232,7 +181,8 @@ maxBS_arthm_min <- min(tdwg_maxBS_melt$value)/1000
 maxBS_arthm_max <- max(tdwg_maxBS_melt$value)/1000
 
 maxBS_p <- ggplot() + 
-  geom_polygon(aes(y = lat, x = long, group = group), fill = "grey60", data = tdwg_shp2) +
+  geom_polygon(aes(y = lat, x = long, group = group), fill = "grey80", size = 0.1, colour = "white",
+               data = tdwg_shp2) +
   geom_point(aes(y = LAT, x= LONG, colour = value/1000, size = log10(value)), data = tdwg_maxBS_melt) +
   facet_wrap(~variable, nrow = 2)+
   coord_fixed() +
@@ -262,7 +212,7 @@ ggsave(file.path(fig.dir, "maxBS.pdf"), maxBS_p, width = 9, height = 10)
 
 ## Model-averaged coefficients ===============
 maxBS_modavg_res <- read.csv(file.path(res.dir, "maxBS_ols_modavg.csv"), stringsAsFactors = TRUE)
-maxBS_modavg_res <- subset(maxBS_modavg_res, !coefficient == "(Intercept)")
+maxBS_modavg_res <- subset(maxBS_modavg_res, !coefficient == "(Intercept)" & Scenario %in% c("Current", "Present-Natural"))
 maxBS_modavg_res$Variable <- factor(maxBS_modavg_res$coefficient,
                                        levels = c("curr_logMax95BS_scl", "pnat_logMax95BS_scl",
                                                   "globalPC1_scl", "globalPC2_scl", "globalPC3_scl",
@@ -282,7 +232,7 @@ maxBS_modavg_plot <- ggplot(data = maxBS_modavg_res) +
   scale_size_continuous(limits = c(0, 1), name = "Variable\nimportance") +
   labs(y = "Standardized\nmodel averaged coefficients") +
   facet_wrap(~ GeographicScale, drop = TRUE, nrow = 4, strip.position = "right") + 
-  scale_color_manual(values = wes_palette("Cavalcanti1",n = 4)[1:2]) +
+  scale_color_manual(values = c("#FDB515", "#003262")) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
         axis.title.x = element_blank(),
         strip.background = element_blank(),
@@ -298,52 +248,6 @@ varexp_theme <- theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 1
                       panel.background = element_blank(),
                       strip.background = element_blank(),
                       strip.text = element_text(color = "grey20", size = 18))
-r2_labelsize <- 5
-medBS_col <- wes_palette("GrandBudapest1", n = 4)[2]
-
-medBS_levels <- c("curr_logMedBS_scl", "pnat_logMedBS_scl", "globalPC1_scl", "globalPC2_scl", "globalPC3_scl", "regionalPC1_scl", "regionalPC2_scl", "regionalPC3_scl","lgm_ens_Pano_scl", "lgm_ens_Tano_scl")
-medBS_labels <- c("Median body size", "Median body size","Climate PC1", "Climate PC2", "Climate PC3",
-                  "Climate PC1", "Climate PC2", "Climate PC3","LGM Prec. Anom.", "LGM Temp. Anom.")
-
-medBS_ols_modavg_res <- read.csv(file.path(res.dir, "medBS_ols_modavg.csv"), stringsAsFactors = TRUE)
-medBS_ols_modavg_res$Variable <- factor(medBS_ols_modavg_res$coefficient,
-                                    levels = medBS_levels, labels = medBS_labels)
-
-medBS_ols_modavg_res$Geographic.Scale <- factor(medBS_ols_modavg_res$Geographic.Scale, levels = c("Global", "Afrotropics", "Neotropics", "Indotropics"))
-medBS_ols_modavg_res$totalR2[duplicated(medBS_ols_modavg_res$totalR2)] <- NA
-medBS_ols_modavg_res$totalR2plot <- sapply(X = medBS_ols_modavg_res$totalR2, FUN = roundCorrectly)
-medBS_ols_modavg_plot <-ggplot(data = subset(medBS_ols_modavg_res, !is.na(Variable) )) + 
-  geom_bar(aes(y = varexp,  x = Variable, fill = Variable), stat = "identity") +
-  facet_grid(Geographic.Scale ~ Scenario) +
-  labs(y = "Variance explained", x = "") +
-  geom_text(aes(y = Inf , x = Inf, label = ifelse(is.na(totalR2),"",totalR2plot)), hjust = 1, vjust = 1, parse = T, size = r2_labelsize) +
-  scale_y_continuous(breaks = c(0,0.1, 0.2, 0.3)) +
-  guides(fill = FALSE) +
-  scale_fill_manual(values = c(medBS_col, rep("grey20",5))) +
-  varexp_theme
-ggsave(file.path(fig.dir, "medBS_ols_modavg_relaimpo.pdf"),
-       medBS_ols_modavg_plot, height= 12, width = 8)
-
-medBS_sar_modavg_res <- read.csv(file.path(res.dir, "medBS_sar_modavg.csv"), stringsAsFactors = TRUE)
-medBS_sar_modavg_res$Scenario <- factor(medBS_sar_modavg_res$Scenario, levels = 
-                                          c("Current", "Present-Natural"), labels = c("Current", "Present-"))
-medBS_sar_modavg_res$Variable <- factor(medBS_sar_modavg_res$coefficient,
-                                        levels = medBS_levels, labels = medBS_labels)
-
-medBS_sar_modavg_res$Geographic.Scale <- factor(medBS_sar_modavg_res$Geographic.Scale, levels = c("Global", "Afrotropics", "Neotropics", "Indotropics"))
-medBS_sar_modavg_res$totalR2[duplicated(medBS_sar_modavg_res$totalR2)] <- NA
-medBS_sar_modavg_res$totalR2plot <- sapply(X = medBS_sar_modavg_res$totalR2, FUN = roundCorrectly)
-medBS_sar_modavg_plot <-ggplot(data = subset(medBS_sar_modavg_res, !is.na(Variable) )) + 
-  geom_bar(aes(y = varexp,  x = Variable, fill = Variable), stat = "identity") +
-  facet_grid(Geographic.Scale ~ Scenario) +
-  labs(y = "Variance explained", x = "") +
-  geom_text(aes(y = Inf , x = Inf, label = ifelse(is.na(totalR2),"",totalR2plot)), hjust = 1, vjust = 1, parse = T, size = r2_labelsize) +
-  guides(fill = FALSE) +
-  scale_y_continuous(breaks = c(0,0.1, 0.2, 0.3)) +
-  scale_fill_manual(values = c(medBS_col, rep("grey20",5))) +
-  varexp_theme
-ggsave(file.path(fig.dir, "medBS_sar_modavg_relaimpo.pdf"),
-       medBS_sar_modavg_plot, height= 12, width = 8)
 
 maxBS_ols_modavg_res <- read.csv(file.path(res.dir, "maxBS_ols_modavg.csv"), stringsAsFactors = TRUE)
 maxBS_ols_modavg_res <- subset(maxBS_ols_modavg_res, !coefficient == "(Intercept)")
@@ -363,9 +267,9 @@ maxBS_ols_modavg_res$colType[maxBS_ols_modavg_res$coefficient == "Maximum body s
 maxBS_ols_modavg_res$colType[maxBS_ols_modavg_res$coefficient == "Maximum body size" & maxBS_ols_modavg_res$Scenario == "Present-Natural"] <- 2
 
 maxBS_col <- c("grey50",
-               wes_palette("Cavalcanti1", n = 4)[1],
-               wes_palette("Cavalcanti1", n = 4)[2])
-maxBS_ols_modavg_plot <- ggplot(data = subset(maxBS_ols_modavg_res, !is.na(coefficient))) + 
+               "#FDB515",
+               "#003262")
+maxBS_ols_modavg_plot <- ggplot(data = subset(maxBS_ols_modavg_res, !is.na(coefficient) & Scenario %in% c("Current", "Present-Natural"))) + 
   geom_bar(aes(y = varexp,  x = coefficient, fill = factor(colType)), stat = "identity") +
   facet_grid(Geographic.Scale ~ Scenario) +
   labs(y = "Variance explained", x = "") +
@@ -376,83 +280,32 @@ maxBS_ols_modavg_plot <- ggplot(data = subset(maxBS_ols_modavg_res, !is.na(coeff
   varexp_theme
 ggsave(file.path(fig.dir, "maxBS_ols_modavg_relaimpo.pdf"), maxBS_ols_modavg_plot, height= 12, width = 8)
 
-maxBS_sar_modavg_res <- read.csv(file.path(res.dir, "maxBS_sar_modavg.csv"))
-maxBS_sar_modavg_res$coefficient <- factor(maxBS_sar_modavg_res$coefficient,
-                                           levels = maxBS_levels,
-                                           labels = maxBS_labels)
-
-maxBS_sar_modavg_res$Geographic.Scale <- factor(maxBS_sar_modavg_res$Geographic.Scale, levels = c("Global", "Afrotropics", "Neotropics", "Indotropics"))
-maxBS_sar_modavg_res$totalR2[duplicated(maxBS_sar_modavg_res$totalR2)] <- NA
-maxBS_sar_modavg_res$totalR2plot <- sapply(X = maxBS_sar_modavg_res$totalR2, FUN = roundCorrectly)
-
-maxBS_sar_modavg_plot <- ggplot(data = subset(maxBS_sar_modavg_res, !is.na(coefficient))) + 
-  geom_bar(aes(y = varexp,  x = coefficient, fill = coefficient), stat = "identity") +
-  facet_grid(Geographic.Scale ~ Scenario) +
-  labs(y = "Variance explained", x = "") +
-  geom_text(aes(y = Inf , x = Inf, label = ifelse(is.na(totalR2),"",totalR2plot)), hjust = 1, vjust = 1, parse = T, size = r2_labelsize) +
-  guides(fill = FALSE) +
-  scale_y_continuous(breaks = c(0,0.1, 0.2, 0.3)) +
-  scale_fill_manual(values = c(maxBS_col, rep("grey20",5))) +
-  varexp_theme
-
-ggsave(file.path(fig.dir, "maxBS_sar_modavg_relaimpo.pdf"), maxBS_sar_modavg_plot, height= 12, width = 8)
-
 ## Partial residuals =========
-maxBS_pnat_presid <- readRDS(file.path(res.dir, "maxBS_pnat_presid.rds"))
-maxBS_curr_presid <- readRDS(file.path(res.dir, "maxBS_curr_presid.rds"))
-medBS_pnat_presid <- readRDS(file.path(res.dir, "medBS_pnat_presid.rds"))
-medBS_curr_presid <- readRDS(file.path(res.dir, "medBS_curr_presid.rds"))
-
-curr_col <- wes_palette("Cavalcanti1",n = 4)[1]
-pnat_col <- wes_palette("Cavalcanti1",n = 4)[2]
-presid_theme <- theme(panel.background = element_blank(), panel.border = element_rect(fill = "transparent"))
-
-names(maxBS_curr_presid$points) <- c("presid", "x")
-names(maxBS_pnat_presid$points) <- c("presid", "x")
-maxBS_comb_presid <- rbind(maxBS_curr_presid$points, maxBS_pnat_presid$points)
-maxBS_comb_presid$Scenario <- rep(c("Current", "Present-natural"), each = 129)
-
-comb_theme <- theme(legend.position = c(0.05,0.9),
-      panel.background = element_blank(),
-      legend.box.background = element_rect(fill = "white"),
-      legend.title = element_blank(),
-      panel.border = element_rect(fill = NA, color = "grey90"))
-
-max_comb_presid_p <- ggplot(data= maxBS_comb_presid) +
-  geom_point(aes(y = presid, x = x, color = Scenario), shape = 21)+ labs(x = "Log maximum body size\n(standard deviations)", y = "Log maximum fruit size \n(partial residuals)") + 
-  geom_abline(slope = maxBS_curr_presid$slope, intercept = maxBS_curr_presid$intercept, colour = curr_col) +
-  geom_abline(slope = maxBS_pnat_presid$slope, intercept = maxBS_pnat_presid$intercept, colour = pnat_col) +
-  comb_theme +
-  scale_color_manual(values = c(curr_col, pnat_col))
-
-names(medBS_curr_presid$points) <- c("presid", "x")
-names(medBS_pnat_presid$points) <- c("presid", "x")
-medBS_comb_presid <- rbind(medBS_curr_presid$points, medBS_pnat_presid$points)
-medBS_comb_presid$Scenario <- rep(c("Current", "Present-Natural"), each = 129)
-
-med_comb_presid_p <- ggplot(data= medBS_comb_presid) +
-  geom_point(aes(y = presid, x = x, color = Scenario), shape = 21) + labs(x = "Log median body size\n(standard deviations)", y = "Log median fruit size \n(partial residuals)") + 
-  geom_abline(slope = medBS_curr_presid$slope, intercept = medBS_curr_presid$intercept, colour = curr_col) +
-  geom_abline(slope = medBS_pnat_presid$slope, intercept = medBS_pnat_presid$intercept, colour = pnat_col) +
-  comb_theme +
-  scale_color_manual(values = c(curr_col, pnat_col))
-
-## New partial residuals =========
 maxBS_partialresid <- readRDS(file.path(res.dir, "maxBS_partialresid.rds"))
+
 for(i in 1:length(maxBS_partialresid)){
-  if(i %in% c(1,3,5,7)){
+  if(i %in% c(1,5,9,13)){
     maxBS_partialresid[[i]]$points$Scenario <- "Current"
-  } else { maxBS_partialresid[[i]]$points$Scenario <- "Present-natural" }
-  if(i %in% c(1,2)){
+  }
+  if(i %in% c(2,6,10,14)){
+    maxBS_partialresid[[i]]$points$Scenario <- "Present-natural"
+  }
+  if(i %in% c(3,7,11,15)){
+    maxBS_partialresid[[i]]$points$Scenario <- "Present-natural (Conservative)"
+  }
+  if(i %in% c(4,8,12,16)){
+    maxBS_partialresid[[i]]$points$Scenario <- "Present-natural (Very conservative)"
+  }
+  if(i %in% c(1,2,3,4)){
     maxBS_partialresid[[i]]$points$Geographic.scale <- "Global"
   }
-  if(i %in% c(3,4)){
+  if(i %in% c(5,6,7,8)){
     maxBS_partialresid[[i]]$points$Geographic.scale <- "Neotropics"
   }
-  if(i %in% c(5,6)){
+  if(i %in% 9:12){
     maxBS_partialresid[[i]]$points$Geographic.scale <- "Afrotropics"
   }
-  if(i %in% c(7,8)){
+  if(i %in% 13:16){
     maxBS_partialresid[[i]]$points$Geographic.scale <- "Indo-Australia"
   }
 }
@@ -466,17 +319,19 @@ maxBS_partialresid_slopes <- unlist(lapply(maxBS_partialresid, FUN = function(x)
 maxBS_partialresid_intercepts <- unlist(lapply(maxBS_partialresid, FUN = function(x) { x$intercept } ))
 maxBS_abline <- data.frame(slope = maxBS_partialresid_slopes,
                            intercept = maxBS_partialresid_intercepts,
-                           Geographic.scale = factor(rep(c("Global", "Neotropics", "Afrotropics", "Indo-Australia"), each = 2), levels = geog_scale),
-                           Scenario = rep(c("Current", "Present-natural"), 4))
+                           Geographic.scale = factor(rep(c("Global", "Neotropics", "Afrotropics", "Indo-Australia"), each = 4), levels = geog_scale),
+                           Scenario = rep(c("Current", "Present-natural", "Present-natural (Conservative)", "Present-natural (Very conservative)"), 4))
 
 maxBS_abline$slope[maxBS_abline$Geographic.scale == "Afrotropics"] <- NA
 maxBS_abline$intercept[maxBS_abline$Geographic.scale == "Afrotropics"] <- NA
-maxBS_presid_plot <- ggplot(aes(y = presid, x = x, group = Scenario, color = Scenario), data = maxBS_partialresid_pts) + 
+maxBS_presid_plot <- ggplot(aes(y = presid, x = x, group = Scenario, color = Scenario),
+                            data = subset(maxBS_partialresid_pts, Scenario %in% c("Current", "Present-natural"))) + 
   geom_point(shape = 21) + 
-  geom_abline(aes(slope = slope, intercept = intercept, colour = Scenario), data = maxBS_abline, show.legend = F) + 
+  geom_abline(aes(slope = slope, intercept = intercept, colour = Scenario),
+              data = subset(maxBS_abline, Scenario %in% c("Current", "Present-natural")), show.legend = F) + 
   facet_wrap(~Geographic.scale, nrow = 4, strip.position = "right") + 
   labs(x = "Log maximum body size\n(standard deviations)", y = "Log maximum fruit size \n(partial residuals)") +
-  scale_colour_manual(values = wes_palette("Cavalcanti1",2)) +
+  scale_colour_manual(values = c("#FDB515", "#003262")) +
   guides(color = guide_legend(override.aes=list(size = 5))) +
   theme(legend.position = "bottom",
         legend.key = element_blank(),
@@ -486,49 +341,28 @@ maxBS_presid_plot <- ggplot(aes(y = presid, x = x, group = Scenario, color = Sce
         panel.border = element_rect(color = "grey30", fill = "transparent"))
 ggsave(maxBS_presid_plot, filename = file.path(fig.dir, "maxBS_presid_plot.pdf"), height = 6, width = 5)
 
-#maxBS_ols_modlist <- list(glob_curr_maxBS_mod, glob_pnat_maxBS_mod, 
-#                          nw_curr_maxBS_mod, nw_pnat_maxBS_mod, 
-#                          oww_curr_maxBS_mod, oww_pnat_maxBS_mod,
-#                          owe_curr_maxBS_mod, owe_pnat_maxBS_mod)
 
 ## Histograms of fruit size change =========
 fruitsizechange <- read.csv(file.path(res.dir, "tdwgFruitSizeChange.csv")) # units are in cm since that is the original fruit length units
-fruitsizechange <- subset(fruitsizechange, !is.na(changeInMedFruitSize))
-medFSchange_hist <- ggplot(data = fruitsizechange) + geom_histogram(aes(changeInMedFruitSize), bins = 10) +
-  labs(x = "Projected difference in\nmedian fruit length(cm)", y = "Count") +
-  geom_vline(xintercept = mean(fruitsizechange$changeInMedFruitSize, na.rm = T), size = 1, linetype = "dashed", color = "coral") +
-  theme(panel.background = element_blank())
 
-maxFSchange_hist <- ggplot(data = fruitsizechange) + geom_histogram(aes(changeInMaxFruitSize), bins = 10) +
+maxFSchange_hist <- ggplot(data = fruitsizechange) + geom_histogram(aes(changeInMaxFruitSize), bins = 15) +
   labs(x = "Projected difference in\nmaximum fruit length (cm)", y = "Count") +
   geom_vline(xintercept = mean(fruitsizechange$changeInMaxFruitSize, na.rm = T),
-             size = 1, linetype = "dashed", color = wes_palette("Cavalcanti1", 5)[4]) +
+             size = 0.5, linetype = "dashed", color = "#ED4E33") +
+  scale_x_continuous(expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
+  theme(panel.background = element_blank())
+
+
+maxFSchange_cons_hist <- ggplot(data = fruitsizechange) + geom_histogram(aes(changeInMaxFruitSize_cons), bins = 15) +
+  labs(x = "Projected difference in\nmaximum fruit length (cm)", y = "Count") +
+  geom_vline(xintercept = mean(fruitsizechange$changeInMaxFruitSize_cons, na.rm = T),
+             size = 0.5, linetype = "dashed", color = "#ED4E33") +
+  scale_x_continuous(expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
   theme(panel.background = element_blank())
 
 ## Change in fruit size mapped =======
-medFSchange_zCuts <- quantile(fruitsizechange$changeInMedFruitSize, probs = seq(0,1,length.out = 6), na.rm = TRUE)
-medFSchange_zmidpt <- vector()
-for(i in 1:(length(medFSchange_zCuts)-1)){ medFSchange_zmidpt[i] <- (medFSchange_zCuts[i] + medFSchange_zCuts[i+1])/2 }
-fruitsizechange$medFSchange_categ <-  cut(fruitsizechange$changeInMedFruitSize, breaks = medFSchange_zCuts, include.lowest = T, ordered_result = T)
-levels(fruitsizechange$medFSchange_categ) <- cleanCuts(levels(fruitsizechange$medFSchange_categ))
-
-medFSchangemap <- ggplot() +
-  geom_polygon(aes(y = lat, x = long, group = group), data = tdwg_shp2) +
-  geom_point(aes(y = LAT, x= LONG, size = medFSchange_categ, color = medFSchange_categ), data = fruitsizechange) + 
-  map_theme +
-  coord_fixed() +
-  #ggtitle(label = "Projected change in median fruit size") +
-  guides(size = FALSE, colour = guide_legend(title = "Change in median\nfruit length (cm)",
-                                             override.aes = list(size = rescale(medFSchange_zmidpt, to = c(1,3))))) +
-  theme(legend.box = 'vertical',
-        legend.title = element_text(size = 10),
-        legend.text = element_text(size = 10),
-        legend.key = element_blank(),
-        legend.key.size = unit(2, "line")) +
-  scale_size_manual(values = rescale(medFSchange_zmidpt, to = c(1,3))) +
-  scale_color_manual(values = brewer.pal(9,"RdBu")[c(9,7,6,3,1)])
-ggsave(file.path(fig.dir, "medFSchange_map.pdf"), medFSchangemap, width = 9, height = 6, device = cairo_pdf)
-
 maxFSchange_zCuts <- quantile(fruitsizechange$changeInMaxFruitSize, probs = seq(0,1,length.out = 6), na.rm = TRUE)
 fruitsizechange$maxFSchange_categ <-  cut(fruitsizechange$changeInMaxFruitSize, breaks = maxFSchange_zCuts, include.lowest = T, ordered_result = T)
 maxFSchange_zmidpt <- vector()
@@ -538,9 +372,10 @@ levels(fruitsizechange$maxFSchange_categ) <- cleanCuts(levels(fruitsizechange$ma
 maxFSchangemap <- ggplot() +
   geom_polygon(aes(y = lat, x = long, group = group), data = tdwg_shp2) +
   geom_point(aes(y = LAT, x= LONG, size = maxFSchange_categ, color = maxFSchange_categ), data = fruitsizechange) + 
-  #ggtitle(label = "Projected change in maximum (95th percentile) fruit size") +
   guides(size = FALSE,
-         colour = guide_legend(title = "Change in maximum\n(95th percentile) fruit length (cm)",
+         colour = guide_legend(title.position = "top",
+                               title.hjust = 0.5,
+                               title = "Change in maximum (95th percentile) fruit length (cm)",
                                override.aes = list(size = rescale(maxFSchange_zmidpt, to = c(1,3))))) +
   coord_fixed() +
   map_theme +
@@ -550,7 +385,32 @@ maxFSchangemap <- ggplot() +
         legend.text = element_text(size = 10)) +
   scale_size_manual(values = rescale(maxFSchange_zmidpt, to = c(1,3))) +
   scale_color_manual(values = brewer.pal(9,"RdBu")[c(9,7,6,3,1)])
-ggsave(file.path(fig.dir, "maxFSchange_map.pdf"), maxFSchangemap, width = 9, height = 6, device = cairo_pdf)
+ggsave(file.path(fig.dir, "maxFSchange_map.pdf"), maxFSchangemap, width = 9, height = 6, device = "pdf")
+
+maxFSchangecons_zCuts <- quantile(fruitsizechange$changeInMaxFruitSize_cons, probs = seq(0,1,length.out = 6), na.rm = TRUE)
+fruitsizechange$maxFSchange_cons_categ <-  cut(fruitsizechange$changeInMaxFruitSize_cons, breaks = maxFSchangecons_zCuts, include.lowest = T, ordered_result = T)
+maxFSchangecons_zmidpt <- vector()
+for(i in 1:(length(maxFSchange_zCuts)-1)){ maxFSchangecons_zmidpt[i] <- (maxFSchangecons_zCuts[i] + maxFSchangecons_zCuts[i+1])/2 }
+levels(fruitsizechange$maxFSchange_cons_categ) <- cleanCuts(levels(fruitsizechange$maxFSchange_cons_categ))
+
+maxFSchangecons_map <- ggplot() +
+  geom_polygon(aes(y = lat, x = long, group = group), data = tdwg_shp2) +
+  geom_point(aes(y = LAT, x= LONG, size = maxFSchange_cons_categ, color = maxFSchange_cons_categ), data = fruitsizechange) + 
+  #ggtitle(label = "Projected change in maximum (95th percentile) fruit size") +
+  guides(size = FALSE,
+         colour = guide_legend(title = "Change in maximum (95th percentile) fruit length (cm)",
+                               title.position = "top",
+                               title.hjust = 0.5,
+                               override.aes = list(size = rescale(maxFSchange_zmidpt, to = c(1,3))))) +
+  coord_fixed() +
+  map_theme +
+  theme(legend.box = 'vertical',
+        legend.key = element_blank(),
+        legend.title = element_text(size = 10),
+        legend.text = element_text(size = 10)) +
+  scale_size_manual(values = rescale(maxFSchange_zmidpt, to = c(1,3))) +
+  scale_color_manual(values = brewer.pal(9,"RdBu")[c(9,7,6,3,1)])
+ggsave(file.path(fig.dir, "maxFSchangecons_map.pdf"), maxFSchangecons_map, width = 9, height = 6)
 
 ## Extinction and body size ==========
 tdwg_final <- read.csv(file.path(data.dir,"tdwg_final.csv"))
@@ -560,10 +420,15 @@ presnat_mamm <- subset(presnat_mamm, LEVEL_3_CO %in% tdwg_final$LEVEL_3_CO)
 presnat_mamm <- merge(x = presnat_mamm,  y = tdwg_env[c("LEVEL_3_CO", "REALM_LONG")], by = "LEVEL_3_CO")
 presnat_mamm$REALM_LONG <- factor(presnat_mamm$REALM_LONG, levels = c("Neotropics", "Afrotropics", "IndoMalay", "Australasia"), labels = c("Neotropics", "Afrotropics", "Indo-Australia", "Indo-Australia"))
 
-target_col <- c("SpecName", "Mass.g", "IUCN.Status.1.2", "REALM_LONG")
+target_col <- c("SpecName", "Mass.g", "IUCN.Status.1.2", "REALM_LONG", "Liberal", "Cons", "SuperCons")
 
 mamm_df  <- presnat_mamm[target_col]
 mamm_df <- mamm_df[!duplicated(mamm_df),]
+
+mamm_df$ConsStat <- ifelse(mamm_df$Liberal == "Y" & mamm_df$Cons == "Y" & mamm_df$SuperCons == "Y",
+                           "Very Conservative",
+                           ifelse(mamm_df$Liberal == "Y" & mamm_df$Cons == "Y",
+                                  "Conservative", "Liberal"))
 
 mamm_df$CurrVsPnat <- ifelse(mamm_df$IUCN.Status.1.2 %in% c("DD", "LC", "NT", "EN", "VU", "CR"),
                              "Current",
@@ -577,6 +442,25 @@ mamm_df2 <- mamm_df
 mamm_df2$REALM_LONG <- "Global"
 mamm_df3 <- rbind(mamm_df, mamm_df2)
 mamm_df3$REALM_LONG <- factor(mamm_df3$REALM_LONG, levels = c("Global", "Afrotropics", "Neotropics", "Indo-Australia"))
+mamm_df3$ConsStat <- factor(mamm_df3$ConsStat, levels = c("Liberal", "Conservative", "Very Conservative"),
+                            labels = c("Default", "Conservative", "Very conservative"))
+mamm_df3 <- mamm_df3[!duplicated(mamm_df3),]
+
+FrugClassPlot <-
+  ggplot(aes(fill = ConsStat, x = log10(Mass.g/1000)), data = subset(mamm_df3, IUCN.Status.1.2 == "EP")) +
+  geom_histogram(binwidth = 0.5) +
+  facet_wrap(~REALM_LONG, nrow = 4, scales = "free_y") +
+  scale_fill_manual(values = brewer.pal(name = "YlGnBu", n = 9)[c(3,5,7)]) + #wes_palette("Royal1", n = 3)) +
+  scale_y_continuous(name = "Number of mammalian frugivores", expand = c(0,0)) +
+  labs(x=expression(paste(Log[10], " body mass (kg)", sep = " "))) +
+  scale_x_continuous(expand = c(0,0)) +
+  theme(axis.title = element_text(size = 12),
+        strip.background = element_blank(),
+        strip.text = element_text(size = 12, colour = "grey20"),
+        panel.background = element_blank(), 
+        legend.position = "bottom", 
+        legend.title = element_blank() )
+ggsave(FrugClassPlot, filename = file.path(fig.dir, "FrugClassPlot.pdf"), width = 5, height = 9)
 
 CurrVsPnatBSHist <- ggplot(aes(fill = CurrVsPnat, x = log10(Mass.g/1000)), data = mamm_df3) +
   geom_histogram(binwidth = 0.5) +
@@ -595,7 +479,7 @@ ggsave(CurrVsPnatBSHist, filename = file.path(fig.dir, "figXX_CurrVsPnatBSHist.p
                                            
 CurrVsFutrBSHist <- ggplot(aes(fill = FutrVsCurr, x = log10(Mass.g/1000)), data = subset(mamm_df3, !IUCN.Status.1.2 %in% c("EX", "EP", "EW"))) +
   geom_histogram(binwidth = 0.5) +
-  facet_wrap(~REALM_LONG, nrow = 1, scales = "free") +
+  facet_wrap(~REALM_LONG, nrow = 4, scales = "free") +
   scale_fill_manual(values = wes_palette("Royal1", n = 2)) +
   scale_y_continuous(name = "Number of\nmammalian frugivores", expand = c(0,0)) +
   labs(x=expression(paste(Log[10], " body mass (kg)", sep = " ")))+
@@ -648,25 +532,40 @@ ggsave(file.path(fig.dir, "fig3_varexp.pdf"), fig3, width = 10, height = 10)
 
 ## FIG 4: Change in fruit size ===============
 maxFSchange_comb <- ggdraw() +
-  draw_plot(maxFSchangemap + theme(legend.position = "none"), 0,0, 1,1) +
-  draw_plot(maxFSchange_hist + theme(text = element_text(size = 8),
-                                     axis.text = element_text(size = 6)), 0.05, 0.1, 0.2, 0.4)
+  draw_plot(maxFSchangemap +
+              #guides(colour = guide_legend(title.position = "top", title = "Change in maximum (95th percentile) fruit length (cm)")) +
+              theme(legend.position = "bottom",
+                                   legend.title = element_text(size = 8),
+                                   legend.text = element_text(size = 6)), 0, 0, 1,1) + 
+  draw_plot(maxFSchange_hist + theme(text = element_text(size = 6)), 0.1, 0.3, 0.18, 0.4)
 
-maxFSchange_comb_wleg <- plot_grid(maxFSchange_comb, get_legend(maxFSchangemap), nrow = 2, rel_heights = c(1,0.1))
+maxFSchangecons_comb <- ggdraw() +
+  draw_plot(maxFSchangecons_map + 
+              theme(legend.position = "bottom",
+                                        legend.title = element_text(size = 8),
+                                        legend.text = element_text(size = 6)), 0,0, 1,1) +
+  draw_plot(maxFSchange_cons_hist + theme(text = element_text(size = 6)), 0.1, 0.3, 0.18, 0.4)
 
-fig4 <- plot_grid(CurrVsFutrBSHist + theme(legend.position = "right"),
-                  maxFSchange_comb_wleg, nrow = 2, rel_heights = c(0.6, 1.2), scale = c(1,1),
-                  labels = "auto")
+# maxFSchange_comb_wleg <- plot_grid(maxFSchange_comb,
+#                                    get_legend(maxFSchangemap),
+#                                    nrow = 2, rel_heights = c(1, 0.1))
+# maxFSchangecons_comb_wleg <- plot_grid(maxFSchangecons_comb,
+#                                        get_legend(maxFSchangecons_map),
+#                                        nrow = 2, rel_heights = c(1,0.1))
 
-ggsave(file.path(fig.dir, "fig4_FSchange.pdf"), fig4, device = cairo_pdf, width = 9, height = 6)
+fig4 <- plot_grid(CurrVsFutrBSHist + theme(title = element_text(size = 8),
+                                           axis.title = element_text(size = 8),
+                                           axis.text = element_text(size = 6),
+                                           legend.text = element_text(size = 8)), 
+                  plot_grid(maxFSchange_comb,
+                            maxFSchangecons_comb,
+                            rel_heights = c(1,1), nrow = 2,
+                            labels = c("b", "c")),
+                  nrow = 1, rel_widths = c(0.4, 1.2), scale = c(1,1),
+                  labels = c("a"))
 
-mean(fruitsizechange$changeInMedFruitSize)
-sd(fruitsizechange$changeInMedFruitSize)
-mean(fruitsizechange$changeInMaxFruitSize)
-sd(fruitsizechange$changeInMaxFruitSize)
-mean(fruitsizechange$futr_maxBodySize)
-mean(fruitsizechange$curr_max95BodySize)
-mean(fruitsizechange$presNat_max95BodySize)
+ggsave(file.path(fig.dir, "fig4_FSchange.pdf"), fig4, width = 8.5, height = 6)
+
 
 ## SUPP FIG 1: Plot sensitivity of gap filling =========
 medFS_cor <- cor(tdwg_final$medianFruitLengthFilled, tdwg_final$medianFruitLength, method = "pearson")
@@ -686,6 +585,27 @@ maxFS_gap <- ggplot() +
 supp_fig1 <- plot_grid(medFS_gap, maxFS_gap, labels = "auto")
 ggsave(supp_fig1, filename = file.path(fig.dir, "suppfig1_gapfill.pdf"), height = 4, width = 8)
 
+
+## Neighbourhood definition  ===============
+nb_def <- readRDS(file.path(res.dir, "nb_def.rds"))
+names(nb_def[[1]]) <- 1:length(nb_def[[1]])
+
+nb_df <- ldply(.data = nb_def[[1]],.id = "from",
+      .fun = function(x){ data.frame("to" = x)})
+
+nb_coords <- data.frame(nb_def[[2]])
+names(nb_coords) <- c("LONG", "LAT")
+nb_coords$id <- 1:nrow(nb_coords)
+
+nb_df2 <- merge(x = nb_df, y = nb_coords, by.x = "from", by.y = "id", all = T)
+nb_df3 <- merge(x = nb_df2, y = nb_coords, by.x = "to", by.y = "id", suffixes = c("_from", "_to"), all = T)
+
+nb_plot <- ggplot() + 
+  geom_polygon(aes(x= long, y = lat, group = group), data = tdwg_shp2, fill = "grey80", colour = "white", size = 0.1) +
+  geom_point(aes(x = LONG, y = LAT), data = nb_coords, pch = 21, size = 3 ) +
+  geom_segment(aes(x = LONG_from, y = LAT_from, xend = LONG_to, yend = LAT_to ), data = nb_df3, size = 0.3) +
+  theme_map()
+ggsave(nb_plot, filename = file.path(fig.dir, "nb_def.pdf"), width=14, height = 6)
 
 ## OTHER PLOTS  ===============
 biotic_melt <- melt(tdwg_final,

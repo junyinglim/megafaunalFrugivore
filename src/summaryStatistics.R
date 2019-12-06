@@ -4,7 +4,7 @@
 rm(list = ls())
 
 ## Directories ========================
-main.dir <- "/Users/junyinglim/Dropbox/Projects/2019/palms/projects/megafaunalFrugivore"
+main.dir <- "~/Dropbox/projects/2019/palms/projects/megafaunalFrugivore"
 data.dir <- file.path(main.dir, "data")
 res.dir <- file.path(main.dir, "results")
 src.dir <- file.path(main.dir, "src")
@@ -109,44 +109,32 @@ summary(glob_pnat_medBS_sar_mod)
 
 
 
+## How many extinct species included 
+tdwg_final_glob <- read.csv(file.path(res.dir, "tdwgFruitSizeChange.csv"))
+countryList <- tdwg_final_glob$LEVEL_3_CO
 
-
-
-
-## SCRATCH SHEET
-levels(fruitsizechange$medFSchange_categ)
-subset(fruitsizechange,  changeInMaxFruitSize > 3)[c("curr_max95BodySize", "futr_maxBodySize")]
-
+mammal_presnat_occ_trait <- read.csv(file.path(res.dir, "mammal_presnat_occ_trait.csv"))
 mammal_curr_occ_trait <- read.csv(file.path(res.dir, "mammal_curr_occ_trait.csv"))
-mammal_pnat_occ_trait <- read.csv(file.path(res.dir, "mammal_presnat_occ_trait.csv"))
-subset(mammal_curr_occ_trait, LEVEL_3_CO == "CBD")[c("SpecName", "IUCN.Status.1.2", "Mass.g")]
+length(unique(subset(mammal_presnat_occ_trait, IUCN.Status.1.2 %in% c("EW", "EX") & LEVEL_3_CO %in% countryList)$SpecName)) # 23 EX or EW
 
-mean(fruitsizechange$changeInMedFruitSize)
+default_EP <- unique(subset(mammal_presnat_occ_trait, IUCN.Status.1.2 %in% c("EP") & LEVEL_3_CO %in% countryList & Liberal == "Y")$SpecName)
+cons_EP <- unique(subset(mammal_presnat_occ_trait, IUCN.Status.1.2 %in% c("EP") & LEVEL_3_CO %in% countryList & Cons == "Y")$SpecName)
+supercons_EP <- unique(subset(mammal_presnat_occ_trait, IUCN.Status.1.2 %in% c("EP") & LEVEL_3_CO %in% countryList & SuperCons == "Y")$SpecName) 
 
-names(fruitsizechange)
-subset(tdwg_final, CONTINENT == "AUSTRALASIA")$presNat_medianBodySize
-subset(tdwg_final, LEVEL_3_CO == "BZN")$presNat_max95BodySize
-subset(tdwg_final, LEVEL_3_CO == "BZN")$curr_max95BodySize
-subset(tdwg_final, LEVEL_3_CO == "BZN")$futr_maxBodySize
-subset(fruitsizechange, LEVEL_3_CO == "BZN")$changeInMaxFruitSize
+length(default_EP) # 177 EP
+length(cons_EP) # 119 EP
+length(supercons_EP) # 67 EP
 
-hist(subset(mammal_curr_occ_trait, LEVEL_3_CO == "BZN")$Mass.g)
-hist(log(subset(mammal_curr_occ_trait, LEVEL_3_CO == "BZN")$Mass.g))
-quantile(subset(mammal_curr_occ_trait, LEVEL_3_CO == "BZN")$Mass.g, probs = 0.95)
-quantile(log(subset(mammal_curr_occ_trait, LEVEL_3_CO == "BZN")$Mass.g), probs = 0.95)
+length(unique(subset(mammal_curr_occ_trait, LEVEL_3_CO %in% countryList)$SpecName)) # 1604 taxa in the current 
+length(unique(subset(mammal_presnat_occ_trait, LEVEL_3_CO %in% countryList)$SpecName)) # 1811 in the present-natural
 
-subset(mammal_curr_occ_trait, LEVEL_3_CO == "BZN" & IUCN.Status.1.2 %in% c("VU", "EN", "CR"))$Mass.g
+length(unique(subset(mammal_curr_occ_trait, IUCN.Status.1.2 %in% c("CR", "DD", "EN", "LC", "NT","VU"))$SpecName))
+length(unique(subset(mammal_presnat_occ_trait, IUCN.Status.1.2 %in% c("CR", "DD", "EN", "LC", "NT","VU"))$SpecName))
 
-subset(mammal_curr_occ_trait, LEVEL_3_CO == "BZN" & IUCN.Status.1.2 == "VU")
-quantile(subset(mammal_curr_occ_trait, LEVEL_3_CO == "BZN")$Mass.g, probs = 0.95)
-quantile(subset(mammal_curr_occ_trait, LEVEL_3_CO == "BZN" & (!IUCN.Status.1.2 %in% c(c("VU","CR","EW","EN","EX"))))$Mass.g, probs = 0.95)
-table(mammal_curr_occ_trait$IUCN.Status.1.2)
+phylacine_trait <- read.csv("~/Dropbox/projects/2019/palms/data/frugivores/PHYLACINE/Trait_data.csv")
+curr_status <- table(subset(phylacine_trait, Binomial.1.2 %in% unique(mammal_curr_occ_trait$SpecName))$IUCN.Status.1.2)
+sum(curr_status[names(curr_status) %in% c("CR", "DD", "EN", "LC", "NT", "VU")])
 
-IUCN.Status.1.2 %in% c("CR","EW","EN","EX")
+pnat_status <- table(subset(phylacine_trait, Binomial.1.2 %in% unique(mammal_presnat_occ_trait$SpecName))$IUCN.Status.1.2)
+sum(pnat_status[names(pnat_status) %in% c("CR", "DD", "EN", "LC", "NT", "VU")])
 
-
-
-
-ggplot() +
-  geom_polygon(aes(y = lat, x = long, group = group), data = tdwg_shp2) +
-  coord_cartesian(ylim = c(-14, 24), xlim = c(80, 160))
