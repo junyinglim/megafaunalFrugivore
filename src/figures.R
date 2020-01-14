@@ -86,6 +86,8 @@ tdwg_final <- read.csv(file.path(data.dir,"tdwg_final.csv"))
 ## Plotting utilities ========================
 # Define map theme
 map_theme <- theme(panel.background = element_blank(),
+                   panel.grid = element_blank(),
+                   panel.border = element_blank(),
                    axis.text = element_blank(),
                    axis.line = element_blank(),
                    axis.ticks = element_blank(),
@@ -116,27 +118,32 @@ map_globaltropics <- ggplot() +
   geom_polygon(aes(y = lat, x = long, group = group, fill = factor(Global)),
                data = tdwg_shp2) + 
   scale_fill_manual(values = c("grey60", "grey20")) +
-  map_theme + theme(legend.position = "none")
+  map_theme + theme(legend.position = "none",
+                    plot.background = element_rect(fill = "transparent", color = NA))
 ggsave(map_globaltropics,
-       filename = file.path(fig.dir, "map_globaltropics.pdf"), height = 6, width = 14)
+       filename = file.path(fig.dir, "map_globaltropics.pdf"), height = 6, width = 14, bg = "transparent")
 
 map_neotropics <- ggplot() +
   geom_polygon(aes(y = lat, x = long, group = group, fill = factor(Neotropics)),
                data = tdwg_shp2) + 
-  scale_fill_manual(values = c("grey60", wes_palette("Cavalcanti1", n = 5)[1])) +
-  map_theme + theme(legend.position = "none")
+  scale_fill_manual(values = c("grey60", "grey20")) +
+  map_theme + theme(legend.position = "none",
+                    plot.background = element_rect(fill = "transparent", color = NA))
 ggsave(map_neotropics, filename = file.path(fig.dir, "map_neotropics.pdf"), height = 6, width = 14)
 
 map_afrotropics <- ggplot() +
   geom_polygon(aes(y = lat, x = long, group = group, fill = factor(Afrotropics)),
                                     data = tdwg_shp2) + 
-  scale_fill_manual(values = c("grey60", wes_palette("Cavalcanti1", n = 5)[2])) +
-  map_theme + theme(legend.position = "none")
+  scale_fill_manual(values = c("grey60", "grey20")) +
+  map_theme + theme(legend.position = "none",
+                    plot.background = element_rect(fill = "transparent", color = NA))
 ggsave(map_afrotropics, filename = file.path(fig.dir, "map_afrotropics.pdf"), height = 6, width = 14)
 
 map_indotropics <- ggplot() +
-  geom_polygon(aes(y = lat, x = long, group = group, fill = factor(Indotropics)), data = tdwg_shp2) +   scale_fill_manual(values = c("grey60", wes_palette("Cavalcanti1", n = 5)[5])) +
-  map_theme + theme(legend.position = "none")
+  geom_polygon(aes(y = lat, x = long, group = group, fill = factor(Indotropics)), data = tdwg_shp2) + 
+  scale_fill_manual(values = c("grey60", "grey20")) +
+  map_theme + theme(legend.position = "none",
+                    plot.background = element_rect(fill = "transparent", color = NA))
 ggsave(map_indotropics, filename = file.path(fig.dir, "map_indotropics.pdf"), height = 6, width = 14)
 
 # Fruit size mapped  ========================
@@ -463,8 +470,8 @@ FrugClassPlot <-
 ggsave(FrugClassPlot, filename = file.path(fig.dir, "FrugClassPlot.pdf"), width = 5, height = 9)
 
 CurrVsPnatBSHist <- ggplot(aes(fill = CurrVsPnat, x = log10(Mass.g/1000)), data = mamm_df3) +
-  geom_histogram(binwidth = 0.5) +
-  facet_wrap(~REALM_LONG, nrow = 4, scales = "free") +
+  geom_histogram(binwidth = 0.35) +
+  facet_wrap(~REALM_LONG, nrow = 4, scales = "free_y") +
   scale_fill_manual(values = wes_palette("Royal1", n = 2)) +
   scale_y_continuous(name = "Number of mammalian frugivores", expand = c(0,0)) +
   labs(x=expression(paste(Log[10], " body mass (kg)", sep = " ")))+
@@ -476,7 +483,16 @@ CurrVsPnatBSHist <- ggplot(aes(fill = CurrVsPnat, x = log10(Mass.g/1000)), data 
         legend.position = "bottom", 
         legend.title = element_blank() )
 ggsave(CurrVsPnatBSHist, filename = file.path(fig.dir, "figXX_CurrVsPnatBSHist.pdf"), width = 9, height = 5)
-                                           
+
+# # Code to plot by percent in each mass bin
+# mamm_df3$bins <- cut(log10(mamm_df3$Mass.g/1000), breaks = seq(-2.4, 4.4, 0.4))
+# test <- ddply(mamm_df3, .variables = .(REALM_LONG, bins), .fun = function(x){ as.data.frame(table(x$CurrVsPnat)/sum(table(x$CurrVsPnat)) ) } )
+# ggplot(test) +
+#   geom_bar(aes(y = Freq, fill = Var1, x = bins), stat = "identity") +
+#   facet_wrap(~REALM_LONG, nrow = 4) +
+#   theme(axis.text = element_text(angle = 90))
+# head(mamm_df3)
+
 CurrVsFutrBSHist <- ggplot(aes(fill = FutrVsCurr, x = log10(Mass.g/1000)), data = subset(mamm_df3, !IUCN.Status.1.2 %in% c("EX", "EP", "EW"))) +
   geom_histogram(binwidth = 0.5) +
   facet_wrap(~REALM_LONG, nrow = 4, scales = "free") +
