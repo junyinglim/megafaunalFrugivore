@@ -277,10 +277,10 @@ tdwg_futr_meanBodySize_summary <-
   ddply(.data = tdwg_futr_meanBodySize,
         .variable = .(LEVEL_3_CO),
         .fun = summarize,
-        futr_lib_medianBodySize = median(futr_lib_medianBodySize, na.rm = T),
-        futr_lib_maxBodySize = median(futr_lib_maxBodySize, na.rm = T),
-        futr_cons_medianBodySize = median(futr_cons_medianBodySize, na.rm = T),
-        futr_cons_maxBodySize = median(futr_cons_maxBodySize, na.rm = T),
+        futr_lib_medianBodySize = mean(futr_lib_medianBodySize, na.rm = T),
+        futr_lib_maxBodySize = mean(futr_lib_maxBodySize, na.rm = T),
+        futr_cons_medianBodySize = mean(futr_cons_medianBodySize, na.rm = T),
+        futr_cons_maxBodySize = mean(futr_cons_maxBodySize, na.rm = T),
         lib_nreps = sum(futr_lib_medianBodySize > 0),
         cons_nreps = sum(futr_cons_medianBodySize > 0))
 

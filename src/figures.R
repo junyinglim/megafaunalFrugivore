@@ -484,15 +484,6 @@ CurrVsPnatBSHist <- ggplot(aes(fill = CurrVsPnat, x = log10(Mass.g/1000)), data 
         legend.title = element_blank() )
 ggsave(CurrVsPnatBSHist, filename = file.path(fig.dir, "figXX_CurrVsPnatBSHist.pdf"), width = 9, height = 5)
 
-# # Code to plot by percent in each mass bin
-# mamm_df3$bins <- cut(log10(mamm_df3$Mass.g/1000), breaks = seq(-2.4, 4.4, 0.4))
-# test <- ddply(mamm_df3, .variables = .(REALM_LONG, bins), .fun = function(x){ as.data.frame(table(x$CurrVsPnat)/sum(table(x$CurrVsPnat)) ) } )
-# ggplot(test) +
-#   geom_bar(aes(y = Freq, fill = Var1, x = bins), stat = "identity") +
-#   facet_wrap(~REALM_LONG, nrow = 4) +
-#   theme(axis.text = element_text(angle = 90))
-# head(mamm_df3)
-
 CurrVsFutrBSHist <- ggplot(aes(fill = FutrVsCurr, x = log10(Mass.g/1000)), data = subset(mamm_df3, !IUCN.Status.1.2 %in% c("EX", "EP", "EW"))) +
   geom_histogram(binwidth = 0.5) +
   facet_wrap(~REALM_LONG, nrow = 4, scales = "free") +
@@ -562,12 +553,6 @@ maxFSchangecons_comb <- ggdraw() +
                                         legend.text = element_text(size = 6)), 0,0, 1,1) +
   draw_plot(maxFSchange_cons_hist + theme(text = element_text(size = 6)), 0.1, 0.3, 0.18, 0.4)
 
-# maxFSchange_comb_wleg <- plot_grid(maxFSchange_comb,
-#                                    get_legend(maxFSchangemap),
-#                                    nrow = 2, rel_heights = c(1, 0.1))
-# maxFSchangecons_comb_wleg <- plot_grid(maxFSchangecons_comb,
-#                                        get_legend(maxFSchangecons_map),
-#                                        nrow = 2, rel_heights = c(1,0.1))
 
 fig4 <- plot_grid(CurrVsFutrBSHist + theme(title = element_text(size = 8),
                                            axis.title = element_text(size = 8),

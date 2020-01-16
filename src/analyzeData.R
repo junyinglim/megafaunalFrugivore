@@ -193,21 +193,13 @@ maxBS_ModPartialResid <- mapply(FUN = generatePartialResiduals, mod = maxBS_ols_
 saveRDS(maxBS_ModPartialResid, file.path(res.dir, "maxBS_partialresid.rds"))
 
 # Making sure the partial residuals were extracted correctly
-crPlot(model = glob_curr_medBS_mod, variable = "curr_logMedBS_scl")
-plot(presid ~ curr_logMedBS_scl, data = medBS_curr_presid$points)
-abline(medBS_curr_presid$intercept, medBS_curr_presid$slope)
-
-crPlot(model = glob_pnat_medBS_mod, variable = "pnat_logMedBS_scl")
-plot(presid ~ pnat_logMedBS_scl, data = medBS_pnat_presid$points)
-abline(medBS_pnat_presid$intercept, medBS_pnat_presid$slope)
-
 crPlot(model = glob_curr_maxBS_mod, variable = "curr_logMax95BS_scl")
-plot(presid ~ curr_logMax95BS_scl, data = maxBS_curr_presid$points)
-abline(maxBS_curr_presid$intercept, maxBS_curr_presid$slope)
+plot(presid ~ x, data = maxBS_ModPartialResid[[1]]$points)
+abline(maxBS_ModPartialResid[[1]]$intercept, maxBS_ModPartialResid[[1]]$slope)
 
 crPlot(model = glob_pnat_maxBS_mod, variable = "pnat_logMax95BS_scl")
-plot(presid ~ pnat_logMax95BS_scl, data = maxBS_pnat_presid$points)
-abline(maxBS_pnat_presid$intercept, maxBS_pnat_presid$slope)
+plot(presid ~ x, data = maxBS_ModPartialResid[[2]]$points)
+abline(maxBS_ModPartialResid[[2]]$intercept, maxBS_ModPartialResid[[2]]$slope)
 
 ## SPATIAL AUTOREGRESSIVE MODELLING ============================================================
 # Extract centroids for each botanical countries
@@ -371,7 +363,6 @@ predict_lib <- with(data.frame(globalPC1_scl, globalPC2_scl, globalPC3_scl,
 glob_futr_delta_cons_mod <- predict(glob_curr_maxBS_delta_mod, newdata = predict_cons) # fitted FS taking into account future extinctions
 glob_futr_delta_lib_mod <- predict(glob_curr_maxBS_delta_mod, newdata = predict_lib) # fitted FS taking into account future extinctions
 
-
 deltaFS_lib <- exp(fitted(glob_curr_maxBS_delta_mod)) - exp(glob_futr_delta_lib_mod)
 deltaFS_cons <- exp(fitted(glob_curr_maxBS_delta_mod)) - exp(glob_futr_delta_cons_mod)
 
@@ -402,7 +393,3 @@ mean(tdwg_final_glob$curr_max95BodySize - tdwg_final_glob$futr_cons_maxBodySize)
 
 mean(tdwg_final_glob$presNat_max95BodySize_cons)
 mean(tdwg_final_glob$presNat_max95BodySize) / mean(tdwg_final_glob$presNat_max95BodySize_supercons)
-
-
-
-
