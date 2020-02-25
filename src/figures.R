@@ -498,6 +498,8 @@ CurrVsFutrBSHist <- ggplot(aes(fill = FutrVsCurr, x = log10(Mass.g/1000)), data 
         legend.title = element_blank() )
 ggsave(CurrVsFutrBSHist, filename = file.path(fig.dir, "figXX_CurrVsFutrBSHist.pdf"), width = 9, height = 5)
 
+write.csv(mamm_df3, file.path(res.dir, "mamm_df.csv"), row.names = T)
+
 ## FIG 1: Maximum fruit size, body size and changes in body size ==========
 fig1 <- plot_grid(maxFS_p + theme(legend.title = element_text(size = 14),
                                   legend.text = element_text(size = 11)),

@@ -238,6 +238,7 @@ simulateExtinction <- function(df, col){
 }
 
 # Simulate 1000 extinction scenarios
+set.seed(12345)
 mammal_liberal_futr_splist <- list()
 mammal_conservative_futr_splist <- list()
 for(i in 1:1000){
