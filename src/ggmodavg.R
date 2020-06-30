@@ -1,3 +1,7 @@
+## Convenience functions to 1) perform model averaging and extract summary statistics
+# Author: Jun Ying Lim
+# Reference: Lim, J.Y., Svenning, J.-C., Göldel, B., Faurby, S. & Kissling, W.D. Past and future extinctions shape the body size - fruit size relationship between palms and mammalian frugivores.
+
 require(ggplot2)
 require(spdep)
 require(relaimpo)

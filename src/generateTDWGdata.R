@@ -19,6 +19,7 @@ library(sp); library(rgdal)
 library(car); library(MuMIn)
 library(readxl)
 library(picante)
+
 source(file.path(src.dir, "ggmodavg.R"))
 
 ## Import palm dataset ========================
@@ -151,13 +152,14 @@ tdwg_fruit_summary <- ddply(.data = subset(palm_occ_trait, Area_code_L3 %in% mam
                         # No gap filling
                         meanFruitLength = mean(AverageFruitLength_cm, na.rm = T),
                         medianFruitLength = median(AverageFruitLength_cm, na.rm = T),
-                        max95FruitLength = quantile(AverageFruitLength_cm,
-                                                    probs = 0.95, na.rm = T, type = 8 ),
+                        max95FruitLength = exp(quantile(log(AverageFruitLength_cm),
+                                                    probs = 0.95, na.rm = T)),
                         # Gap filling
                         medianFruitLengthFilled = median(AverageFruitLength_cm_filled, na.rm = T),
                         meanFruitLengthFilled = mean(AverageFruitLength_cm_filled, na.rm = T),
-                        max95FruitLengthFilled = quantile(AverageFruitLength_cm_filled,
-                                                          probs = 0.95, na.rm = T, type = 8 ),
+                        max95FruitLengthFilled = exp(quantile(log(AverageFruitLength_cm_filled),
+                                                          probs = 0.95, na.rm = T)),
+                        maxFruitLengthFilled = max(AverageFruitLength_cm_filled, na.rm = T),
                         sdLogFruitLengthFilled = sd(log(AverageFruitLength_cm_filled), na.rm = T),
                         megapalm_nsp = sum(AverageFruitLength_cm_filled > 4, na.rm = T),
                         palm_nSp = length(AverageFruitLength_cm))
@@ -168,21 +170,22 @@ write.csv(subset(palm_occ_trait, Area_code_L3 %in% mammal_palm_intersect), file 
 mammal_presnat_occ_trait <- merge(mammal_presnat_comb_occ, phylacine_trait, by.x = "SpecName", by.y = "Binomial.1.2", all.x = TRUE)
 mammal_presnat_occ_trait <- merge(mammal_presnat_occ_trait, frugivoreClass, by.x = "SpecName", by.y = "Binomial.1.2", all.x = TRUE)
 
+# Extant species are coded as NAs but they are included under all definitions
 mammal_presnat_occ_trait$Liberal[is.na(mammal_presnat_occ_trait$Liberal)] <- "Y"
-mammal_presnat_occ_trait$Cons[is.na(mammal_presnat_occ_trait$Cons)] <- "Y"
-mammal_presnat_occ_trait$SuperCons[is.na(mammal_presnat_occ_trait$SuperCons)] <- "Y"
+mammal_presnat_occ_trait$Default[is.na(mammal_presnat_occ_trait$Default)] <- "Y"
+mammal_presnat_occ_trait$Conservative[is.na(mammal_presnat_occ_trait$Conservative)] <- "Y"
 
 tdwg_presnat_summary <-
   ddply(.data = subset(mammal_presnat_occ_trait, LEVEL_3_CO %in% mammal_palm_intersect),
         .variables = .(LEVEL_3_CO),
         .fun = summarize,
         presNat_meanBodySize = mean(Mass.g, na.rm = T),
-        presNat_medianBodySize = quantile(Mass.g, probs = 0.5, na.rm = T),
-        presNat_max95BodySize = quantile(Mass.g, probs = 0.95, type = 8, na.rm = T ),
-        presNat_medianBodySize_cons = quantile(Mass.g[Cons == "Y"], probs = 0.5, na.rm = T),
-        presNat_max95BodySize_cons = quantile(Mass.g[Cons == "Y"], probs = 0.95, na.rm = T),
-        presNat_medianBodySize_supercons = quantile(Mass.g[SuperCons == "Y"], probs = 0.5, na.rm = T),
-        presNat_max95BodySize_supercons = quantile(Mass.g[SuperCons == "Y"], probs = 0.95, na.rm = T),
+        presNat_medianBodySize = median(Mass.g[Default == "Y"], na.rm = T),
+        presNat_max95BodySize = exp(quantile(log(Mass.g[Default == "Y"]), probs = 0.95, na.rm = T)),
+        presNat_medianBodySize_lib = median(Mass.g[Liberal == "Y"], na.rm = T),
+        presNat_max95BodySize_lib = exp(quantile(log(Mass.g[Liberal == "Y"]), probs = 0.95, na.rm = T )),
+        presNat_medianBodySize_cons = median(Mass.g[Conservative == "Y"], na.rm = T),
+        presNat_max95BodySize_cons = exp(quantile(log(Mass.g[Conservative == "Y"]), probs = 0.95, na.rm = T)),
         presNat_sdBodySize = sd(log(Mass.g), na.rm = T),
         presNat_nSp = length(unique(SpecName)),
         presNat_meso_nSp = length(unique(SpecName[Mass.g > 10000])),
@@ -197,8 +200,8 @@ tdwg_curr_summary <-
         .variables = .(LEVEL_3_CO),
         .fun = summarize,
         curr_meanBodySize = mean(Mass.g, na.rm = T),
-        curr_medianBodySize = quantile(Mass.g, probs = 0.5, type = 8, na.rm = T),
-        curr_max95BodySize = quantile(Mass.g, probs = 0.95, type = 8, na.rm = T),
+        curr_medianBodySize = median(Mass.g, na.rm = T),
+        curr_max95BodySize = exp(quantile(log(Mass.g), probs = 0.95, na.rm = T)),
         curr_sdBodySize = sd(log(Mass.g), na.rm = T),
         curr_nSp = length(unique(SpecName)),
         curr_meso_nSp = length(unique(SpecName[Mass.g > 10000])),
@@ -258,13 +261,34 @@ for(i in 1:1000){
     ddply(.data = subset(mammal_curr_occ_trait,
                          LEVEL_3_CO %in% mammal_palm_intersect),
         .variables = .(LEVEL_3_CO),
-        .fun = summarize,
-        futr_lib_medianBodySize = median(Mass.g[SpecName %in% mammal_liberal_futr_splist[[i]] ] , na.rm = T),
-        futr_lib_maxBodySize = quantile(Mass.g[SpecName %in% mammal_liberal_futr_splist[[i]]],
-                                    probs = 0.95, na.rm = T),
-        futr_cons_medianBodySize = median(Mass.g[SpecName %in% mammal_conservative_futr_splist[[i]] ] , na.rm = T),
-        futr_cons_maxBodySize = quantile(Mass.g[SpecName %in% mammal_conservative_futr_splist[[i]]],
-                                            probs = 0.95, na.rm = T))
+        .fun = function(x){
+          curr_maxBodySize = max(x$Mass.g)
+          if( length(na.omit(x$Mass.g[x$SpecName %in% mammal_liberal_futr_splist[[i]]])) == 0 ){
+            futr_lib_medianBodySize = 0
+            futr_lib_maxBodySize = 0
+            futr_lib_max95BodySize = 0
+          } else {
+            futr_lib_medianBodySize = median(x$Mass.g[x$SpecName %in% mammal_liberal_futr_splist[[i]] ], na.rm = T)
+            futr_lib_maxBodySize = max(x$Mass.g[x$SpecName %in% mammal_liberal_futr_splist[[i]] ], na.rm = T)
+            futr_lib_max95BodySize = exp(quantile(log(x$Mass.g[x$SpecName %in% mammal_liberal_futr_splist[[i]]]),
+                                                  probs = 0.95, na.rm = T))
+          }
+          if( length(na.omit(x$Mass.g[x$SpecName %in% mammal_conservative_futr_splist[[i]]] )) == 0 ){
+            futr_cons_medianBodySize = 0
+            futr_cons_maxBodySize = 0
+            futr_cons_max95BodySize = 0
+          } else {
+            futr_cons_medianBodySize = median(x$Mass.g[x$SpecName %in% mammal_conservative_futr_splist[[i]] ], na.rm = T)
+            futr_cons_maxBodySize = max(x$Mass.g[x$SpecName %in% mammal_conservative_futr_splist[[i]] ], na.rm = T)
+            futr_cons_max95BodySize = exp(quantile(log(x$Mass.g[x$SpecName %in% mammal_conservative_futr_splist[[i]]]),
+                                                  probs = 0.95, na.rm = T))
+          }
+          iter = i
+          data.frame(iter, curr_maxBodySize,
+                     futr_lib_medianBodySize, futr_lib_maxBodySize, futr_lib_max95BodySize,
+                     futr_cons_medianBodySize, futr_cons_maxBodySize, futr_cons_max95BodySize)
+        })
+        
 }
 close(pb)
 
@@ -278,10 +302,13 @@ tdwg_futr_meanBodySize_summary <-
   ddply(.data = tdwg_futr_meanBodySize,
         .variable = .(LEVEL_3_CO),
         .fun = summarize,
+        curr_maxBodySize = mean(curr_maxBodySize, na.rm = T),
         futr_lib_medianBodySize = mean(futr_lib_medianBodySize, na.rm = T),
         futr_lib_maxBodySize = mean(futr_lib_maxBodySize, na.rm = T),
+        futr_lib_max95BodySize = mean(futr_lib_max95BodySize, na.rm = T),
         futr_cons_medianBodySize = mean(futr_cons_medianBodySize, na.rm = T),
         futr_cons_maxBodySize = mean(futr_cons_maxBodySize, na.rm = T),
+        futr_cons_max95BodySize = mean(futr_cons_max95BodySize, na.rm = T),
         lib_nreps = sum(futr_lib_medianBodySize > 0),
         cons_nreps = sum(futr_cons_medianBodySize > 0))
 
@@ -300,12 +327,13 @@ write.csv(tdwg_res, file.path(res.dir, "tdwg_mammal.csv"), row.names = FALSE)
 ## Data handling and clean up ========================
 # Merge with tdwg environmental data
 tdwg_final <- merge(tdwg_res, tdwg_env, by = "LEVEL_3_CO", all.x = TRUE)
+tdwg_final$lgm_ens_Tano <- (tdwg_final$lgm_ens_Tmean/10 - 273.15) - tdwg_final$bio1_mean/10
+tdwg_final$lgm_ens_Pano <- (tdwg_final$lgm_ens_Pmean/10 ) - tdwg_final$bio12_mean
+
 tdwg_final2 <- subset(tdwg_final, REALM_LONG %in% c("IndoMalay", "Australasia", "Neotropics", "Afrotropics"))
 
 # Global level PCA
 env.var <- paste0("bio", c(12, 15, 17, 1, 11, 4), "_mean")
-  #paste0("bio", 1:19, "_mean")
-#c("PREC_Sum", "PREC_CV", "P_drie_quart", "Tmean_mean", "T_cold_quart", "Temp_SD")
 globalPCA <- prcomp(x = tdwg_final2[env.var], scale. = TRUE, center = TRUE)
 
 tdwg_final2$globalPC1 <- globalPCA$x[,1]
@@ -320,10 +348,12 @@ write.csv(roundNumbers(data.frame(globalPCA_res)), row.names = T, file = file.pa
 tdwg_final_nw <- subset(tdwg_final2, REALM_LONG == "Neotropics")
 tdwg_final_oww <- subset(tdwg_final2, REALM_LONG == "Afrotropics")
 tdwg_final_owe <- subset(tdwg_final2, REALM_LONG %in% c("IndoMalay", "Australasia"))
+tdwg_final_owe_noAus <- subset(tdwg_final_owe, !(REGION_NAM == "Australia" | LEVEL_NAME == "New Guinea")) # to test the effect of removing australia
 
 nwPCA <- prcomp(x= tdwg_final_nw[env.var], scale. = TRUE, center = TRUE)
 owwPCA <- prcomp(x= tdwg_final_oww[env.var], scale. = TRUE, center = TRUE)
 owePCA <- prcomp(x= tdwg_final_owe[env.var], scale. = TRUE, center = TRUE)
+owe_noAusPCA <- prcomp(x= tdwg_final_owe_noAus[env.var], scale. = TRUE, center = TRUE)
 
 nwPCA_varexp <- cumsum(nwPCA$sdev^2) / sum(nwPCA$sdev^2)
 owwPCA_varexp <- cumsum(owwPCA$sdev^2) / sum(owwPCA$sdev^2)
@@ -348,8 +378,72 @@ tdwg_final_owe$regionalPC1 <- owePCA$x[,1]
 tdwg_final_owe$regionalPC2 <- owePCA$x[,2]
 tdwg_final_owe$regionalPC3 <- owePCA$x[,3]
 
+tdwg_final_owe_noAus$regionalPC1_noAus <- owe_noAusPCA$x[,1]
+tdwg_final_owe_noAus$regionalPC2_noAus <- owe_noAusPCA$x[,2]
+tdwg_final_owe_noAus$regionalPC3_noAus <- owe_noAusPCA$x[,3]
+
 pc.col <- c("LEVEL_3_CO", "regionalPC1", "regionalPC2", "regionalPC3")
 regionalPCA <- Reduce(rbind, list(tdwg_final_nw[pc.col], tdwg_final_oww[pc.col], tdwg_final_owe[pc.col]))
-tdwg_final2 <- merge(tdwg_final2, regionalPCA, by = "LEVEL_3_CO")
+regionalPCA2 <- merge(regionalPCA, tdwg_final_owe_noAus[,c("LEVEL_3_CO", "regionalPC1_noAus", "regionalPC2_noAus", "regionalPC3_noAus")], by = "LEVEL_3_CO", all.x = TRUE)
 
+tdwg_final2 <- merge(tdwg_final2, regionalPCA2, by = "LEVEL_3_CO")
 write.csv(tdwg_final2, file.path(data.dir,"tdwg_final.csv"))
+
+## Calculate correlation between variables ========================
+tdwg_global_corr <- tdwg_final2[,c("curr_medianBodySize",
+                                  "curr_max95BodySize",
+                                  "presNat_medianBodySize",
+                                  "presNat_max95BodySize",
+                                  "globalPC1",
+                                  "globalPC2",
+                                  "globalPC3",
+                                  "lgm_ens_Tano",
+                                  "lgm_ens_Pano")]
+var_labs <- c("Median BS (Current)", "Maximum BS (Current)",
+              "Median BS (Present-natural)", "Maximum BS (Present-natural)",
+              "Climate PC1", "Climate PC2", "Climate PC3",
+              "LGM Temp. Anom.", "LGM Prec. Anom.")
+names(tdwg_global_corr) <- var_labs
+
+tdwg_nw_corr <- tdwg_final_nw[,c("curr_medianBodySize",
+                                 "curr_max95BodySize",
+                                 "presNat_medianBodySize",
+                                 "presNat_max95BodySize",
+                                 "regionalPC1",
+                                 "regionalPC2",
+                                 "regionalPC3",
+                                 "lgm_ens_Tano",
+                                 "lgm_ens_Pano")]
+names(tdwg_nw_corr) <- var_labs
+
+tdwg_oww_corr <- tdwg_final_oww[,c("curr_medianBodySize",
+                                   "curr_max95BodySize",
+                                   "presNat_medianBodySize",
+                                   "presNat_max95BodySize",
+                                   "regionalPC1",
+                                   "regionalPC2",
+                                   "regionalPC3",
+                                   "lgm_ens_Tano",
+                                   "lgm_ens_Pano")]
+names(tdwg_oww_corr) <- var_labs
+
+tdwg_owe_corr <- tdwg_final_owe[,c("curr_medianBodySize",
+                                   "curr_max95BodySize",
+                                   "presNat_medianBodySize",
+                                   "presNat_max95BodySize",
+                                   "regionalPC1",
+                                   "regionalPC2",
+                                   "regionalPC3",
+                                   "lgm_ens_Tano",
+                                   "lgm_ens_Pano")]
+names(tdwg_owe_corr) <- var_labs
+
+tdwg_global_corr_test <- cor(tdwg_global_corr)
+tdwg_nw_corr_test <- cor(tdwg_nw_corr)
+tdwg_oww_corr_test <- cor(tdwg_oww_corr)
+tdwg_owe_corr_test <- cor(tdwg_owe_corr)
+
+write.csv(tdwg_global_corr_test, file.path(res.dir, "tdwg_global_corr.csv"))
+write.csv(tdwg_nw_corr_test, file.path(res.dir, "tdwg_nw_corr.csv"))
+write.csv(tdwg_oww_corr_test, file.path(res.dir, "tdwg_oww_corr.csv"))
+write.csv(tdwg_owe_corr_test, file.path(res.dir, "tdwg_owe_corr.csv"))

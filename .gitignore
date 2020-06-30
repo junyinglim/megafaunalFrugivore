@@ -45,3 +45,6 @@ results/*
 progressNotes/*
 resources/*
 src/clean/*
+src/R1_clean/*
+src/R2_clean/*
+src/deprecated/*

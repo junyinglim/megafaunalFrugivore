@@ -1,12 +1,13 @@
 ## Estimate extinction rates ##
-# Estimate extinction rates of extant mammals using observed changes in red list status over observed time frames
+# Estimate extinction probabilities of extant mammals using observed changes in red list status over observed time frames
 # Author: Jun Ying Lim
 # Reference: Lim, J.Y., Svenning, J.-C., Göldel, B., Faurby, S. & Kissling, W.D. Past and future extinctions shape the body size - fruit size relationship between palms and mammalian frugivores.
 
 ## Packages and directories ========================
 library(cowplot)
+library(ggplot2)
 rm(list = ls())
-main.dir <- "/Users/junyinglim/Dropbox/Projects/2019/palms/projects/megafaunalFrugivore"
+main.dir <- "/Users/junyinglim/Dropbox/Projects/2019/palms/projects/megafaunalFrugivore/src/R2_clean/"
 data.dir <- file.path(main.dir, "data")
 res.dir <- file.path(main.dir, "results")
 fig.dir <- file.path(main.dir, "figs")
@@ -220,25 +221,17 @@ saveRDS(dimarco_parboot, file.path(res.dir, "dimarco_parboot.rds"))
 hoffmann_parboot <- list(hoffmann_par_sim, hoffmann_par_obs)
 saveRDS(hoffmann_parboot, file.path(res.dir, "hoffmann_parboot.rds"))
 
-# Plot empirical rate versus rates derived from simulations using the same rates
-dimarco_parboot_plot <- ggplot() +
-  geom_histogram(aes(x = value), bins = 30, data = dimarco_par_sim) +
-  geom_vline(aes(xintercept = value), data = dimarco_par_obs) +
-  scale_y_continuous(expand = c(0,0)) +
-  scale_x_continuous(expand = c(0,0)) +
-  labs(y = "No. of simulations", x = "Instantaneous rates", title = "Di Marco et al. 2014") +
-  facet_wrap(~par_label) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+## Generate human readable files  ========================
+dimarco_parboot <- readRDS(file.path(res.dir, "dimarco_parboot.rds"))[[1]]
+dimarco_parboot$iteration <- rep(1:1000, each = 9)
+write.csv(dimarco_parboot, file.path(res.dir, "dimarco_parboot.csv"), row.names= F)
 
-hoffmann_parboot_plot <- ggplot() +
-  geom_histogram(aes(x = value), bins = 30, data = hoffmann_par_sim) +
-  geom_vline(aes(xintercept = value), data = hoffmann_par_obs) +
-  scale_y_continuous(expand = c(0,0)) +
-  scale_x_continuous(expand = c(0,0)) +
-  labs(y = "No. of simulations", x = "Instantaneous rates", title = "Hoffmann et al. 2010") +
-  facet_wrap(~par_label) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+dimarco_par <- readRDS(file.path(res.dir, "dimarco_parboot.rds"))[[2]]
+write.csv(dimarco_par, file.path(res.dir, "dimarco_par.csv"), row.names= F)
 
-parbootplot <- cowplot::plot_grid(hoffmann_parboot_plot, dimarco_parboot_plot, labels = "auto")
+hoffmann_parboot <- readRDS(file.path(res.dir, "hoffmann_parboot.rds"))[[1]]
+hoffmann_parboot$iteration <- rep(1:1000, each = 10)
+write.csv(hoffmann_parboot, file.path(res.dir, "hoffmann_parboot.csv"), row.names= F)
 
-ggsave(parbootplot, filename = file.path(fig.dir, "parbootplot.pdf"), width = 12, height = 8)
+hoffmann_par <- readRDS(file.path(res.dir, "hoffmann_parboot.rds"))[[2]]
+write.csv(hoffmann_par, file.path(res.dir, "hoffmann_par.csv"), row.names= F)
