@@ -219,6 +219,11 @@ ctmc_pExt <- read.csv(file.path(data.dir, "ctmc_pExt.csv"))
 ctmc_pExt$consRate <- apply(ctmc_pExt[,c("dimarco","hoffmann")], MARGIN = 1, FUN = mean)
 ctmc_pExt$libRate <- ctmc_pExt$davis
 
+# DD species assumed to have the same extinction probability as LC
+ctmc_pExt <- rbind(ctmc_pExt, c("DD", NA, NA, NA, ctmc_pExt$consRate[1], ctmc_pExt$libRate[1]))
+ctmc_pExt$consRate <- as.numeric(ctmc_pExt$consRate)
+ctmc_pExt$libRate <- as.numeric(ctmc_pExt$libRate)
+
 # Merge extant species list with extinction probabilities
 mammal_curr_sp_status <- merge(x = mammal_curr_sp, y = ctmc_pExt, by.x = "IUCN.Status.1.2", by.y = "IUCN.Status")
 

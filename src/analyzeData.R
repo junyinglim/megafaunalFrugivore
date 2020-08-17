@@ -403,16 +403,19 @@ mean(tdwg_final$presNat_max95BodySize_lib) # 630.5 kg
 mean(tdwg_final$presNat_max95BodySize_cons) # 352.8 kg
 
 mean(tdwg_final$curr_max95BodySize) # 52.2 kg
-mean(tdwg_final$futr_lib_max95BodySize) # 44.1 kg
-mean(tdwg_final$futr_cons_max95BodySize) # 51.7 kg
+mean(tdwg_final$futr_lib_max95BodySize) # 44.1 kg (now 43.1)
+mean(tdwg_final$futr_cons_max95BodySize) # 51.7 kg (50.8 kg)
+
+(mean(tdwg_final$curr_max95BodySize) - mean(tdwg_final$futr_lib_max95BodySize)) /1000
+(mean(tdwg_final$curr_max95BodySize) - mean(tdwg_final$futr_cons_max95BodySize)) /1000
 
 mean(tdwg_final$curr_maxBodySize) # 1,916 kg
 mean(tdwg_final$futr_lib_maxBodySize) # 1,548 kg
 mean(tdwg_final$futr_cons_maxBodySize) # 1,857 kg
 
 # Percent decline in body size
-(mean(tdwg_final$curr_max95BodySize - tdwg_final$futr_lib_max95BodySize)/mean(tdwg_final$curr_max95BodySize)) * 100
-(mean(tdwg_final$curr_max95BodySize - tdwg_final$futr_cons_max95BodySize)/mean(tdwg_final$curr_max95BodySize)) * 100
+(mean(tdwg_final$curr_max95BodySize - tdwg_final$futr_lib_max95BodySize)/mean(tdwg_final$curr_max95BodySize)) * 100 # 15.5 (now 17.4)
+(mean(tdwg_final$curr_max95BodySize - tdwg_final$futr_cons_max95BodySize)/mean(tdwg_final$curr_max95BodySize)) * 100 # 0.8 (now 2.68)
 
 (mean(tdwg_final$curr_maxBodySize - tdwg_final$futr_lib_maxBodySize)/mean(tdwg_final$curr_maxBodySize)) * 100
 (mean(tdwg_final$curr_maxBodySize - tdwg_final$futr_cons_maxBodySize)/mean(tdwg_final$curr_maxBodySize)) * 100
@@ -489,19 +492,19 @@ write.csv(tdwg_final, file.path(res.dir, "tdwgFruitSizeChange.csv"), row.names =
 
 # Fruit size change summary statistics
 tdwg_final <- read.csv(file.path(res.dir, "tdwgFruitSizeChange.csv"))
-mean(tdwg_final$changeInMax95FruitSize) # 0.22 cm 
-sd(tdwg_final$changeInMax95FruitSize) # 0.42
-mean(tdwg_final$changeInMax95FruitSize_cons) # 0.01 cm
-sd(tdwg_final$changeInMax95FruitSize_cons) # 0.08
+mean(tdwg_final$changeInMax95FruitSize) # 0.22 cm (now 0.25 cm)
+sd(tdwg_final$changeInMax95FruitSize) # 0.42 (now 0.437)
+mean(tdwg_final$changeInMax95FruitSize_cons) # 0.01 cm (now 0.03)
+sd(tdwg_final$changeInMax95FruitSize_cons) # 0.08 (now 0.05)
 
-mean(tdwg_final$percentChangeInMax95FruitSize) # 3.81 %
+mean(tdwg_final$percentChangeInMax95FruitSize) # 3.81 % (now 4.1%)
 sd(tdwg_final$percentChangeInMax95FruitSize) # 8.25
-mean(tdwg_final$percentChangeInMax95FruitSize_cons) # 0.17 %
+mean(tdwg_final$percentChangeInMax95FruitSize_cons) # 0.17 % (now 0.45%)
 sd(tdwg_final$percentChangeInMax95FruitSize_cons) # 1.51
 
-mean(tdwg_final$changeInMaxFruitSize) # 0.32 cm
+mean(tdwg_final$changeInMaxFruitSize) # 0.32 cm (now 0.33 cm)
 sd(tdwg_final$changeInMaxFruitSize) # 0.47
-mean(tdwg_final$changeInMaxFruitSize_cons) # 0.03 cm
+mean(tdwg_final$changeInMaxFruitSize_cons) # 0.03 cm (0.04 cm)
 sd(tdwg_final$changeInMaxFruitSize_cons) # 0.03
 
 mean(tdwg_final$percentChangeInMaxFruitSize) # 3.71 %

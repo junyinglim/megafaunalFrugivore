@@ -102,18 +102,26 @@ map_theme <- theme(panel.background = element_blank(),
                    strip.text = element_text(size = 18))
 
 ## Plot biogeography panels =========================
+tdwg_shp_raw <- rgdal::readOGR("~/Dropbox/Projects/2019/palms/data/TDWG/level3/level3.shp")
+tdwg_shp_raw@data$id <- rownames(tdwg_shp_raw@data)
+tdwg_shp_small <- rgeos::gSimplify(tdwg_shp_raw, tol = 0.1, topologyPreserve = T)
+
+tdwg_shp_small_fort <- fortify(tdwg_shp_small, region = "id")
+tdwg_shp_small_fort2 <- merge(tdwg_shp_small_fort, tdwg_shp_raw@data, by = "id")
+tdwg_shp_small_fort2 <- subset(tdwg_shp_small_fort2, !LEVEL_3_CO == "ANT")
+
 neot_countrylist <- subset(tdwg_final, THREEREALM == "NewWorld")$LEVEL_3_CO
 afrot_countrylist <- subset(tdwg_final, THREEREALM == "OWWest")$LEVEL_3_CO
 indot_countrylist <- subset(tdwg_final, THREEREALM == "OWEast")$LEVEL_3_CO
 
-tdwg_shp2$Global <- ifelse(tdwg_shp2$LEVEL_3_CO %in% tdwg_final$LEVEL_3_CO, 1, 0)
-tdwg_shp2$Neotropics <- ifelse(tdwg_shp2$LEVEL_3_CO %in% neot_countrylist, 1, 0)
-tdwg_shp2$Afrotropics <- ifelse(tdwg_shp2$LEVEL_3_CO %in% afrot_countrylist, 1, 0)
-tdwg_shp2$Indotropics <- ifelse(tdwg_shp2$LEVEL_3_CO %in% indot_countrylist, 1, 0)
+tdwg_shp_small_fort2$Global <- ifelse(tdwg_shp_small_fort2$LEVEL_3_CO %in% tdwg_final$LEVEL_3_CO, 1, 0)
+tdwg_shp_small_fort2$Neotropics <- ifelse(tdwg_shp_small_fort2$LEVEL_3_CO %in% neot_countrylist, 1, 0)
+tdwg_shp_small_fort2$Afrotropics <- ifelse(tdwg_shp_small_fort2$LEVEL_3_CO %in% afrot_countrylist, 1, 0)
+tdwg_shp_small_fort2$Indotropics <- ifelse(tdwg_shp_small_fort2$LEVEL_3_CO %in% indot_countrylist, 1, 0)
 
 map_globaltropics <- ggplot() +
   geom_polygon(aes(y = lat, x = long, group = group, fill = factor(Global)),
-               data = tdwg_shp2) + 
+               data = tdwg_shp_small_fort2) + 
   scale_fill_manual(values = c("grey60", "grey20")) +
   map_theme + theme(legend.position = "none",
                     plot.background = element_rect(fill = "transparent", color = NA))
@@ -122,7 +130,7 @@ ggsave(map_globaltropics,
 
 map_neotropics <- ggplot() +
   geom_polygon(aes(y = lat, x = long, group = group, fill = factor(Neotropics)),
-               data = tdwg_shp2) + 
+               data = tdwg_shp_small_fort2) + 
   scale_fill_manual(values = c("grey60", "grey20")) +
   map_theme + theme(legend.position = "none",
                     plot.background = element_rect(fill = "transparent", color = NA))
@@ -130,14 +138,14 @@ ggsave(map_neotropics, filename = file.path(fig.dir, "map_neotropics.pdf"), heig
 
 map_afrotropics <- ggplot() +
   geom_polygon(aes(y = lat, x = long, group = group, fill = factor(Afrotropics)),
-                                    data = tdwg_shp2) + 
+                                    data = tdwg_shp_small_fort2) + 
   scale_fill_manual(values = c("grey60", "grey20")) +
   map_theme + theme(legend.position = "none",
                     plot.background = element_rect(fill = "transparent", color = NA))
 ggsave(map_afrotropics, filename = file.path(fig.dir, "map_afrotropics.pdf"), height = 6, width = 14)
 
 map_indotropics <- ggplot() +
-  geom_polygon(aes(y = lat, x = long, group = group, fill = factor(Indotropics)), data = tdwg_shp2) + 
+  geom_polygon(aes(y = lat, x = long, group = group, fill = factor(Indotropics)), data = tdwg_shp_small_fort2) + 
   scale_fill_manual(values = c("grey60", "grey20")) +
   map_theme + theme(legend.position = "none",
                     plot.background = element_rect(fill = "transparent", color = NA))
@@ -199,7 +207,7 @@ maxBS_p <- ggplot() +
   scale_size_continuous(breaks = rev(c(3+log10(maxBS_arthm_min), 2, 3, 4, 5, 6, 3+log10(maxBS_arthm_max))),
                         labels = rev(c(0.03, 0.1, 1, 10, 100, "1,000", "4,946")),
                         range = c(0.5,3)) +
-  guides(colour = guide_colorbar(title = "Maximum\n(95th percentile)\nbody mass (kg)",
+  guides(fill = guide_colorbar(title = "Maximum\n(95th percentile)\nbody mass (kg)",
                                  #label.theme = element_text(angle = 45, vjust = 0.5),
                                  order = 1, direction = "vertical"),
          size = guide_legend(title = "", order = 2)) +
@@ -209,7 +217,7 @@ maxBS_p <- ggplot() +
         legend.spacing.x = unit(0.1, 'cm'),
         legend.position = "right",
         legend.text.align =  0.5,
-        legend.title = element_blank(),
+        #legend.title = element_blank(),
         legend.box = "vertical")
 
 ggsave(file.path(fig.dir, "maxBS.pdf"), maxBS_p, width = 9, height = 10)
@@ -665,7 +673,7 @@ maxBS_ols_modavg_res$Model <- "Maximum Body Size"
 medBS_ols_modavg_res$Model <- "Median Body Size"
 
 ols_modavg_res <- rbind(maxBS_ols_modavg_res, medBS_ols_modavg_res)
-ols_modavg_res_subset <- subset(ols_modavg_res, Geographic.Scale %in% c("Indotropics", "Indotropics (No Australia)") &
+ols_modavg_res_subset <- subset(ols_modavg_res, Geographic.Scale %in% c("Indotropics", "Indotropics (No Australia + New Guinea)") &
                                   !coefficient == "(Intercept)" &
                                   Scenario %in% c("Current", "Present-Natural"))
 coef_levels <- c("curr_logMedBS_scl", "pnat_logMedBS_scl","curr_logMax95BS_scl", "pnat_logMax95BS_scl",
@@ -674,7 +682,7 @@ coef_labels <- c("Median body size", "Median body size", "Maximum body size", "M
                  "Climate PC1", "Climate PC2", "Climate PC3","LGM Prec. Anom.", "LGM Temp. Anom.")
 
 ols_modavg_res_subset$Geographic.Scale <- factor(ols_modavg_res_subset$Geographic.Scale, 
-                                                 levels = c("Indotropics", "Indotropics (No Australia)"),
+                                                 levels = c("Indotropics", "Indotropics (No Australia + New Guinea)"),
                                                  labels = c("Indo-Australia", "Indotropics\n(Indo-Australia but Australia +\nNew Guinea excluded)"))
 
 ols_modavg_res_subset$Variable <- factor(ols_modavg_res_subset$coefficient,
@@ -823,8 +831,6 @@ maxFS_combined_plot <- plot_grid(maxFSchange_comb,
                                  maxFSchangecons_comb,
                                  rel_heights = c(1,1), nrow = 2)
 ggsave(maxFS_combined_plot, filename = file.path(fig.dir, "maxFS_combined_plot.pdf"), width = 9, height = 10)
-
-
 
 ## Neighbourhood definition  ===============
 nb_def <- readRDS(file.path(res.dir, "nb_def.rds"))
