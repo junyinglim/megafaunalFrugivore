@@ -127,6 +127,8 @@ map_globaltropics <- ggplot() +
                     plot.background = element_rect(fill = "transparent", color = NA))
 ggsave(map_globaltropics,
        filename = file.path(fig.dir, "map_globaltropics.pdf"), height = 6, width = 14, bg = "transparent")
+ggsave(map_globaltropics,
+       filename = file.path(fig.dir, "map_globaltropics.jpg"), height = 1.5, width = 3.5, bg = "transparent")
 
 map_neotropics <- ggplot() +
   geom_polygon(aes(y = lat, x = long, group = group, fill = factor(Neotropics)),
@@ -135,6 +137,7 @@ map_neotropics <- ggplot() +
   map_theme + theme(legend.position = "none",
                     plot.background = element_rect(fill = "transparent", color = NA))
 ggsave(map_neotropics, filename = file.path(fig.dir, "map_neotropics.pdf"), height = 6, width = 14)
+ggsave(map_neotropics, filename = file.path(fig.dir, "map_neotropics.jpg"), height = 1.5, width = 3.5)
 
 map_afrotropics <- ggplot() +
   geom_polygon(aes(y = lat, x = long, group = group, fill = factor(Afrotropics)),
@@ -143,6 +146,7 @@ map_afrotropics <- ggplot() +
   map_theme + theme(legend.position = "none",
                     plot.background = element_rect(fill = "transparent", color = NA))
 ggsave(map_afrotropics, filename = file.path(fig.dir, "map_afrotropics.pdf"), height = 6, width = 14)
+ggsave(map_afrotropics, filename = file.path(fig.dir, "map_afrotropics.jpg"), height = 1.5, width = 3.5)
 
 map_indotropics <- ggplot() +
   geom_polygon(aes(y = lat, x = long, group = group, fill = factor(Indotropics)), data = tdwg_shp_small_fort2) + 
@@ -150,6 +154,7 @@ map_indotropics <- ggplot() +
   map_theme + theme(legend.position = "none",
                     plot.background = element_rect(fill = "transparent", color = NA))
 ggsave(map_indotropics, filename = file.path(fig.dir, "map_indotropics.pdf"), height = 6, width = 14)
+ggsave(map_indotropics, filename = file.path(fig.dir, "map_indotropics.jpg"), height = 1.5, width = 3.5)
 
 # Fruit size mapped  ========================
 target.col <- c("LAT", "LONG", "LEVEL_3_CO", "max95FruitLengthFilled")
@@ -601,8 +606,13 @@ fig2 <- plot_grid(plot_grid(maxBS_modavg_plot +
                             legend.background = element_rect(fill = "transparent"),
                             legend.key = element_blank(),
                             legend.key.width = unit(0.5,"cm"),
-                            legend.title = element_blank()),
-                    maxBS_presid_plot + theme(legend.position = "none"),
+                            legend.title = element_blank(),
+                            panel.grid = element_blank(),
+                            plot.background = element_rect(fill = "transparent", color = NA)),
+                    maxBS_presid_plot + 
+                      theme(legend.position = "none",
+                            plot.background = element_rect(fill = "transparent", color = NA),
+                            panel.grid = element_blank()),
                             axis = "b", align = "h",
                             rel_widths = c(1.2,0.6),
                             labels = "auto", nrow = 1),
@@ -613,7 +623,9 @@ ggsave(file.path(fig.dir, "fig2_presid_modcoeff.pdf"), fig2, width = 7, height =
 ## FIG 3: Variance explained ===============
 fig3 <- maxBS_ols_modavg_plot + theme(axis.title.y = element_text(size = 26),
                                 axis.text.y = element_text(size = 16),
-                                axis.text.x = element_text(size = 16, angle = 50))
+                                axis.text.x = element_text(size = 16, angle = 50),
+                                plot.background = element_rect(fill = "transparent", color = NA),
+                                panel.grid = element_blank())
 ggsave(file.path(fig.dir, "fig3_varexp.pdf"), fig3, width = 10, height = 10)
 
 ## FIG 4: Change in fruit size ===============
